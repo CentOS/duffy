@@ -3,6 +3,8 @@ type: metal
 queue:
   provision: metal-provision
   destroy: metal-destroy
+# timeout is in seconds
+timeout: 21600
 stock:
   distro: 
     CentOS:
