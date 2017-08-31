@@ -1,0 +1,14 @@
+# config used for this machine type
+type: metal
+queue:
+  provision: metal-provision
+  destroy: metal-destroy
+stock:
+  distro: 
+    CentOS:
+      - ver: 7
+        arch: x86_64
+        count: 20
+      - Ver: 6
+        arch: x86_64
+        count: 5
