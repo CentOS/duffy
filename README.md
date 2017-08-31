@@ -30,3 +30,15 @@ oc new-project duffy-dev
 bash cico_build.sh
 oc apply -f _OPENSHIFT.yaml
 ```
+
+## Authors
+
+Please add your name here with any significant contribution
+
+ * Karanbir Singh
+
+ ## Copyright
+
+ Copyright 2017 Karanbir Singh
+
+ Content in this repository is licensed under the Apache License Ver.2 of Jan 2004. A copy of which is included in the repository.
