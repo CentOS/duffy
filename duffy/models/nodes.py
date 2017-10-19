@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import datetime
+import uuid
 
 from duffy.database import db, Duffyv1Model
 from duffy.extensions import marshmallow
@@ -42,16 +44,16 @@ class HostSchema(marshmallow.ModelSchema):
 
 session_host_table = db.Table('session_hosts', db.metadata,
                            db.Column('ssid', db.String, db.ForeignKey('sessions.id')),
-                           db.Column('hostname', db.String, db.ForeignKey('stock.hostname')),
+                           db.Column('hostid', db.String, db.ForeignKey('stock.id')),
                            )
 
 
 class Session(Duffyv1Model):
     __tablename__ = 'sessions'
-    id = db.Column(db.String, primary_key=True)
-    delivered_at = db.Column(db.DateTime)
+    id = db.Column(db.String, default=lambda: str(uuid.uuid4())[:8], primary_key=True)
+    delivered_at = db.Column(db.DateTime, default=datetime.datetime.now())
     dropped_at = db.Column(db.DateTime)
     apikey = db.Column(db.String)
-    state = db.Column(db.String)
+    state = db.Column(db.String, default='Deployed')
     jobid = db.Column(db.String)
     hosts = db.relationship('Host', secondary=session_host_table)

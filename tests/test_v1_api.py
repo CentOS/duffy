@@ -4,8 +4,8 @@ import unittest
 
 from duffy.app import create_app
 from duffy.database import db
-from duffy.config import DevConfig
-from duffy.models import Host
+from duffy.config import DevConfig as CONFIG
+from duffy.models import Host, Session
 import json
 
 
@@ -86,7 +86,7 @@ def _populate_test_data(db):
 
 class DuffyV1ApiTests(unittest.TestCase):
     def setUp(self):
-        self.testapp = create_app(DevConfig)
+        self.testapp = create_app(CONFIG)
         self.client = self.testapp.test_client()
         with self.testapp.app_context():
             db.create_all()
@@ -140,3 +140,18 @@ class DuffyV1ApiTests(unittest.TestCase):
                 data = json.loads(r.data)
             except:
                 assert 'Insufficient Nodes in READY State' in r.data
+
+    def test_host_has_ssid(self):
+        r = self.client.get('/Node/get')
+        data = json.loads(r.data)
+
+        assert len(data['hosts'][0]['comment']) == 8
+
+    def test_different_ssids_per_session(self):
+        r1 = self.client.get('/Node/get')
+        r1data = json.loads(r1.data)
+
+        r2 = self.client.get('/Node/get')
+        r2data = json.loads(r2.data)
+
+        assert r1data['hosts'][0]['comment'] != r2data['hosts'][0]['comment']
