@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 from duffy.models import Host, HostSchema, Session
 from duffy.database import db
 
@@ -26,8 +26,11 @@ def nodeget():
     for host in hosts:
         host.comment = s.id
         host.state = 'Deployed'
-        host.save()
         s.hosts.append(host)
+        host.save()
     s.save()
 
-    return HostSchema(many=True).jsonify(hosts)
+    hostschema = HostSchema(many=True).dump(hosts)
+    hostschema.data.update({'ssid': s.id})
+
+    return jsonify(hostschema.data)

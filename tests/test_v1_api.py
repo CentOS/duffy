@@ -4,7 +4,7 @@ import unittest
 
 from duffy.app import create_app
 from duffy.database import db
-from duffy.config import DevConfig as CONFIG
+from duffy.config import TestConfig as CONFIG
 from duffy.models import Host, Session
 import json
 
@@ -145,7 +145,7 @@ class DuffyV1ApiTests(unittest.TestCase):
         r = self.client.get('/Node/get')
         data = json.loads(r.data)
 
-        assert len(data['hosts'][0]['comment']) == 8
+        assert len(data['ssid']) == 8
 
     def test_different_ssids_per_session(self):
         r1 = self.client.get('/Node/get')
@@ -154,4 +154,4 @@ class DuffyV1ApiTests(unittest.TestCase):
         r2 = self.client.get('/Node/get')
         r2data = json.loads(r2.data)
 
-        assert r1data['hosts'][0]['comment'] != r2data['hosts'][0]['comment']
+        assert r1data['ssid'] != r2data['ssid']

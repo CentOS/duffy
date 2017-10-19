@@ -34,7 +34,6 @@ class Host(Duffyv1Model):
 
 
 class HostSchema(marshmallow.ModelSchema):
-
     @post_dump(pass_many=True)
     def wrap(self, data, many):
         return {'hosts': data}
