@@ -10,6 +10,8 @@ import json
 
 
 def _populate_test_data(db):
+    # If more C7 x86_64 hosts are added make sure n1.hufty has the lowest
+    # used_count.
     n1hufty = Host(hostname='n1.hufty',
                    ip='127.0.0.1',
                    chassis='hufty',
@@ -52,7 +54,7 @@ def _populate_test_data(db):
     n4hufty = Host(hostname='n4.hufty',
                    ip='127.0.0.4',
                    chassis='hufty',
-                   used_count=4,
+                   used_count=6,
                    state='Ready',
                    comment='-',
                    distro=None,
@@ -65,7 +67,7 @@ def _populate_test_data(db):
     n5hufty = Host(hostname='n5.hufty',
                    ip='127.0.0.5',
                    chassis='hufty',
-                   used_count=4,
+                   used_count=6,
                    state='Ready',
                    comment='-',
                    distro=None,
@@ -94,15 +96,22 @@ class DuffyV1ApiTests(unittest.TestCase):
         with self.testapp.app_context():
             db.drop_all()
 
-    def test_api_returns_something(self):
+    def test_api_returns_host_with_the_lowest_used_count(self):
+        # n1.hufty should be the one with the lowest used_count, see
+        # _populate_test_data() for the definition
+        with self.testapp.app_context():
+            assert Host.query.filter(Host.hostname=='n1.hufty').one().state == 'Ready'
         r = self.client.get('/Node/get')
         data = json.loads(r.data)
         assert data['hosts'][0]['ver'] == '7'
+        assert data['hosts'][0]['hostname'] == 'n1.hufty'
         assert data['hosts'][0]['arch'] == 'x86_64'
         assert data['hosts'][0]['distro'] is None
         assert data['hosts'][0]['state'] == 'Deployed'
 
     def test_api_returns_host_with_correct_ver(self):
+        with self.testapp.app_context():
+            assert Host.query.filter(Host.hostname=='n1.hufty').one().state == 'Ready'
         r = self.client.get('/Node/get?ver=6')
         data = json.loads(r.data)
         assert data['hosts'][0]['ver'] == '6'

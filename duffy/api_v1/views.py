@@ -16,7 +16,7 @@ def nodeget():
                               Host.state == 'Ready',
                               Host.ver == get_ver,
                               Host.arch == get_arch
-                              ).order_by(db.desc(Host.used_count)).limit(get_count).all()
+                              ).order_by(db.asc(Host.used_count)).limit(get_count).all()
 
     if len(hosts) != get_count:
         return 'Insufficient Nodes in READY State'
