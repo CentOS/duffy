@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from duffy.database import db
+from duffy.database import db, Duffyv1Model
 from duffy.extensions import marshmallow
 from marshmallow import post_dump
 
-class Project(db.Model):
+class Project(Duffyv1Model):
     """"""
     __tablename__ = 'users'
     apikey = db.Column(db.String, primary_key=True)
@@ -14,7 +14,7 @@ class Project(db.Model):
     limitnodes = db.Column(db.Integer)
 
 
-class Host(db.Model):
+class Host(Duffyv1Model):
     __tablename__ = 'stock'
     id = db.Column(db.Integer, primary_key=True)
     hostname = db.Column(db.String)
@@ -46,7 +46,7 @@ session_host_table = db.Table('session_hosts', db.metadata,
                            )
 
 
-class Session(db.Model):
+class Session(Duffyv1Model):
     __tablename__ = 'sessions'
     id = db.Column(db.String, primary_key=True)
     delivered_at = db.Column(db.DateTime)
