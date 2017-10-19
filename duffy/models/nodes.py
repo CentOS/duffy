@@ -5,6 +5,7 @@ import uuid
 from duffy.database import db, Duffyv1Model
 from duffy.extensions import marshmallow
 from marshmallow import post_dump
+import marshmallow as ma
 
 class Project(Duffyv1Model):
     """"""
@@ -43,10 +44,11 @@ class Host(Duffyv1Model):
     session_id = db.Column(db.Integer, db.ForeignKey('sessions.id'))
     session = db.relationship('Session', lazy='joined')
 
-class HostSchema(marshmallow.ModelSchema):
-    @post_dump(pass_many=True)
-    def wrap(self, data, many):
-        return {'hosts': data}
+class SessionSchema(marshmallow.Schema):
+    id = ma.fields.String(dump_to='ssid')
+    hosts = ma.fields.Nested("HostSchema", only='hostname', many=True)
 
+class HostSchema(marshmallow.ModelSchema):
+    session_id = ma.fields.String(dump_to='comment')
     class Meta:
         model = Host

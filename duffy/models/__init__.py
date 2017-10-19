@@ -1,1 +1,1 @@
-from .nodes import Host, HostSchema, Session
+from .nodes import Host, HostSchema, Session, SessionSchema

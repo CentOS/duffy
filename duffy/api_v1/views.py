@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from flask import Blueprint, request, jsonify
-from duffy.models import Host, HostSchema, Session
+from duffy.models import Host, HostSchema, Session, SessionSchema
 from duffy.database import db
 
 blueprint = Blueprint('api_v1', __name__)
@@ -21,16 +21,13 @@ def nodeget():
     if len(hosts) != get_count:
         return 'Insufficient Nodes in READY State'
 
-    s = Session()
-    s.save()
+    sess = Session()
+    sess.save()
     for host in hosts:
-        host.comment = s.id
         host.state = 'Deployed'
-        s.hosts.append(host)
+        sess.hosts.append(host)
         host.save()
-    s.save()
+    sess.save()
 
-    hostschema = HostSchema(many=True).dump(hosts)
-    hostschema.data.update({'ssid': s.id})
-
-    return jsonify(hostschema.data)
+    rtn = SessionSchema().dump(sess)
+    return jsonify(rtn.data)
