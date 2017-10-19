@@ -15,6 +15,15 @@ class Project(Duffyv1Model):
     createdat = db.Column(db.DateTime)
     limitnodes = db.Column(db.Integer)
 
+class Session(Duffyv1Model):
+    __tablename__ = 'sessions'
+    id = db.Column(db.String, default=lambda: str(uuid.uuid4())[:8], primary_key=True)
+    delivered_at = db.Column(db.DateTime, default=datetime.datetime.now())
+    dropped_at = db.Column(db.DateTime)
+    apikey = db.Column(db.String)
+    state = db.Column(db.String, default='Deployed')
+    jobid = db.Column(db.String)
+    hosts = db.relationship('Host', lazy='joined')
 
 class Host(Duffyv1Model):
     __tablename__ = 'stock'
@@ -31,7 +40,8 @@ class Host(Duffyv1Model):
     arch = db.Column(db.String)
     pool = db.Column(db.Integer)
     console_port = db.Column(db.Integer)
-
+    session_id = db.Column(db.Integer, db.ForeignKey('sessions.id'))
+    session = db.relationship('Session', lazy='joined')
 
 class HostSchema(marshmallow.ModelSchema):
     @post_dump(pass_many=True)
@@ -40,19 +50,3 @@ class HostSchema(marshmallow.ModelSchema):
 
     class Meta:
         model = Host
-
-session_host_table = db.Table('session_hosts', db.metadata,
-                           db.Column('ssid', db.String, db.ForeignKey('sessions.id')),
-                           db.Column('hostid', db.String, db.ForeignKey('stock.id')),
-                           )
-
-
-class Session(Duffyv1Model):
-    __tablename__ = 'sessions'
-    id = db.Column(db.String, default=lambda: str(uuid.uuid4())[:8], primary_key=True)
-    delivered_at = db.Column(db.DateTime, default=datetime.datetime.now())
-    dropped_at = db.Column(db.DateTime)
-    apikey = db.Column(db.String)
-    state = db.Column(db.String, default='Deployed')
-    jobid = db.Column(db.String)
-    hosts = db.relationship('Host', secondary=session_host_table)

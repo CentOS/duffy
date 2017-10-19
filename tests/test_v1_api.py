@@ -155,3 +155,11 @@ class DuffyV1ApiTests(unittest.TestCase):
         r2data = json.loads(r2.data)
 
         assert r1data['ssid'] != r2data['ssid']
+
+    def test_session_has_hosts(self):
+        r1 = self.client.get('/Node/get?count=2')
+        r1data = json.loads(r1.data)
+
+        with self.testapp.app_context():
+            s = Session.query.get(r1data['hosts'][0]['comment'])
+            assert len(s.hosts) == 2
