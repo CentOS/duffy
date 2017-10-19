@@ -119,5 +119,15 @@ class DuffyV1ApiTests(unittest.TestCase):
 
     def test_api_doesnt_return_unless_it_fills_the_request(self):
         r = self.client.get('/Node/get?count=100')
-        data = json.loads(r.data)
-        assert len(data['hosts']) == 0
+        try:
+            data = json.loads(r.data)
+        except:
+            assert 'Insufficient Nodes in READY State' in r.data
+
+    def test_exhausting_the_pool(self):
+        for poolsize in range(4):
+            try:
+                r = self.client.get('/Node/get')
+                data = json.loads(r.data)
+            except:
+                assert 'Insufficient Nodes in READY State' in r.data
