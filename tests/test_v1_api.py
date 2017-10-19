@@ -100,6 +100,7 @@ class DuffyV1ApiTests(unittest.TestCase):
         assert data['hosts'][0]['ver'] == '7'
         assert data['hosts'][0]['arch'] == 'x86_64'
         assert data['hosts'][0]['distro'] is None
+        assert data['hosts'][0]['state'] == 'Deployed'
 
     def test_api_returns_host_with_correct_ver(self):
         r = self.client.get('/Node/get?ver=6')
@@ -107,6 +108,7 @@ class DuffyV1ApiTests(unittest.TestCase):
         assert data['hosts'][0]['ver'] == '6'
         assert data['hosts'][0]['arch'] == 'x86_64'
         assert data['hosts'][0]['distro'] is None
+        assert data['hosts'][0]['state'] == 'Deployed'
 
     def test_api_returns_multiple_hosts(self):
         r = self.client.get('/Node/get?count=2')
