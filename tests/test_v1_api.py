@@ -4,7 +4,7 @@ import unittest
 
 from duffy.app import create_app
 from duffy.database import db
-from duffy.config import DevConfig as CONFIG
+from duffy.config import TestConfig as CONFIG
 from duffy.models import Host, Session
 import json
 
