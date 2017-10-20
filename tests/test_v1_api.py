@@ -77,10 +77,24 @@ def _populate_test_data(db):
                    pool=1,
                    console_port=123)
 
+    n1p8h1 = Host(hostname='n1.p8h1',
+                  ip='127.0.0.6',
+                  chassis='p8h1',
+                  used_count=6,
+                  state='Ready',
+                  comment='-',
+                  distro=None,
+                  rel=None,
+                  ver=7,
+                  arch='ppc64le',
+                  pool=1,
+                  console_port=123)
+
     db.session.add(n1hufty)
     db.session.add(n2hufty)
     db.session.add(n3hufty)
     db.session.add(n4hufty)
+    db.session.add(n1p8h1)
     db.session.commit()
 
 
@@ -123,6 +137,18 @@ class DuffyV1ApiTests(unittest.TestCase):
                 h = Host.query.filter(Host.hostname == hostname).one()
                 assert h.ver == '6'
                 assert h.arch == 'x86_64'
+                assert h.distro is None
+                assert h.state == 'Deployed'
+
+    def test_api_returns_host_with_correct_arch(self):
+        r1 = self.client.get('/Node/get?arch=ppc64le')
+        data = json.loads(r1.data)
+
+        for hostname in data['hosts']:
+            with self.testapp.app_context():
+                h = Host.query.filter(Host.hostname == hostname).one()
+                assert h.ver == '7'
+                assert h.arch == 'ppc64le'
                 assert h.distro is None
                 assert h.state == 'Deployed'
 
