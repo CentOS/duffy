@@ -199,3 +199,9 @@ class DuffyV1ApiTests(unittest.TestCase):
         with self.testapp.app_context():
             s = Session.query.get(r1data['ssid'])
             assert len(s.hosts) == 2
+
+    def test_nodedone_without_apikey_fails(self):
+        r1 = self.client.get('/Node/done')
+        data = json.loads(r1.data)
+        assert data['msg'] == 'Missing duffy key'
+        assert r1.status_code == 403

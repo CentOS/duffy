@@ -1,9 +1,19 @@
 # -*- coding: utf-8 -*-
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, abort
+from functools import wraps
 from duffy.models import Host, HostSchema, Session, SessionSchema
 from duffy.database import db
 
 blueprint = Blueprint('api_v1', __name__)
+
+
+def duffy_key_required(fn):
+    @wraps(fn)
+    def decorated(*args, **kwargs):
+        if not request.args.get('key'):
+            return jsonify({'msg': 'Missing duffy key'}), 403
+        return fn(*args, **kwargs)
+    return decorated
 
 
 @blueprint.route('/Node/get')
@@ -31,3 +41,8 @@ def nodeget():
 
     rtn = SessionSchema().dump(sess)
     return jsonify(rtn.data)
+
+@blueprint.route('/Node/done')
+@duffy_key_required
+def nodedone():
+    pass
