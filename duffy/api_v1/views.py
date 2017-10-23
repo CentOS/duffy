@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask import Blueprint, request, jsonify, abort
 from functools import wraps
-from duffy.models import Host, HostSchema, Session, SessionSchema
+from duffy.models import Host, HostSchema, Session, SessionSchema, Project
 from duffy.database import db
 
 blueprint = Blueprint('api_v1', __name__)
@@ -10,17 +10,23 @@ blueprint = Blueprint('api_v1', __name__)
 def duffy_key_required(fn):
     @wraps(fn)
     def decorated(*args, **kwargs):
-        if not request.args.get('key'):
-            return jsonify({'msg': 'Missing duffy key'}), 403
+        duffy_key = request.args.get('key', None)
+        if not duffy_key:
+            return jsonify({'msg': 'Invalid duffy key'}), 403
+        return fn(*args, **kwargs)
+    return decorated
+
         return fn(*args, **kwargs)
     return decorated
 
 
 @blueprint.route('/Node/get')
+@duffy_key_required
 def nodeget():
     get_ver = request.args.get('ver', 7)
     get_arch = request.args.get('arch', 'x86_64')
     get_count = int(request.args.get('count', 1))
+    get_key = request.args.get('key')
 
     hosts = Host.query.filter(Host.pool == 1,
                               Host.state == 'Ready',
@@ -32,6 +38,7 @@ def nodeget():
         return 'Insufficient Nodes in READY State'
 
     sess = Session()
+    sess.apikey = get_key
     sess.save()
     for host in hosts:
         host.state = 'Deployed'
