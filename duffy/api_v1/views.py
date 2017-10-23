@@ -16,6 +16,16 @@ def duffy_key_required(fn):
         return fn(*args, **kwargs)
     return decorated
 
+def ssid_required(fn):
+    @wraps(fn)
+    def decorated(*args, **kwargs):
+        ssid = request.args.get('ssid')
+        if not ssid:
+            return jsonify({'msg': 'Invalid session ID'}), 403
+
+        sess = Session.query.get(ssid)
+        if not sess:
+            return jsonify({'msg': 'Invalid session ID'}), 403
         return fn(*args, **kwargs)
     return decorated
 
@@ -51,5 +61,19 @@ def nodeget():
 
 @blueprint.route('/Node/done')
 @duffy_key_required
+@ssid_required
 def nodedone():
-    pass
+    get_key = request.args.get('key')
+    get_ssid = request.args.get('ssid')
+
+    session = Session.query.get(get_ssid)
+
+    if session.apikey != get_key:
+        return jsonify({'msg': 'Invalid duffy key'}), 403
+
+    for host in session.hosts:
+        host.state = "Deprovision"
+        host.save()
+    session.state = 'Done'
+    session.save()
+    return "Done"
