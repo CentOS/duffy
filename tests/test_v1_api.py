@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
+import datetime
 import unittest
 
 from duffy.app import create_app
 from duffy.database import db
 from duffy.config import TestConfig as CONFIG
-from duffy.models import Host, Session
+from duffy.models import Host, Session, Project
 import json
 
 
@@ -90,11 +91,18 @@ def _populate_test_data(db):
                   pool=1,
                   console_port=123)
 
+    testproject = Project(apikey='asdf-1234',
+                     projectname='uniitest-proj',
+                     jobname='asdf123',
+                     createdat = datetime.datetime(1970, 1, 1, 1, 0),
+                     limitnodes=2)
+
     db.session.add(n1hufty)
     db.session.add(n2hufty)
     db.session.add(n3hufty)
     db.session.add(n4hufty)
     db.session.add(n1p8h1)
+    db.session.add(testproject)
     db.session.commit()
 
 
@@ -115,7 +123,7 @@ class DuffyV1ApiTests(unittest.TestCase):
         # _populate_test_data() for the definition
         with self.testapp.app_context():
             assert Host.query.filter(Host.hostname=='n1.hufty').one().state == 'Ready'
-        r = self.client.get('/Node/get')
+        r = self.client.get('/Node/get?key=asdf-1234')
         data = json.loads(r.data)
         for hostname in data['hosts']:
             with self.testapp.app_context():
@@ -129,7 +137,7 @@ class DuffyV1ApiTests(unittest.TestCase):
     def test_api_returns_host_with_correct_ver(self):
         with self.testapp.app_context():
             assert Host.query.filter(Host.hostname=='n1.hufty').one().state == 'Ready'
-        r = self.client.get('/Node/get?ver=6')
+        r = self.client.get('/Node/get?key=asdf-1234&ver=6')
         data = json.loads(r.data)
 
         for hostname in data['hosts']:
@@ -141,7 +149,7 @@ class DuffyV1ApiTests(unittest.TestCase):
                 assert h.state == 'Deployed'
 
     def test_api_returns_host_with_correct_arch(self):
-        r1 = self.client.get('/Node/get?arch=ppc64le')
+        r1 = self.client.get('/Node/get?key=asdf-1234&arch=ppc64le')
         data = json.loads(r1.data)
 
         for hostname in data['hosts']:
@@ -153,7 +161,7 @@ class DuffyV1ApiTests(unittest.TestCase):
                 assert h.state == 'Deployed'
 
     def test_api_returns_multiple_hosts(self):
-        r = self.client.get('/Node/get?count=2')
+        r = self.client.get('/Node/get?key=asdf-1234&count=2')
         data = json.loads(r.data)
         for hostname in data['hosts']:
             with self.testapp.app_context():
@@ -163,7 +171,7 @@ class DuffyV1ApiTests(unittest.TestCase):
                 assert len(data['hosts']) == 2
 
     def test_api_doesnt_return_unless_it_fills_the_request(self):
-        r = self.client.get('/Node/get?count=100')
+        r = self.client.get('/Node/get?key=asdf-1234&count=100')
         try:
             data = json.loads(r.data)
         except:
@@ -172,28 +180,28 @@ class DuffyV1ApiTests(unittest.TestCase):
     def test_exhausting_the_pool(self):
         for poolsize in range(4):
             try:
-                r = self.client.get('/Node/get')
+                r = self.client.get('/Node/get?key=asdf-1234&')
                 data = json.loads(r.data)
             except:
                 assert 'Insufficient Nodes in READY State' in r.data
 
     def test_host_has_ssid(self):
-        r = self.client.get('/Node/get')
+        r = self.client.get('/Node/get?key=asdf-1234&')
         data = json.loads(r.data)
 
         assert len(data['ssid']) == 8
 
     def test_different_ssids_per_session(self):
-        r1 = self.client.get('/Node/get')
+        r1 = self.client.get('/Node/get?key=asdf-1234')
         r1data = json.loads(r1.data)
 
-        r2 = self.client.get('/Node/get')
+        r2 = self.client.get('/Node/get?key=asdf-1234')
         r2data = json.loads(r2.data)
 
         assert r1data['ssid'] != r2data['ssid']
 
     def test_session_has_hosts(self):
-        r1 = self.client.get('/Node/get?count=2')
+        r1 = self.client.get('/Node/get?key=asdf-1234&count=2')
         r1data = json.loads(r1.data)
 
         with self.testapp.app_context():
