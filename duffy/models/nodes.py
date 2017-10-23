@@ -22,7 +22,7 @@ class Session(Duffyv1Model):
     delivered_at = db.Column(db.DateTime, default=datetime.datetime.now())
     dropped_at = db.Column(db.DateTime)
     apikey = db.Column(db.String)
-    state = db.Column(db.String, default='Deployed')
+    state = db.Column(db.String, default='Prod')
     jobid = db.Column(db.String)
     hosts = db.relationship('Host', lazy='joined')
 
