@@ -200,6 +200,14 @@ class DuffyV1ApiTests(unittest.TestCase):
 
         assert r1data['ssid'] != r2data['ssid']
 
+    def test_session_has_state(self):
+        r1 = self.client.get('/Node/get?key=asdf-1234&count=2')
+        r1data = json.loads(r1.data)
+
+        with self.testapp.app_context():
+            s = Session.query.get(r1data['ssid'])
+            assert s.state == 'Prod'
+
     def test_session_has_hosts(self):
         r1 = self.client.get('/Node/get?key=asdf-1234&count=2')
         r1data = json.loads(r1.data)
@@ -211,5 +219,53 @@ class DuffyV1ApiTests(unittest.TestCase):
     def test_nodedone_without_apikey_fails(self):
         r1 = self.client.get('/Node/done')
         data = json.loads(r1.data)
-        assert data['msg'] == 'Missing duffy key'
+        assert data['msg'] == 'Invalid duffy key'
         assert r1.status_code == 403
+
+    def test_nodedone_without_ssid_fails(self):
+        r1 = self.client.get('/Node/done?key=asdf-1234')
+        data = json.loads(r1.data)
+        assert data['msg'] == 'Invalid session ID'
+        assert r1.status_code == 403
+
+    def test_nodedone_sets_node_state(self):
+        r1 = self.client.get('/Node/get?key=asdf-1234&count=2')
+        r1data = json.loads(r1.data)
+
+        with self.testapp.app_context():
+            s = Session.query.get(r1data['ssid'])
+
+            r2 = self.client.get('/Node/done?key=asdf-1234&ssid={0}'.format(s.id))
+            for host in s.hosts:
+                assert host.state == 'Deprovision'
+
+    def test_nodedone_sets_session_state(self):
+        r1 = self.client.get('/Node/get?key=asdf-1234&count=2')
+        r1data = json.loads(r1.data)
+
+        with self.testapp.app_context():
+            s = Session.query.get(r1data['ssid'])
+
+            assert s.state == 'Prod'
+
+    def test_nodedone_with_different_apikey_fails(self):
+        r1 = self.client.get('/Node/get?key=asdf-1234&count=2')
+        r1data = json.loads(r1.data)
+
+        with self.testapp.app_context():
+            s = Session.query.get(r1data['ssid'])
+
+            r2 = self.client.get('/Node/done?key=hjkl-4567&ssid={0}'.format(s.id))
+            r2data = json.loads(r2.data)
+            assert r2data['msg'] == 'Invalid duffy key'
+            assert r2.status_code == 403
+
+    def test_nodedone_with_bad_ssid_fails(self):
+        r1 = self.client.get('/Node/get?key=asdf-1234&count=2')
+        r1data = json.loads(r1.data)
+
+        with self.testapp.app_context():
+            r2 = self.client.get('/Node/done?key=1234567890&ssid={0}'.format('INVALID_SSID'))
+            r2data = json.loads(r2.data)
+            assert r2data['msg'] == 'Invalid session ID'
+            assert r2.status_code == 403
