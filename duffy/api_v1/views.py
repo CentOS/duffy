@@ -76,4 +76,24 @@ def nodedone():
         host.save()
     session.state = 'Done'
     session.save()
-    return "Done"
+    return jsonify("Done")
+
+@blueprint.route('/Node/fail')
+@duffy_key_required
+@ssid_required
+def nodefail():
+    get_key = request.args.get('key')
+    get_ssid = request.args.get('ssid')
+
+    session = Session.query.get(get_ssid)
+
+    if session.apikey != get_key:
+        return jsonify({'msg': 'Invalid duffy key'}), 403
+
+    for host in session.hosts:
+        host.state = 'Fail'
+        host.save()
+    session.state = 'Fail'
+    session.save()
+
+    return jsonify("Done")
