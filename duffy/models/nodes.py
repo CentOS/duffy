@@ -4,8 +4,8 @@ import uuid
 
 from duffy.database import db, Duffyv1Model
 from duffy.extensions import marshmallow
-from marshmallow import post_dump
 import marshmallow as ma
+
 
 class Project(Duffyv1Model):
     """"""
@@ -16,6 +16,7 @@ class Project(Duffyv1Model):
     createdat = db.Column(db.DateTime)
     limitnodes = db.Column(db.Integer)
 
+
 class Session(Duffyv1Model):
     __tablename__ = 'sessions'
     id = db.Column(db.String, default=lambda: str(uuid.uuid4())[:8], primary_key=True)
@@ -25,6 +26,7 @@ class Session(Duffyv1Model):
     state = db.Column(db.String, default='Prod')
     jobid = db.Column(db.String)
     hosts = db.relationship('Host', lazy='joined')
+
 
 class Host(Duffyv1Model):
     __tablename__ = 'stock'
@@ -44,11 +46,14 @@ class Host(Duffyv1Model):
     session_id = db.Column(db.Integer, db.ForeignKey('sessions.id'))
     session = db.relationship('Session', lazy='joined')
 
+
 class SessionSchema(marshmallow.Schema):
     id = ma.fields.String(dump_to='ssid')
     hosts = ma.fields.Nested("HostSchema", only='hostname', many=True)
 
+
 class HostSchema(marshmallow.ModelSchema):
     session_id = ma.fields.String(dump_to='comment')
+
     class Meta:
         model = Host
