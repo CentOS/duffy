@@ -65,19 +65,6 @@ def _populate_test_data(db):
                    pool=1,
                    console_port=123)
 
-    n5hufty = Host(hostname='n5.hufty',
-                   ip='127.0.0.5',
-                   chassis='hufty',
-                   used_count=6,
-                   state='Ready',
-                   comment='-',
-                   distro=None,
-                   rel=None,
-                   ver=7,
-                   arch='x86_64',
-                   pool=1,
-                   console_port=123)
-
     n1p8h1 = Host(hostname='n1.p8h1',
                   ip='127.0.0.6',
                   chassis='p8h1',
@@ -92,10 +79,10 @@ def _populate_test_data(db):
                   console_port=123)
 
     testproject = Project(apikey='asdf-1234',
-                     projectname='uniitest-proj',
-                     jobname='asdf123',
-                     createdat = datetime.datetime(1970, 1, 1, 1, 0),
-                     limitnodes=2)
+                          projectname='uniitest-proj',
+                          jobname='asdf123',
+                          createdat=datetime.datetime(1970, 1, 1, 1, 0),
+                          limitnodes=2)
 
     db.session.add(n1hufty)
     db.session.add(n2hufty)
@@ -122,7 +109,7 @@ class DuffyV1ApiTests(unittest.TestCase):
         # n1.hufty should be the one with the lowest used_count, see
         # _populate_test_data() for the definition
         with self.testapp.app_context():
-            assert Host.query.filter(Host.hostname=='n1.hufty').one().state == 'Ready'
+            assert Host.query.filter(Host.hostname == 'n1.hufty').one().state == 'Ready'
         r = self.client.get('/Node/get?key=asdf-1234')
         data = json.loads(r.data)
         for hostname in data['hosts']:
@@ -174,7 +161,7 @@ class DuffyV1ApiTests(unittest.TestCase):
         r = self.client.get('/Node/get?key=asdf-1234&count=100')
         try:
             data = json.loads(r.data)
-        except:
+        except ValueError:
             assert 'Insufficient Nodes in READY State' in r.data
 
     def test_exhausting_the_pool(self):
@@ -182,7 +169,7 @@ class DuffyV1ApiTests(unittest.TestCase):
             try:
                 r = self.client.get('/Node/get?key=asdf-1234&')
                 data = json.loads(r.data)
-            except:
+            except ValueError:
                 assert 'Insufficient Nodes in READY State' in r.data
 
     def test_host_has_ssid(self):
