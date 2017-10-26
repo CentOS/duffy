@@ -226,6 +226,18 @@ class DuffyV1ApiTests(unittest.TestCase):
             for host in s.hosts:
                 assert host.state == 'Deprovision'
 
+    def test_nodedone_node_has_no_session_after(self):
+        r1 = self.client.get('/Node/get?key=asdf-1234&count=2')
+        r1data = json.loads(r1.data)
+
+        with self.testapp.app_context():
+            s = Session.query.get(r1data['ssid'])
+
+            r2 = self.client.get('/Node/done?key=asdf-1234&ssid={0}'.format(s.id))
+            for host in s.hosts:
+                assert host.session == None
+                assert host.session_id == ''
+
     def test_nodedone_sets_session_state(self):
         r1 = self.client.get('/Node/get?key=asdf-1234&count=2')
         r1data = json.loads(r1.data)

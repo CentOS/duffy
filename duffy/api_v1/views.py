@@ -73,6 +73,8 @@ def nodedone():
 
     for host in session.hosts:
         host.state = "Deprovision"
+        host.session = None
+        host.session_id = ''
         host.save()
     session.state = 'Done'
     session.save()
