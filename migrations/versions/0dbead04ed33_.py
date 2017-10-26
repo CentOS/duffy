@@ -1,7 +1,7 @@
-"""empty message
+"""Initial DB State
 
 Revision ID: 0dbead04ed33
-Revises: 
+Revises:
 Create Date: 2017-10-18 15:40:30.397802
 
 """
