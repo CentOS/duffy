@@ -19,7 +19,7 @@ def create_app(config_object=DevConfig):
 
 def register_extensions(app):
     db.init_app(app)
-    migrate.init_app(app, db)
+    migrate.init_app(app, db, render_as_batch=True)
     marshmallow.init_app(app)
     return None
 
