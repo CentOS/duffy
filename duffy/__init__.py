@@ -10,5 +10,7 @@ APP = create_app(CONFIG)
 
 @APP.cli.command()
 def initdb():
-    click.echo('Working on the DB')
-    pass
+    from duffy.data import _populate_test_data
+    # TODO: Warn if ran without an up-to-date-db
+    click.echo('Initializing the DB...')
+    _populate_test_data()
