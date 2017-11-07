@@ -38,6 +38,11 @@ def nodeget():
     get_count = int(request.args.get('count', 1))
     get_key = request.args.get('key')
 
+    project = Project.query.get(get_key)
+
+    if not project:
+        return 'Invalid duffy key'
+
     hosts = Host.query.filter(Host.pool == 1,
                               Host.state == 'Ready',
                               Host.ver == get_ver,
@@ -51,8 +56,11 @@ def nodeget():
     sess.apikey = get_key
     sess.save()
     for host in hosts:
-        host.state = 'Deployed'
+        host.state = 'Contextualizing'
+        host.save()
+        host.contextualize(project)
         sess.hosts.append(host)
+        host.state = 'Deployed'
         host.save()
     sess.save()
 
