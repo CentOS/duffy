@@ -15,7 +15,13 @@ class Project(Duffyv1Model):
     jobname = db.Column(db.String)
     createdat = db.Column(db.DateTime)
     limitnodes = db.Column(db.Integer)
+    sshkeys = db.relationship("SSHKey", backref="project")
 
+class SSHKey(Duffyv1Model):
+    __tablename__ = 'userkeys'
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('users.apikey'))
+    key = db.Column(db.String)
 
 class Session(Duffyv1Model):
     __tablename__ = 'sessions'
