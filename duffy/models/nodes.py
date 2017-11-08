@@ -49,6 +49,7 @@ class Host(Duffyv1Model):
     arch = db.Column(db.String)
     pool = db.Column(db.Integer)
     console_port = db.Column(db.Integer)
+    flavor = db.Column(db.String)
     session_id = db.Column(db.Integer, db.ForeignKey('sessions.id'))
     session = db.relationship('Session', lazy='joined')
 
@@ -86,7 +87,6 @@ class Host(Duffyv1Model):
 class SessionSchema(marshmallow.Schema):
     id = ma.fields.String(dump_to='ssid')
     hosts = ma.fields.Nested("HostSchema", only='hostname', many=True)
-
 
 class HostSchema(marshmallow.ModelSchema):
     session_id = ma.fields.String(dump_to='comment')
