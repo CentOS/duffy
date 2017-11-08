@@ -58,23 +58,30 @@ class Host(Duffyv1Model):
         # Sync all of the keys to the root user on the remote host
         import paramiko
         import os
-        ssh = paramiko.SSHClient()
-        # TODO: Make this configurable
         try:
+            ssh = paramiko.SSHClient()
+            # TODO: Make this configurable
             key = paramiko.DSSKey.from_private_key_file(os.path.expanduser('~/.ssh/id_dsa'))
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
             ssh.connect(self.hostname, username='root', pkey=key)
             sftp = ssh.open_sftp()
             file_handle = sftp.file('/root/.ssh/authorized_keys', mode='a', bufsize=-1)
+        except Exception as e:
+            self.state = 'Ready'
+            self.save()
+            return False
+
+        try:
             for sshkey in project.sshkeys:
                 file_handle.write(sshkey.key + '\n')
             file_handle.flush()
             file_handle.close()
             ssh.close()
         except Exception as e:
-            self.state = 'Ready'
+            self.state = 'Failed'
             self.save()
+            return False
 
 class SessionSchema(marshmallow.Schema):
     id = ma.fields.String(dump_to='ssid')
