@@ -14,6 +14,7 @@ setuptools.setup(
         'flask-migrate',
         'flask-marshmallow',
         'marshmallow-sqlalchemy',
+        'paramiko',
     ],
 
     classifiers=[
