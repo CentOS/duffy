@@ -1,14 +1,20 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+import json
+import mock
+
 import unittest
 
+# Normal imports
 from duffy.app import create_app
 from duffy.data import _populate_test_data
 from duffy.database import db
 from duffy.config import TestConfig as CONFIG
 from duffy.models import Host, Session, Project
-import json
+
+#Stuff we patch/mock out later
+from duffy.models.nodes import uuid
 
 
 class DuffyV1ApiTests(unittest.TestCase):
@@ -230,3 +236,25 @@ class DuffyV1ApiTests(unittest.TestCase):
             r2data = json.loads(r2.data)
             assert r2data['msg'] == 'Invalid session ID'
             assert r2.status_code == 403
+
+    def test_inventory_with_apikey_returns_hosts_and_sessions(self):
+        r = self.client.get('/Node/get?key=asdf-1234&count=2')
+        data = json.loads(r.data)
+
+        i = self.client.get('/Inventory?key=asdf-1234')
+        idata = json.loads(i.data)
+        assert any('n1.hufty' in x for x in idata)
+        assert any('n4.hufty' in x for x in idata)
+
+    @mock.patch.object(uuid, 'uuid4', return_value='deadbeef')
+    def test_inventory_without_apikey_returns_all_hosts(self, mock_uuid):
+        r = self.client.get('/Node/get?key=asdf-1234&count=2')
+        n1huftylist = [1, u'n1.hufty', u'127.0.0.1', u'hufty', 4, u'Deployed', u'deadbeef', None, None, u'7', u'x86_64', 1, 123, None]
+        n2huftylist = [2, u'n2.hufty', u'127.0.0.2', u'hufty', 5, u'Ready', None, None, None, u'6', u'x86_64', 1, 123, None]
+        data = json.loads(r.data)
+        i = self.client.get('/Inventory')
+        idata = json.loads(i.data)
+
+        assert n1huftylist in idata
+        assert n2huftylist in idata
+

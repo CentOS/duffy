@@ -107,3 +107,41 @@ def nodefail():
     session.save()
 
     return jsonify("Done")
+
+@blueprint.route('/Inventory')
+def inventory():
+    get_key = request.args.get('key')
+    if get_key:
+        # Return a list of active sessions for the user whose key we have
+        sessions = Session.query.filter(Session.apikey == get_key)
+        rtn_sessions = []
+        for session in sessions:
+            for host in session.hosts:
+                sch = HostSchema().dump(host)
+                rtn_sessions.append([sch.data['hostname'],sch.data['session']])
+        return jsonify(rtn_sessions)
+    else:
+        # No key, return a list of all hosts
+        hosts = Host.query.all()
+        rtn_hosts = []
+
+        for host in hosts:
+            sch = HostSchema().dump(host)
+            ordered_host = [sch.data['id'],
+                            sch.data['hostname'],
+                            sch.data['ip'],
+                            sch.data['chassis'],
+                            sch.data['used_count'],
+                            sch.data['state'],
+                            sch.data['comment'],
+                            sch.data['distro'],
+                            sch.data['rel'],
+                            sch.data['ver'],
+                            sch.data['arch'],
+                            sch.data['pool'],
+                            sch.data['console_port'],
+                            sch.data['flavor'],
+                            ]
+            rtn_hosts.append(ordered_host)
+
+        return jsonify(rtn_hosts)
