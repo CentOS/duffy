@@ -66,7 +66,7 @@ class Host(Duffyv1Model):
 
             ssh.connect(self.hostname, username='root', pkey=key)
             sftp = ssh.open_sftp()
-            file_handle = sftp.file('/root/.ssh/id_rsa.pub', mode='a', bufsize=-1)
+            file_handle = sftp.file('/root/.ssh/authorized_keys', mode='a', bufsize=-1)
             for sshkey in project.sshkeys:
                 file_handle.write(sshkey.key + '\n')
             file_handle.flush()
