@@ -60,17 +60,21 @@ class Host(Duffyv1Model):
         import os
         ssh = paramiko.SSHClient()
         # TODO: Make this configurable
-        key = paramiko.DSSKey.from_private_key_file(os.path.expanduser('~/.ssh/id_dsa'))
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        try:
+            key = paramiko.DSSKey.from_private_key_file(os.path.expanduser('~/.ssh/id_dsa'))
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-        ssh.connect(self.hostname, username='root', pkey=key)
-        sftp = ssh.open_sftp()
-        file_handle = sftp.file('/root/.ssh/id_rsa.pub', mode='a', bufsize=-1)
-        for sshkey in project.sshkeys:
-            file_handle.write(sshkey.key + '\n')
-        file_handle.flush()
-        file_handle.close()
-        ssh.close()
+            ssh.connect(self.hostname, username='root', pkey=key)
+            sftp = ssh.open_sftp()
+            file_handle = sftp.file('/root/.ssh/id_rsa.pub', mode='a', bufsize=-1)
+            for sshkey in project.sshkeys:
+                file_handle.write(sshkey.key + '\n')
+            file_handle.flush()
+            file_handle.close()
+            ssh.close()
+        except Exception as e:
+            self.state = 'Ready'
+            self.save()
 
 class SessionSchema(marshmallow.Schema):
     id = ma.fields.String(dump_to='ssid')
