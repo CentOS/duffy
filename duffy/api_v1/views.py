@@ -58,10 +58,19 @@ def nodeget():
     for host in hosts:
         host.state = 'Contextualizing'
         host.save()
-        host.contextualize(project)
-        sess.hosts.append(host)
-        host.state = 'Deployed'
-        host.save()
+        if host.contextualize(project):
+            sess.hosts.append(host)
+            host.state = 'Deployed'
+            host.save()
+	else: 
+	    # if any of the hosts fail we should return any in-progress hosts
+	    # to the pool for reclamation
+            for host in sess.hosts:
+                host.state = 'Active'
+                host.save()
+            sess.state = 'Failed'
+            sess.save()
+            return jsonify('Failed to allocate nodes')
     sess.save()
 
     rtn = SessionSchema().dump(sess)
