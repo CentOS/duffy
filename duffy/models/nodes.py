@@ -69,6 +69,8 @@ class Host(Duffyv1Model):
             sftp = ssh.open_sftp()
             file_handle = sftp.file('/root/.ssh/authorized_keys', mode='a', bufsize=-1)
         except Exception as e:
+            from flask import logging
+            logging.error(e)
             self.state = 'Ready'
             self.save()
             return False
@@ -83,6 +85,7 @@ class Host(Duffyv1Model):
             self.state = 'Failed'
             self.save()
             return False
+        return True         # If all went well, we made it here
 
 class SessionSchema(marshmallow.Schema):
     id = ma.fields.String(dump_to='ssid')
