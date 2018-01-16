@@ -25,5 +25,5 @@ setuptools.setup(
         "Topic :: Utilities",
     ],
 
-    scripts=[],
+    scripts=['scripts/duffy'],
 )
