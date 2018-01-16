@@ -10,9 +10,9 @@ import marshmallow as ma
 class Project(Duffyv1Model):
     """"""
     __tablename__ = 'users'
-    apikey = db.Column(db.String, primary_key=True)
-    projectname = db.Column(db.String)
-    jobname = db.Column(db.String)
+    apikey = db.Column(db.String(37), primary_key=True)
+    projectname = db.Column(db.String(50))
+    jobname = db.Column(db.String(50))
     createdat = db.Column(db.DateTime)
     limitnodes = db.Column(db.Integer)
     sshkeys = db.relationship("SSHKey", backref="project")
@@ -20,17 +20,17 @@ class Project(Duffyv1Model):
 class SSHKey(Duffyv1Model):
     __tablename__ = 'userkeys'
     id = db.Column(db.Integer, primary_key=True)
-    project_id = db.Column(db.Integer, db.ForeignKey('users.apikey'))
-    key = db.Column(db.String)
+    project_id = db.Column(db.String(37), db.ForeignKey('users.apikey'))
+    key = db.Column(db.String(8192))
 
 class Session(Duffyv1Model):
     __tablename__ = 'sessions'
-    id = db.Column(db.String, default=lambda: str(uuid.uuid4())[:8], primary_key=True)
+    id = db.Column(db.String(37), default=lambda: str(uuid.uuid4())[:8], primary_key=True)
     delivered_at = db.Column(db.DateTime, default=datetime.datetime.now())
     dropped_at = db.Column(db.DateTime)
-    apikey = db.Column(db.String)
-    state = db.Column(db.String, default='Prod')
-    jobid = db.Column(db.String)
+    apikey = db.Column(db.String(37))
+    state = db.Column(db.String(15), default='Prod')
+    jobid = db.Column(db.String(200))
     hosts = db.relationship('Host', lazy='joined')
 
 
@@ -50,7 +50,7 @@ class Host(Duffyv1Model):
     pool = db.Column(db.Integer)
     console_port = db.Column(db.Integer)
     flavor = db.Column(db.String)
-    session_id = db.Column(db.Integer, db.ForeignKey('sessions.id'))
+    session_id = db.Column(db.String, db.ForeignKey('sessions.id'))
     session = db.relationship('Session', lazy='joined')
 
     def contextualize(self, project):
