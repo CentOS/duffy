@@ -65,7 +65,7 @@ class Host(Duffyv1Model):
             key = paramiko.DSSKey.from_private_key_file(os.path.expanduser('~/.ssh/id_dsa'))
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-            ssh.connect(self.hostname, username='root', pkey=key)
+            ssh.connect(self.ip, username='root', pkey=key)
             sftp = ssh.open_sftp()
             file_handle = sftp.file('/root/.ssh/authorized_keys', mode='a', bufsize=-1)
         except Exception as e:
