@@ -26,7 +26,7 @@ class SSHKey(Duffyv1Model):
 class Session(Duffyv1Model):
     __tablename__ = 'sessions'
     id = db.Column(db.String(37), default=lambda: str(uuid.uuid4())[:8], primary_key=True)
-    delivered_at = db.Column(db.DateTime, default=datetime.datetime.now())
+    delivered_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     dropped_at = db.Column(db.DateTime)
     apikey = db.Column(db.String(37))
     state = db.Column(db.String(15), default='Prod')
