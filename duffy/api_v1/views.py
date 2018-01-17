@@ -68,9 +68,9 @@ def nodeget():
             sess.hosts.append(host)
             host.state = 'Deployed'
             host.save()
-	else: 
-	    # if any of the hosts fail we should return any in-progress hosts
-	    # to the pool for reclamation
+        else:
+            # if any of the hosts fail we should return any in-progress hosts
+            # to the pool for reclamation
             for host in sess.hosts:
                 host.state = 'Active'
                 host.save()
