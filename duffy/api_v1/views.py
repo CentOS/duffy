@@ -37,16 +37,22 @@ def nodeget():
     get_arch = request.args.get('arch', 'x86_64')
     get_count = int(request.args.get('count', 1))
     get_key = request.args.get('key')
+    get_flavor = request.args.get('flavor')
 
     project = Project.query.get(get_key)
 
     if not project:
         return 'Invalid duffy key'
 
+    if get_arch in ('aarch64','ppc64le'):
+        if not get_flavor:
+            get_flavor = 'tiny'
+
     hosts = Host.query.filter(Host.pool == 1,
                               Host.state == 'Ready',
                               Host.ver == get_ver,
-                              Host.arch == get_arch
+                              Host.arch == get_arch,
+                              Host.flavor == get_flavor
                               ).order_by(db.asc(Host.used_count)).limit(get_count).all()
 
     if len(hosts) != get_count:
