@@ -2,9 +2,8 @@
 
 import datetime
 import json
-import mock
-
 import unittest
+import mock 
 
 # Normal imports
 from duffy.app import create_app
@@ -21,6 +20,8 @@ class DuffyV1ApiTests(unittest.TestCase):
     def setUp(self):
         self.testapp = create_app(CONFIG)
         self.client = self.testapp.test_client()
+        m = mock.MagicMock(return_value=True)
+        Host.contextualize = m
         with self.testapp.app_context():
             db.create_all()
             _populate_test_data()
