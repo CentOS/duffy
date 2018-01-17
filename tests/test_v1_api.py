@@ -1,118 +1,30 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+import json
 import unittest
+import mock 
 
+# Normal imports
 from duffy.app import create_app
+from duffy.data import _populate_test_data
 from duffy.database import db
 from duffy.config import TestConfig as CONFIG
 from duffy.models import Host, Session, Project
-import json
 
-
-def _populate_test_data(db):
-    # If more C7 x86_64 hosts are added make sure n1.hufty has the lowest
-    # used_count.
-    n1hufty = Host(hostname='n1.hufty',
-                   ip='127.0.0.1',
-                   chassis='hufty',
-                   used_count=4,
-                   state='Ready',
-                   comment='-',
-                   distro=None,
-                   rel=None,
-                   ver=7,
-                   arch='x86_64',
-                   pool=1,
-                   console_port=123)
-
-    n2hufty = Host(hostname='n2.hufty',
-                   ip='127.0.0.2',
-                   chassis='hufty',
-                   used_count=5,
-                   state='Ready',
-                   comment='-',
-                   distro=None,
-                   rel=None,
-                   ver=6,
-                   arch='x86_64',
-                   pool=1,
-                   console_port=123)
-
-    n3hufty = Host(hostname='n3.hufty',
-                   ip='127.0.0.3',
-                   chassis='hufty',
-                   used_count=5,
-                   state='Ready',
-                   comment='-',
-                   distro=None,
-                   rel=None,
-                   ver=6,
-                   arch='x86_64',
-                   pool=1,
-                   console_port=123)
-
-    n4hufty = Host(hostname='n4.hufty',
-                   ip='127.0.0.4',
-                   chassis='hufty',
-                   used_count=6,
-                   state='Ready',
-                   comment='-',
-                   distro=None,
-                   rel=None,
-                   ver=7,
-                   arch='x86_64',
-                   pool=1,
-                   console_port=123)
-
-    n5hufty = Host(hostname='n5.hufty',
-                   ip='127.0.0.5',
-                   chassis='hufty',
-                   used_count=6,
-                   state='Ready',
-                   comment='-',
-                   distro=None,
-                   rel=None,
-                   ver=7,
-                   arch='x86_64',
-                   pool=1,
-                   console_port=123)
-
-    n1p8h1 = Host(hostname='n1.p8h1',
-                  ip='127.0.0.6',
-                  chassis='p8h1',
-                  used_count=6,
-                  state='Ready',
-                  comment='-',
-                  distro=None,
-                  rel=None,
-                  ver=7,
-                  arch='ppc64le',
-                  pool=1,
-                  console_port=123)
-
-    testproject = Project(apikey='asdf-1234',
-                     projectname='uniitest-proj',
-                     jobname='asdf123',
-                     createdat = datetime.datetime(1970, 1, 1, 1, 0),
-                     limitnodes=2)
-
-    db.session.add(n1hufty)
-    db.session.add(n2hufty)
-    db.session.add(n3hufty)
-    db.session.add(n4hufty)
-    db.session.add(n1p8h1)
-    db.session.add(testproject)
-    db.session.commit()
+#Stuff we patch/mock out later
+from duffy.models.nodes import uuid
 
 
 class DuffyV1ApiTests(unittest.TestCase):
     def setUp(self):
         self.testapp = create_app(CONFIG)
         self.client = self.testapp.test_client()
+        m = mock.MagicMock(return_value=True)
+        Host.contextualize = m
         with self.testapp.app_context():
             db.create_all()
-            _populate_test_data(db)
+            _populate_test_data()
 
     def tearDown(self):
         with self.testapp.app_context():
@@ -122,7 +34,7 @@ class DuffyV1ApiTests(unittest.TestCase):
         # n1.hufty should be the one with the lowest used_count, see
         # _populate_test_data() for the definition
         with self.testapp.app_context():
-            assert Host.query.filter(Host.hostname=='n1.hufty').one().state == 'Ready'
+            assert Host.query.filter(Host.hostname == 'n1.hufty').one().state == 'Ready'
         r = self.client.get('/Node/get?key=asdf-1234')
         data = json.loads(r.data)
         for hostname in data['hosts']:
@@ -174,7 +86,7 @@ class DuffyV1ApiTests(unittest.TestCase):
         r = self.client.get('/Node/get?key=asdf-1234&count=100')
         try:
             data = json.loads(r.data)
-        except:
+        except ValueError:
             assert 'Insufficient Nodes in READY State' in r.data
 
     def test_exhausting_the_pool(self):
@@ -182,7 +94,7 @@ class DuffyV1ApiTests(unittest.TestCase):
             try:
                 r = self.client.get('/Node/get?key=asdf-1234&')
                 data = json.loads(r.data)
-            except:
+            except ValueError:
                 assert 'Insufficient Nodes in READY State' in r.data
 
     def test_host_has_ssid(self):
@@ -238,6 +150,18 @@ class DuffyV1ApiTests(unittest.TestCase):
             r2 = self.client.get('/Node/done?key=asdf-1234&ssid={0}'.format(s.id))
             for host in s.hosts:
                 assert host.state == 'Deprovision'
+
+    def test_nodedone_node_has_no_session_after(self):
+        r1 = self.client.get('/Node/get?key=asdf-1234&count=2')
+        r1data = json.loads(r1.data)
+
+        with self.testapp.app_context():
+            s = Session.query.get(r1data['ssid'])
+
+            r2 = self.client.get('/Node/done?key=asdf-1234&ssid={0}'.format(s.id))
+            for host in s.hosts:
+                assert host.session == None
+                assert host.session_id == ''
 
     def test_nodedone_sets_session_state(self):
         r1 = self.client.get('/Node/get?key=asdf-1234&count=2')
@@ -313,3 +237,25 @@ class DuffyV1ApiTests(unittest.TestCase):
             r2data = json.loads(r2.data)
             assert r2data['msg'] == 'Invalid session ID'
             assert r2.status_code == 403
+
+    def test_inventory_with_apikey_returns_hosts_and_sessions(self):
+        r = self.client.get('/Node/get?key=asdf-1234&count=2')
+        data = json.loads(r.data)
+
+        i = self.client.get('/Inventory?key=asdf-1234')
+        idata = json.loads(i.data)
+        assert any('n1.hufty' in x for x in idata)
+        assert any('n4.hufty' in x for x in idata)
+
+    @mock.patch.object(uuid, 'uuid4', return_value='deadbeef')
+    def test_inventory_without_apikey_returns_all_hosts(self, mock_uuid):
+        r = self.client.get('/Node/get?key=asdf-1234&count=2')
+        n1huftylist = [1, u'n1.hufty', u'127.0.0.1', u'hufty', 4, u'Deployed', u'deadbeef', None, None, u'7', u'x86_64', 1, 123, None]
+        n2huftylist = [2, u'n2.hufty', u'127.0.0.2', u'hufty', 5, u'Ready', None, None, None, u'6', u'x86_64', 1, 123, None]
+        data = json.loads(r.data)
+        i = self.client.get('/Inventory')
+        idata = json.loads(i.data)
+
+        assert n1huftylist in idata
+        assert n2huftylist in idata
+

@@ -14,6 +14,7 @@ setuptools.setup(
         'flask-migrate',
         'flask-marshmallow',
         'marshmallow-sqlalchemy',
+        'paramiko',
     ],
 
     classifiers=[
@@ -24,5 +25,5 @@ setuptools.setup(
         "Topic :: Utilities",
     ],
 
-    scripts=[],
+    scripts=['scripts/duffy'],
 )

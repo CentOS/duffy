@@ -3,6 +3,7 @@
 from flask import Flask
 
 from duffy import api_v1
+from duffy.types import seamicro
 
 from duffy.extensions import db, migrate, marshmallow
 from duffy.config import ProdConfig,DevConfig
@@ -19,13 +20,14 @@ def create_app(config_object=DevConfig):
 
 def register_extensions(app):
     db.init_app(app)
-    migrate.init_app(app, db)
+    migrate.init_app(app, db, render_as_batch=True)
     marshmallow.init_app(app)
     return None
 
 
 def register_blueprints(app):
     app.register_blueprint(api_v1.views.blueprint)
+    app.register_blueprint(seamicro.views.blueprint)
     return None
 
 
