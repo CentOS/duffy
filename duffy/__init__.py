@@ -3,6 +3,7 @@ from flask.helpers import get_debug_flag
 
 from duffy.app import create_app
 from duffy.config import DevConfig, ProdConfig
+from duffy.extensions import db
 
 CONFIG = DevConfig if get_debug_flag() else ProdConfig
 
@@ -13,4 +14,5 @@ def initdb():
     from duffy.data import _populate_test_data
     # TODO: Warn if ran without an up-to-date-db
     click.echo('Initializing the DB...')
+    db.create_all()
     _populate_test_data()
