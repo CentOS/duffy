@@ -105,6 +105,9 @@ def nodedone():
     if session.apikey != get_key:
         return jsonify({'msg': 'Invalid duffy key'}), 403
 
+    if session.state not in ('Prod','Fail'):
+        return jsonify({'msg': 'Session not in Prod'})
+
     for host in session.hosts:
         host.state = "Deprovision"
         host.session = None
