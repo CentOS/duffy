@@ -71,6 +71,34 @@ class DuffyV1ApiTests(unittest.TestCase):
                 assert h.distro is None
                 assert h.state == 'Deployed'
 
+    def test_api_returns_host_with_correct_flavor(self):
+
+        # Test request with a default flavor
+        r1 = self.client.get('/Node/get?key=asdf-1234&arch=ppc64le')
+        data = json.loads(r1.data)
+
+        for hostname in data['hosts']:
+            with self.testapp.app_context():
+                h = Host.query.filter(Host.hostname == hostname).one()
+                assert h.ver == '7'
+                assert h.arch == 'ppc64le'
+                assert h.distro is None
+                assert h.state == 'Deployed'
+                assert h.flavor == 'tiny'
+
+        # Test a request with a specified flavor
+        r2 = self.client.get('/Node/get?key=asdf-1234&arch=ppc64le&flavor=medium')
+        data = json.loads(r2.data)
+
+        for hostname in data['hosts']:
+            with self.testapp.app_context():
+                h = Host.query.filter(Host.hostname == hostname).one()
+                assert h.ver == '7'
+                assert h.arch == 'ppc64le'
+                assert h.distro is None
+                assert h.state == 'Deployed'
+                assert h.flavor == 'medium'
+
     def test_api_returns_multiple_hosts(self):
         r = self.client.get('/Node/get?key=asdf-1234&count=2')
         data = json.loads(r.data)

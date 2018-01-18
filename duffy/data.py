@@ -68,6 +68,21 @@ def _populate_test_data():
                   ver=7,
                   arch='ppc64le',
                   pool=1,
+                  flavor='tiny',
+                  console_port=123)
+
+    n2p8h1 = Host(hostname='n2.p8h2',
+                  ip='127.0.0.6',
+                  chassis='p8h2',
+                  used_count=6,
+                  state='Ready',
+                  comment='-',
+                  distro=None,
+                  rel=None,
+                  ver=7,
+                  arch='ppc64le',
+                  pool=1,
+                  flavor='medium',
                   console_port=123)
 
     testproject = Project(apikey='asdf-1234',
@@ -81,5 +96,6 @@ def _populate_test_data():
     db.session.add(n3hufty)
     db.session.add(n4hufty)
     db.session.add(n1p8h1)
+    db.session.add(n2p8h1)
     db.session.add(testproject)
     db.session.commit()
