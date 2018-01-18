@@ -23,7 +23,6 @@ class DuffyV1ApiTests(unittest.TestCase):
         m = mock.MagicMock(return_value=True)
         Host.contextualize = m
         with self.testapp.app_context():
-            db.create_all()
             _populate_test_data()
 
     def tearDown(self):
