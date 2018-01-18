@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-from flask import Blueprint, request, jsonify, abort
+import datetime
+
+from flask import Blueprint, request, jsonify, abort, current_app
 from functools import wraps
 from duffy.models import Host, HostSchema, Session, SessionSchema, Project
 from duffy.database import db
@@ -47,6 +49,15 @@ def nodeget():
     if get_arch in ('aarch64','ppc64le'):
         if not get_flavor:
             get_flavor = 'tiny'
+
+    five_minutes_ago = datetime.datetime.utcnow() - datetime.timedelta(minutes=5)
+    recent_sessions_count = Session.query.filter(Session.apikey==get_key, Session.delivered_at > five_minutes_ago, (Session.state == 'Prod') | (Session.state == 'Fail')).count()
+    current_app.logger.info("Activity Rate: {} - {}".format(get_key, recent_sessions_count))
+
+    if recent_sessions_count > 5:
+        return jsonify('Failed to allocate nodes: Rate limit exceeded: {} sessions '
+                       'in the last 5 minutes'.format(recent_sessions_count)
+                       ), 429
 
     hosts = Host.query.filter(Host.pool == 1,
                               Host.state == 'Ready',
