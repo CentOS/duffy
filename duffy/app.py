@@ -12,6 +12,7 @@ from duffy.config import ProdConfig,DevConfig
 def create_app(config_object=DevConfig):
     app = Flask(__name__.split('.')[0])
     app.config.from_object(config_object)
+    app.config.from_pyfile('/etc/duffy.conf')
     register_extensions(app)
     register_blueprints(app)
     register_errorhandlers(app)
