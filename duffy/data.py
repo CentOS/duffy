@@ -5,6 +5,7 @@ from duffy.models import Host, Session, Project
 def _populate_test_data():
     # If more C7 x86_64 hosts are added make sure n1.hufty has the lowest
     # used_count.
+    db.create_all()
     n1hufty = Host(hostname='n1.hufty',
                    ip='127.0.0.1',
                    chassis='hufty',
