@@ -12,8 +12,13 @@ from duffy.config import ProdConfig,DevConfig
 def create_app(config_object=DevConfig):
     app = Flask(__name__.split('.')[0])
     app.config.from_object(config_object)
-    if config_object['ENV'] == 'prod':
-        app.config.from_pyfile('/etc/duffy.conf')
+    try:
+        with open('/etc/duffy.conf') as conffile:
+            ETC_DUFFY_CONFIG = conffile.read()
+            app.config.from_object(config_object)
+    except IOError, e:
+        print e
+
     register_extensions(app)
     register_blueprints(app)
     register_errorhandlers(app)
