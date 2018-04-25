@@ -69,7 +69,7 @@ class Host(Duffyv1Model):
             sftp = ssh.open_sftp()
             file_handle = sftp.file('/root/.ssh/authorized_keys', mode='a', bufsize=-1)
         except Exception as e:
-            self.state = 'Ready'
+            self.state = 'Active'
             self.save()
             return False
 
