@@ -52,11 +52,17 @@ class Host(Duffyv1Model):
     flavor = db.Column(db.String(20))
     session_id = db.Column(db.String(37), db.ForeignKey('sessions.id'))
     session = db.relationship('Session', lazy='joined')
+    version_id = db.Column(db.Integer)
+
+    __mapper_args__ = {
+        "version_id_col": version_id
+    }
 
     def contextualize(self, project):
         self.state = 'Contextualizing'
         self.save()
         # Sync all of the keys to the root user on the remote host
+        return True
         import paramiko
         import os
         try:
