@@ -4,7 +4,7 @@ import datetime
 from flask import Blueprint, request, jsonify, abort, current_app
 from functools import wraps
 from duffy.models import Host, HostSchema, Session, SessionSchema, Project
-from duffy.database import db
+from duffy.extensions import db
 
 blueprint = Blueprint('api_v1', __name__)
 
@@ -35,23 +35,26 @@ def ssid_required(fn):
 @blueprint.route('/Node/get')
 @duffy_key_required
 def nodeget():
-    get_ver = request.args.get('ver', 7)
+    get_ver = request.args.get('ver', '7', type=str)
     get_arch = request.args.get('arch', 'x86_64')
     get_count = int(request.args.get('count', 1))
     get_key = request.args.get('key')
     get_flavor = request.args.get('flavor')
 
-    project = Project.query.get(get_key)
+    project = db.session.query(Project).get(get_key)
 
     if not project:
         return 'Invalid duffy key'
 
-    if get_arch in ('aarch64','ppc64le'):
+    if get_arch in ('aarch64', 'ppc64le'):
         if not get_flavor:
             get_flavor = 'tiny'
 
     five_minutes_ago = datetime.datetime.utcnow() - datetime.timedelta(minutes=5)
-    recent_sessions_count = Session.query.filter(Session.apikey==get_key, Session.delivered_at > five_minutes_ago, (Session.state == 'Prod') | (Session.state == 'Fail')).count()
+    recent_sessions_count = Session.query.filter(Session.apikey == get_key,
+                                                 Session.delivered_at > five_minutes_ago,
+                                                 (Session.state == 'Prod') | (Session.state == 'Fail')).count()
+
     current_app.logger.info("Activity Rate: {} - {}".format(get_key, recent_sessions_count))
 
     if recent_sessions_count > 5:
@@ -59,39 +62,60 @@ def nodeget():
                        'in the last 5 minutes'.format(recent_sessions_count)
                        ), 429
 
-    hosts = Host.query.filter(Host.pool == 1,
-                              Host.state == 'Ready',
-                              Host.ver == get_ver,
-                              Host.arch == get_arch,
-                              Host.flavor == get_flavor
-                              ).order_by(db.asc(Host.used_count)).limit(get_count).all()
-
-    if len(hosts) != get_count:
-        return 'Insufficient Nodes in READY State'
-
     sess = Session()
     sess.apikey = get_key
     sess.save()
-    for host in hosts:
-        host.state = 'Contextualizing'
-        host.save()
-        if host.contextualize(project):
-            sess.hosts.append(host)
-            host.state = 'Deployed'
-            host.save()
-        else:
-            # if any of the hosts fail we should return any in-progress hosts
-            # to the pool for reclamation
-            for host in sess.hosts:
-                host.state = 'Active'
-                host.save()
-            sess.state = 'Failed'
-            sess.save()
-            return jsonify('Failed to allocate nodes')
-    sess.save()
 
-    rtn = SessionSchema().dump(sess)
-    return jsonify(rtn.data)
+    attempts = 0
+
+    while attempts < 5:
+        hosts = Host.query.filter(Host.pool == 1,
+                                Host.state == 'Ready',
+                                Host.ver == get_ver,
+                                Host.arch == get_arch,
+                                Host.flavor == get_flavor
+                                ).order_by(db.asc(Host.used_count)).limit(get_count).all()
+
+        if len(hosts) != get_count:
+            sess.state='Unfulfilled'
+            sess.save()
+            db.session.commit()
+            current_app.logger.info("Session: {}, insufficient hosts ({} < {})".format(sess.id, hosts, get_count))
+            return 'Insufficient Nodes in READY State'
+
+        try:
+            for host in hosts:
+                if host.contextualize(project):
+                    sess.hosts.append(host)
+                    host.state = 'Deployed'
+                    host.save()
+                else:
+                    # if any of the hosts fail we should return any in-progress hosts
+                    # to the pool for reclamation
+                    for host in sess.hosts:
+                        host.state = 'Active'
+                        host.save()
+                    sess.state = 'Failed'
+                    sess.save()
+                    db.session.commit()
+                    return jsonify('Failed to allocate nodes')
+
+            # We've successfully contextualized all of the hosts with the ssh
+            # key at this point
+            sess.save()
+            db.session.commit()
+            rtn = SessionSchema().dump(sess)
+            current_app.logger.info("Session: {}, host_request: {}".format(sess.id, get_count))
+            return jsonify(rtn.data)
+        except Exception as exc:
+            db.session.rollback()
+            current_app.logger.info("Session: {}, error contextualizing...Retrying...{}".format(sess.id, attempts))
+            attempts += 1
+    else:
+        sess.state = 'Unfulfilled'
+        sess.save()
+        db.session.commit()
+        return jsonify('Maximum contextualization retries exceeded: {}'.format(attempts), 409)
 
 @blueprint.route('/Node/done')
 @duffy_key_required
