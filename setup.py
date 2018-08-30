@@ -14,6 +14,7 @@ setuptools.setup(
         'flask-migrate',
         'flask-marshmallow',
         'marshmallow-sqlalchemy',
+        'marshmallow==3.0.0b6',
         'paramiko',
     ],
 
