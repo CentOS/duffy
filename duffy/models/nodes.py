@@ -62,7 +62,6 @@ class Host(Duffyv1Model):
         self.state = 'Contextualizing'
         self.save()
         # Sync all of the keys to the root user on the remote host
-        return True
         import paramiko
         import os
         try:
