@@ -11,7 +11,7 @@ from config import DevConfig
 from models.nodes import Host
 
 import beanstalkc
-bs_obj = beanstalkc.Connection(host='127.0.0.1',parse_yaml=False)
+bs_obj = beanstalkc.Connection(host='127.0.0.1', parse_yaml=False)
 bs_obj.watch('requests')
 bs_obj.ignore('default')
 
@@ -58,7 +58,7 @@ def provision(json_jobs):
     db_obj.session.commit()
 
 
-def poweroff():
+def poweroff(json_jobs):
     '''
     This function executes ansible playbook local-ci-poweroff.yml && updates db
     accordingly
@@ -66,13 +66,14 @@ def poweroff():
     cmd_line="cd /srv/code/ansible ; ansible-playbook playbooks/local-ci-poweroff.yml --limit %s.ci.centos.org" % j['hostname']
     return_code = subprocess.call(cmd_line, shell=True)
     connection_check()
+    hostname_var = json_jobs['hostname']
     session = Host.query.filter_by(hostname=hostname_var)
     if return_code == 0:
         session.state = 'Acive'
         session.pool = 0
     else:
         session.state = 'Failed'
-        session.comment = 'Failed to power dow')
+        session.comment = 'Failed to power dow'
         session.pool = 0
 
     db_obj.session.commit()
