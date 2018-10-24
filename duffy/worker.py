@@ -3,12 +3,11 @@
 This is a [WIP] python file to update worker from v1.
 '''
 
-import subprocess
-import json
+from config import ProdConfig
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from config import DevConfig
-from models.nodes import Host
+import json
+import subprocess
 
 import beanstalkc
 bs_obj = beanstalkc.Connection(host='127.0.0.1', parse_yaml=False)
@@ -16,11 +15,10 @@ bs_obj.watch('requests')
 bs_obj.ignore('default')
 
 app = Flask(__name__)
-app.config['ENV'] = DevConfig.ENV
-app.config['DEBUG'] = DevConfig.DEBUG
-app.config['DB'] = DevConfig.DB
-app.config['DB_PATH'] = DevConfig.DB_PATH
-app.config['SQLALCHEMY_DATABASE_URI'] = DevConfig.SQLALCHEMY_DATABASE_URI
+app.config['DEBUG'] = ProdConfig.DEBUG
+app.config['DEBUG_TB_ENABLED'] = ProdConfig.DEBUG_TB_ENABLED
+app.config['ENV'] = ProdConfig.ENV
+app.config['SQLALCHEMY_DATABASE_URI'] = ProdConfig.SQLALCHEMY_DATABASE_URI
 
 db_obj = SQLAlchemy(app)
 
@@ -29,7 +27,7 @@ def connection_check():
     This function checks and establishes sqllite Connection.
     '''
     try:
-        dummy_data = Host.query.first()
+        dummy_data = stock.query.first()
     except:
         global db_obj
         global app
@@ -47,7 +45,7 @@ def provision(json_jobs):
     print('Returned : ', return_code)
     hostname_var = json_jobs['hostname']
     connection_check()
-    session = Host.query.filter_by(hostname=hostname_var)
+    session = stock.query.filter_by(hostname=hostname_var)
     if return_code == 0:
         session.state = 'Ready'
     else:
@@ -67,13 +65,13 @@ def poweroff(json_jobs):
     return_code = subprocess.call(cmd_line, shell=True)
     connection_check()
     hostname_var = json_jobs['hostname']
-    session = Host.query.filter_by(hostname=hostname_var)
+    session = stock.query.filter_by(hostname=hostname_var)
     if return_code == 0:
-        session.state = 'Acive'
+        session.state = 'Active'
         session.pool = 0
     else:
         session.state = 'Failed'
-        session.comment = 'Failed to power dow'
+        session.comment = 'Failed to poweroff'
         session.pool = 0
 
     db_obj.session.commit()
