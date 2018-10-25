@@ -9,12 +9,14 @@ setuptools.setup(
     license='Apache 2.0',
 
     install_requires=[
+        'beanstalkc',
         'flask',
-        'flask-sqlalchemy',
-        'flask-migrate',
         'flask-marshmallow',
+        'flask-migrate',
+        'flask-sqlalchemy',
         'marshmallow-sqlalchemy',
         'marshmallow==3.0.0b6',
+        'mysql-python',
         'paramiko',
     ],
 
