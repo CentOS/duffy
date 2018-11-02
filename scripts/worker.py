@@ -1,6 +1,6 @@
 '''
-<TODO>
-This is a [WIP] python file to update worker from v1.
+Worker executes ansible playbooks as per beansalkc request to
+provision/poweroff nodes.
 '''
 
 import json
