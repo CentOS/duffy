@@ -26,7 +26,10 @@ def provision(json_jobs):
     This function executes ansible playbook local-ci-deploy.yml && updates db
     accordingly
     '''
-    cmd_line = "date ; cd /srv/code/ansible  ; /usr/bin/ansible-playbook playbooks/local-ci-deploy.yml --limit %s.ci.centos.org --extra-vars 'centos_dist=%s centos_arch=%s'" % (json_jobs['hostname'], json_jobs['ver'], json_jobs['arch'])
+    cmd_line = "date ; cd /srv/code/ansible  ; /usr/bin/ansible-playbook \
+            playbooks/local-ci-deploy.yml --limit %s.ci.centos.org \
+            --extra-vars 'centos_dist=%s centos_arch=%s'"\
+            % (json_jobs['hostname'], json_jobs['ver'], json_jobs['arch'])
     return_code = subprocess.call(cmd_line, shell=True)
     print(cmd_line)
     print('Returned : ', return_code)
@@ -50,7 +53,9 @@ def poweroff(json_jobs):
     This function executes ansible playbook local-ci-poweroff.yml && updates db
     accordingly
     '''
-    cmd_line = "cd /srv/code/ansible ; ansible-playbook playbooks/local-ci-poweroff.yml --limit %s.ci.centos.org" % json_jobs['hostname']
+    cmd_line = "cd /srv/code/ansible ; ansible-playbook \
+            playbooks/local-ci-poweroff.yml --limit %s.ci.centos.org"\
+            % json_jobs['hostname']
     return_code = subprocess.call(cmd_line, shell=True)
     hostname_var = json_jobs['hostname']
     session_query = Host.query.filter_by(hostname=hostname_var).first()
