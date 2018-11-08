@@ -38,8 +38,10 @@ def provision(json_jobs):
     session_query = Host.query.filter_by(hostname=hostname_var).first()
     if return_code == 0:
         session_query.state = 'Ready'
+        session_query.next_state = 'Deployed'
     else:
         session_query.state = 'Failed'
+        session_query.next_state = 'Active'
         session_query.comment = 'ansible exit {}'.format(return_code)
         session_query.pool = 0
 
@@ -61,9 +63,11 @@ def poweroff(json_jobs):
     session_query = Host.query.filter_by(hostname=hostname_var).first()
     if return_code == 0:
         session_query.state = 'Active'
+        session_query.next_state = 'Ready'
         session_query.pool = 0
     else:
         session_query.state = 'Failed'
+        session_query.next_state = 'Active'
         session_query.comment = 'Failed to poweroff'
         session_query.pool = 0
 
