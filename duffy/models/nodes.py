@@ -42,6 +42,7 @@ class Host(Duffyv1Model):
     chassis = db.Column(db.String(20))
     used_count = db.Column(db.Integer)
     state = db.Column(db.String(20))
+    next_state = db.Column(db.String(20))
     comment = db.Column(db.String(255))
     distro = db.Column(db.String(20))
     rel = db.Column(db.String(10))
