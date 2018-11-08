@@ -43,7 +43,7 @@ def main():
 
     parser = argparse.ArgumentParser(description='sets next state for a node')
     parser.add_argument('-s', '--state', type=str, help=state_help)
-    parser.add_argument('-h', '--hostname', type=str, help=hostname_help)
+    parser.add_argument('-n', '--hostname', type=str, help=hostname_help)
     args = parser.parse_args()
     state = args.state
     hostname = args.hostname
