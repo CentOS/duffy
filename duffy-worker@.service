@@ -1,0 +1,15 @@
+[Unit]
+Description=runs worker.py %I
+After=multi-user.target
+
+[Service]
+Type=idle
+User=duffy
+Group=duffy
+WorkingDirectory=/srv/duffy2
+ExecStart=/srv/duffy2-venv/bin/python /srv/duffy2/scripts/worker.py
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
