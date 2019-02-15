@@ -23,6 +23,7 @@ class SSHKey(Duffyv1Model):
     project_id = db.Column(db.String(37), db.ForeignKey('users.apikey'))
     key = db.Column(db.String(8192))
 
+
 class Session(Duffyv1Model):
     __tablename__ = 'sessions'
     id = db.Column(db.String(37), default=lambda: str(uuid.uuid4())[:8], primary_key=True)
@@ -53,6 +54,22 @@ class Host(Duffyv1Model):
     flavor = db.Column(db.String(20))
     session_id = db.Column(db.String(37), db.ForeignKey('sessions.id'))
     session = db.relationship('Session', lazy='joined')
+
+
+class Openstack_Host(Duffyv1Model):
+    __tablename__ = 'openstack_nodes'
+    id = db.Column(db.Integer, primary_key=True)
+    hostname = db.Column(db.String(20))
+    ip = db.Column(db.String(15))
+    state = db.Column(db.String(20))
+    next_state = db.Column(db.String(20))
+    comment = db.Column(db.String(255))
+    distro = db.Column(db.String(20))
+    rel = db.Column(db.String(10))
+    arch = db.Column(db.String(10))
+    session_id = db.Column(db.String(37), db.ForeignKey('sessions.id'))
+    session = db.relationship('Session', lazy='joined')
+
 
     def contextualize(self, project):
         self.state = 'Contextualizing'
