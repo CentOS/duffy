@@ -33,12 +33,12 @@ def reset_failed_nodes():
     failed_nodes = Host.query.filter_by(state='Failed').all()
     print("CHANGING FAILED NODE STATUS TO ACTIVE\n")
     print(failed_nodes)
-    for i in failed_nodes:
-        i.state = 'Active'
-        session = DB.object_session(i)
-        session.add(i)
-    if failed_nodes:
-        session.commit()
+    for single_node in failed_nodes:
+        single_node.state = 'Active'
+        session = DB.object_session(single_node)
+        session.add(single_node)
+
+    session.commit()
 
 
 def main():
