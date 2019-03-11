@@ -1,20 +1,29 @@
 # -*- coding: utf-8 -*-
+import datetime
+import uuid
+
 from duffy.database import db, Duffyv1Model
 from duffy.extensions import marshmallow
 from nodes import *
 
 
-class Openstack_Host(Duffyv1Model):
-    __tablename__ = 'openstack_nodes'
+class Host(Duffyv1Model):
+    __tablename__ = 'stock'
     id = db.Column(db.Integer, primary_key=True)
     hostname = db.Column(db.String(20))
     ip = db.Column(db.String(15))
+    chassis = db.Column(db.String(20))
+    used_count = db.Column(db.Integer)
     state = db.Column(db.String(20))
     next_state = db.Column(db.String(20))
     comment = db.Column(db.String(255))
     distro = db.Column(db.String(20))
     rel = db.Column(db.String(10))
+    ver = db.Column(db.String(10))
     arch = db.Column(db.String(10))
+    pool = db.Column(db.Integer)
+    console_port = db.Column(db.Integer)
+    flavor = db.Column(db.String(20))
     session_id = db.Column(db.String(37), db.ForeignKey('sessions.id'))
     session = db.relationship('Session', lazy='joined')
 
