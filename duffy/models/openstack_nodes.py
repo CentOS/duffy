@@ -4,7 +4,7 @@ from duffy.extensions import marshmallow
 from nodes import *
 
 
-class Openstack_Host(Duffyv1Model):
+class openstack_host(Duffyv1Model):
     __tablename__ = 'openstack_nodes'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(30))
