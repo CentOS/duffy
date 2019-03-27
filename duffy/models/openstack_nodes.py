@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from duffy.database import db, Duffyv1Model
-from duffy.extensions import marshmallow
 from nodes import *
 
 
