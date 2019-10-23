@@ -35,7 +35,11 @@ class Host(Duffyv1Model):
         try:
             ssh = paramiko.SSHClient()
             # TODO: Make this configurable
-            key = paramiko.DSSKey.from_private_key_file(os.path.expanduser('~/.ssh/id_dsa'))
+            if self.ver in (6, 7):
+                key = paramiko.DSSKey.from_private_key_file(os.path.expanduser('~/.ssh/id_dsa'))
+            else:
+                key = paramiko.RSAKey.from_private_key_file(os.path.expanduser('~/.ssh/id_rsa'))
+
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
             ssh.connect(self.ip, username='root', pkey=key)
