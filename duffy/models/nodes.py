@@ -4,6 +4,7 @@ import uuid
 
 from duffy.database import db, Duffyv1Model
 from duffy.extensions import marshmallow
+from duffy.models.baremetal_nodes import Host
 import marshmallow as ma
 
 
