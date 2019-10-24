@@ -2,7 +2,7 @@
 """The main application module for duffy."""
 from flask import Flask
 
-from duffy import api_v1
+from duffy import api_v1, api_v2
 from duffy.types import seamicro
 
 from duffy.extensions import db, migrate, marshmallow
@@ -29,6 +29,7 @@ def register_extensions(app):
 
 def register_blueprints(app):
     app.register_blueprint(api_v1.views.blueprint)
+    app.register_blueprint(api_v2.views.blueprint)
     app.register_blueprint(seamicro.views.blueprint)
     return None
 
