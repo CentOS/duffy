@@ -29,7 +29,6 @@ def register_extensions(app):
 
 def register_blueprints(app):
     app.register_blueprint(api_v1.views.blueprint)
-    app.register_blueprint(api_v2.views.blueprint)
     app.register_blueprint(seamicro.views.blueprint)
     return None
 
