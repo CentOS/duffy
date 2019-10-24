@@ -2,7 +2,7 @@
 """The main application module for duffy."""
 from flask import Flask
 
-from duffy import api_v1, api_v2
+from duffy import api_v1
 from duffy.types import seamicro
 
 from duffy.extensions import db, migrate, marshmallow
