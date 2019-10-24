@@ -35,7 +35,7 @@ class Host(Duffyv1Model):
         try:
             ssh = paramiko.SSHClient()
             # TODO: Make this configurable
-            if self.ver in (6, 7):
+            if self.ver in ('6', '7'):
                 key = paramiko.DSSKey.from_private_key_file(os.path.expanduser('~/.ssh/id_dsa'))
             else:
                 key = paramiko.RSAKey.from_private_key_file(os.path.expanduser('~/.ssh/id_rsa'))
