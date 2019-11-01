@@ -129,6 +129,21 @@ def nodefail():
     if session.apikey != get_key:
         return jsonify({'msg': 'Invalid duffy key'}), 403
 
+    # count nodes in fail state and return error if it exceeds the limit
+    sessions = session.query.filter(session.apikey == get_key)
+    MAX_FAIL_NODES_ALLOWED = 5
+    fail_count = 0
+    for fail_session in sessions:
+        for host in fail_session.hosts:
+            sch = HostSchema().dump(host)
+            if sch.data['state'] == 'Fail':
+                fail_count = fail_count + 1
+
+    if fail_count >= MAX_FAIL_NODES_ALLOWED:
+        return jsonify({'msg': 'Exceeded maximum allowed fail nodes limit,\
+                        please release other machines to continue'}), 403
+
+
     for host in session.hosts:
         host.state = 'Fail'
         host.save()
