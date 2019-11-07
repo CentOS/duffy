@@ -26,10 +26,11 @@ class openstack_host(Duffyv1Model):
         try:
             ssh = paramiko.SSHClient()
             # TODO: Make this configurable
-            key = paramiko.DSSKey.from_private_key_file(os.path.expanduser('~/.ssh/id_dsa'))
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
             ssh.connect(self.ip, username='duffy', pkey=key)
+            key = paramiko.RSAKey.from_private_key_file(os.path.expanduser('~/.ssh/id_rsa'))
+
             sftp = ssh.open_sftp()
             file_handle = sftp.file('/duffy/.ssh/authorized_keys', mode='a', bufsize=-1)
         except Exception as e:
