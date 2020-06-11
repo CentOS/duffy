@@ -99,6 +99,28 @@ class DuffyV1ApiTests(unittest.TestCase):
                 assert h.state == 'Deployed'
                 assert h.flavor == 'medium'
 
+    def test_api_returns_host_without_excluded_hostname(self):
+        for hname in [".hufty", ".crusty", "n2.crusty"]:
+            r1 = self.client.get('/Node/get?key=asdf-1234&exclude_host=%{}'.format(hname))
+            data = json.loads(r1.data)
+
+            for hostname in data['hosts']:
+                with self.testapp.app_context():
+                    h = Host.query.filter(Host.hostname == hostname).one()
+                    assert h.ver == '7'
+                    assert not hostname.endswith(hname)
+
+    def test_api_returns_host_without_multiple_excluded_hostnames(self):
+        r1 = self.client.get('/Node/get?key=asdf-1234&exclude_host=%.hufty,n1.crusty')
+        data = json.loads(r1.data)
+
+        for hostname in data['hosts']:
+            with self.testapp.app_context():
+                h = Host.query.filter(Host.hostname == hostname).one()
+                assert h.ver == '7'
+                assert not hostname.endswith('.hufty')
+                assert hostname != 'n1.crusty'
+
     def test_api_returns_multiple_hosts(self):
         r = self.client.get('/Node/get?key=asdf-1234&count=2')
         data = json.loads(r.data)

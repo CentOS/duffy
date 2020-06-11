@@ -5,6 +5,7 @@ from flask import Blueprint, request, jsonify, abort, current_app
 from functools import wraps
 from duffy.models import Host, HostSchema, Session, SessionSchema, Project
 from duffy.database import db
+from sqlalchemy import and_
 
 blueprint = Blueprint('api_v1', __name__)
 
@@ -40,6 +41,8 @@ def nodeget():
     get_count = int(request.args.get('count', 1))
     get_key = request.args.get('key')
     get_flavor = request.args.get('flavor')
+    get_exclude = request.args.get('exclude_host')
+    host_conds = []
 
     project = Project.query.get(get_key)
 
@@ -49,6 +52,9 @@ def nodeget():
     if get_arch in ('aarch64','ppc64le'):
         if not get_flavor:
             get_flavor = 'tiny'
+
+    if get_exclude:
+        host_conds += [ ~Host.hostname.like(x) for x in get_exclude.split(',') ]
 
     five_minutes_ago = datetime.datetime.utcnow() - datetime.timedelta(minutes=5)
     recent_sessions_count = Session.query.filter(Session.apikey==get_key, Session.delivered_at > five_minutes_ago, (Session.state == 'Prod') | (Session.state == 'Fail')).count()
@@ -63,7 +69,8 @@ def nodeget():
                               Host.state == 'Ready',
                               Host.ver == get_ver,
                               Host.arch == get_arch,
-                              Host.flavor == get_flavor
+                              Host.flavor == get_flavor,
+                              and_(*host_conds),
                               ).order_by(db.asc(Host.used_count)).limit(get_count).all()
 
     if len(hosts) != get_count:
