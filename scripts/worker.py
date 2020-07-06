@@ -47,6 +47,7 @@ def provision(json_jobs):
             playbooks/local-ci-deploy.yml --limit %s.ci.centos.org \
             --extra-vars 'centos_dist=%s centos_arch=%s'"\
             % (json_jobs['hostname'], json_jobs['ver'], json_jobs['arch'])
+
     return_code = subprocess.call(cmd_line, preexec_fn=preexec_function, shell=True)
     print(cmd_line)
     hostname_var = json_jobs['hostname']
@@ -54,8 +55,10 @@ def provision(json_jobs):
     session_query = Host.query.filter_by(hostname=hostname_var).first()
     if return_code == 0:
         session_query.state = 'Ready'
+        session_query.next_state = 'Deployed'
     else:
         session_query.state = 'Failed'
+        session_query.next_state = 'Active'
         session_query.comment = 'ansible exit {}'.format(return_code)
         session_query.pool = 0
 
@@ -72,14 +75,17 @@ def poweroff(json_jobs):
     cmd_line = "cd /srv/code/ansible ; ansible-playbook \
             playbooks/local-ci-poweroff.yml --limit %s.ci.centos.org"\
             % json_jobs['hostname']
+
     return_code = subprocess.call(cmd_line, preexec_fn=preexec_function, shell=True)
     hostname_var = json_jobs['hostname']
     session_query = Host.query.filter_by(hostname=hostname_var).first()
     if return_code == 0:
         session_query.state = 'Active'
+        session_query.next_state = 'Ready'
         session_query.pool = 0
     else:
         session_query.state = 'Failed'
+        session_query.next_state = 'Active'
         session_query.comment = 'Failed to poweroff'
         session_query.pool = 0
 
