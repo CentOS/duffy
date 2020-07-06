@@ -4,17 +4,20 @@ import setuptools
 setuptools.setup(
     name='duffy',
     description='',
+    version='2.0.2',
     packages=setuptools.find_packages(),
     include_package_data=True,
     license='Apache 2.0',
 
     install_requires=[
+        'beanstalkc',
         'flask',
-        'flask-sqlalchemy',
-        'flask-migrate',
         'flask-marshmallow',
+        'flask-migrate',
+        'flask-sqlalchemy',
         'marshmallow-sqlalchemy',
         'marshmallow==3.0.0b6',
+        'pymysql',
         'paramiko',
     ],
 

@@ -4,10 +4,12 @@ provision/poweroff nodes.
 '''
 
 import json
+import os
+import signal
 import subprocess
-from flask_sqlalchemy import SQLAlchemy
 from duffy import APP
 from duffy.models.nodes import Host
+from flask_sqlalchemy import SQLAlchemy
 
 import beanstalkc
 BS = beanstalkc.Connection(host='127.0.0.1', parse_yaml=False)
@@ -20,6 +22,21 @@ APP.app_context().push()
 with APP.app_context():
     DB.init_app(APP)
 
+continue_loop = True
+def signal_handling(signum, frame):
+    '''
+    make loop variable false to stop worker in next run
+    '''
+    global continue_loop
+    continue_loop = False
+
+
+def preexec_function():
+    os.setpgrp()
+
+
+signal.signal(signal.SIGTERM ,signal_handling)
+
 
 def provision(json_jobs):
     '''
@@ -30,9 +47,9 @@ def provision(json_jobs):
             playbooks/local-ci-deploy.yml --limit %s.ci.centos.org \
             --extra-vars 'centos_dist=%s centos_arch=%s'"\
             % (json_jobs['hostname'], json_jobs['ver'], json_jobs['arch'])
-    return_code = subprocess.call(cmd_line, shell=True)
+
+    return_code = subprocess.call(cmd_line, preexec_fn=preexec_function, shell=True)
     print(cmd_line)
-    print('Returned : ', return_code)
     hostname_var = json_jobs['hostname']
     print(hostname_var)
     session_query = Host.query.filter_by(hostname=hostname_var).first()
@@ -58,7 +75,8 @@ def poweroff(json_jobs):
     cmd_line = "cd /srv/code/ansible ; ansible-playbook \
             playbooks/local-ci-poweroff.yml --limit %s.ci.centos.org"\
             % json_jobs['hostname']
-    return_code = subprocess.call(cmd_line, shell=True)
+
+    return_code = subprocess.call(cmd_line, preexec_fn=preexec_function, shell=True)
     hostname_var = json_jobs['hostname']
     session_query = Host.query.filter_by(hostname=hostname_var).first()
     if return_code == 0:
@@ -91,5 +109,5 @@ def task():
     job.delete()
 
 
-while True:
+while continue_loop:
     task()
