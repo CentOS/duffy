@@ -28,7 +28,7 @@ Clone the duffy2 repo::
 
 Populate a test database::
 
-    flask initdb
+    flask db init
 
 Run the duffy server::
 
@@ -63,6 +63,6 @@ the moment. See above for populating a database for development purposes
 
 Authors
 -------
-Copyright © 2017 Karanbir Singh and `other contributors`
+Copyright © 2017-2020 Karanbir Singh and `other contributors`
 
 .. _other contributors: https://github.com/CentOS/AUTHORS.txt
