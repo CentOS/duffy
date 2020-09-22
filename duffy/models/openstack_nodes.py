@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from duffy.database import db, Duffyv1Model
-from nodes import *
+from .nodes import *
 
 
 class openstack_host(Duffyv1Model):

@@ -3,7 +3,7 @@ import datetime
 import uuid
 
 from duffy.database import db, Duffyv1Model
-from nodes import *
+from .nodes import *
 
 
 class Host(Duffyv1Model):
