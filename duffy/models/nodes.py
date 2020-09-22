@@ -40,7 +40,7 @@ class SessionSchema(marshmallow.Schema):
     id = ma.fields.String(dump_to='ssid')
     hosts = ma.fields.Nested("HostSchema", only='hostname', many=True)
 
-class HostSchema(marshmallow.ModelSchema):
+class HostSchema(marshmallow.Schema):
     session_id = ma.fields.String(dump_to='comment')
 
     class Meta:

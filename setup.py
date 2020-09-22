@@ -10,7 +10,7 @@ setuptools.setup(
     license='Apache 2.0',
 
     install_requires=[
-        'beanstalkc',
+#        'beanstalkc',
         'flask',
         'flask-marshmallow',
         'flask-migrate',
