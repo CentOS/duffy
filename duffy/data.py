@@ -58,6 +58,32 @@ def _populate_test_data():
                    pool=1,
                    console_port=123)
 
+    n1crusty = Host(hostname='n1.crusty',
+                   ip='127.0.0.5',
+                   chassis='crusty',
+                   used_count=99,
+                   state='Ready',
+                   comment='-',
+                   distro=None,
+                   rel=None,
+                   ver=7,
+                   arch='x86_64',
+                   pool=1,
+                   console_port=123)
+
+    n2crusty = Host(hostname='n2.crusty',
+                   ip='127.0.0.5',
+                   chassis='crusty',
+                   used_count=99,
+                   state='Ready',
+                   comment='-',
+                   distro=None,
+                   rel=None,
+                   ver=7,
+                   arch='x86_64',
+                   pool=1,
+                   console_port=123)
+
     n1p8h1 = Host(hostname='n1.p8h1',
                   ip='127.0.0.6',
                   chassis='p8h1',
@@ -96,6 +122,8 @@ def _populate_test_data():
     db.session.add(n2hufty)
     db.session.add(n3hufty)
     db.session.add(n4hufty)
+    db.session.add(n1crusty)
+    db.session.add(n2crusty)
     db.session.add(n1p8h1)
     db.session.add(n2p8h1)
     db.session.add(testproject)
