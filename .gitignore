@@ -5,3 +5,5 @@ build/
 *.egg
 *.egg-info
 *.db
+*.swp
+.venv/
