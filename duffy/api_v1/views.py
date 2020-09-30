@@ -3,7 +3,7 @@ import datetime
 
 from flask import Blueprint, request, jsonify, abort, current_app
 from functools import wraps
-from duffy.models import Host, HostSchema, Session, SessionSchema, Project
+from duffy.models import Host, HostSchema, Session, SessionSchema, OpennebulaHost, OpenNebulaHostSchema, Project
 from duffy.database import db
 
 blueprint = Blueprint('api_v1', __name__)
@@ -40,6 +40,7 @@ def nodeget():
     get_count = int(request.args.get('count', 1))
     get_key = request.args.get('key')
     get_flavor = request.args.get('flavor')
+    get_type = request.args.get('type')
 
     project = Project.query.get(get_key)
 
@@ -59,32 +60,52 @@ def nodeget():
                        'in the last 5 minutes'.format(recent_sessions_count)
                        ), 429
 
-    hosts = Host.query.filter(Host.pool == 1,
-                              Host.state == 'Ready',
-                              Host.ver == get_ver,
-                              Host.arch == get_arch,
-                              Host.flavor == get_flavor
-                              ).order_by(db.asc(Host.used_count)).limit(get_count).all()
+    if type == Session.TYPE_BARE_METAL:
+        hosts = Host.query.filter(Host.pool == 1,
+                                Host.state == 'Ready',
+                                Host.ver == get_ver,
+                                Host.arch == get_arch,
+                                Host.flavor == get_flavor
+                                ).order_by(db.asc(Host.used_count)).limit(get_count).all()
 
-    if len(hosts) != get_count:
-        return 'Insufficient Nodes in READY State'
+        if len(hosts) != get_count:
+            return 'Insufficient Nodes in READY State'
+
+    elif type == Session.TYPE_OPEN_NEBULA:
+        # Create the VM nodes on OpenNebula
+        # Fill the duffy.models.opennebula_nodes table
+        # Fill the hosts list
+        hosts = []
+
+    else:
+        return ('Unrecognized type. Supported types are: \n'
+                Session.TYPE_BARE_METAL + '\n'
+                Session.TYPE_OPEN_NEBULA
+                )
 
     sess = Session()
     sess.apikey = get_key
+    sess.type = type
     sess.save()
     for host in hosts:
         host.state = 'Contextualizing'
         host.save()
         if host.contextualize(project):
-            sess.hosts.append(host)
+            if sess.type == Session.TYPE_BARE_METAL:
+                sess.hosts.append(host)
             host.state = 'Deployed'
             host.save()
         else:
-            # if any of the hosts fail we should return any in-progress hosts
-            # to the pool for reclamation
-            for host in sess.hosts:
-                host.state = 'Active'
-                host.save()
+            if sess.type == Session.TYPE_BARE_METAL:
+                # if any of the hosts fail we should return any in-progress hosts
+                # to the pool for reclamation
+                for host in sess.hosts:
+                    host.state = 'Active'
+                    host.save()
+            elif sess.type == Session.TYPE_OPEN_NEBULA:
+                # if any of the hosts fail, we should delete it
+                for host in hosts:
+                    host.delete()
             sess.state = 'Failed'
             sess.save()
             return jsonify('Failed to allocate nodes')
@@ -108,11 +129,19 @@ def nodedone():
     if session.state not in ('Prod','Fail'):
         return jsonify({'msg': 'Session not in Prod'})
 
-    for host in session.hosts:
-        host.state = "Deprovision"
-        host.session = None
-        host.session_id = ''
-        host.save()
+    if session.type == Session.TYPE_BARE_METAL:
+        for host in session.hosts:
+            host.state = "Deprovision"
+            host.session = None
+            host.session_id = ''
+            host.save()
+    elif session.type == Session.TYPE_OPEN_NEBULA:
+        hosts = OpennebulaHost.query.filter(OpennebulaHost.session == session).all()
+        for host in hosts:
+            # Deprovision the hosts
+            host.delete()
+
+
     session.state = 'Done'
     session.save()
     return jsonify("Done")
@@ -134,10 +163,17 @@ def nodefail():
     MAX_FAIL_NODES_ALLOWED = 5
     fail_count = 0
     for fail_session in sessions:
-        for host in fail_session.hosts:
-            sch = HostSchema().dump(host)
-            if sch.data['state'] == 'Fail':
-                fail_count = fail_count + 1
+        if fail_session.type == Session.TYPE_BARE_METAL:
+            for host in fail_session.hosts:
+                sch = HostSchema().dump(host)
+                if sch.data['state'] == 'Fail':
+                    fail_count = fail_count + 1
+        elif fail_session.type == Session.TYPE_OPEN_NEBULA:
+            hosts = OpennebulaHost.query.filter(OpennebulaHost.session == session).all()
+            for host in hosts:
+                if host.state == 'Fail':
+                    fail_count = fail_count + 1
+
 
     if fail_count >= MAX_FAIL_NODES_ALLOWED:
         return jsonify({'msg': 'Exceeded maximum allowed fail nodes limit,\
@@ -160,9 +196,15 @@ def inventory():
         sessions = Session.query.filter(Session.apikey == get_key)
         rtn_sessions = []
         for session in sessions:
-            for host in session.hosts:
-                sch = HostSchema().dump(host)
-                rtn_sessions.append([sch.data['hostname'],sch.data['session']])
+            if session.type == Session.TYPE_BARE_METAL:
+                for host in session.hosts:
+                    sch = HostSchema().dump(host)
+                    rtn_sessions.append([sch.data['hostname'],sch.data['session']])
+            elif session.type == Session.TYPE_OPEN_NEBULA:
+                hosts = OpennebulaHost.query.filter(OpennebulaHost.session == session).all()
+                for host in hosts:
+                    sch = OpenNebulaHostSchema().dump(host)
+                    rtn_sessions.append([sch.data['hostname'],sch.data['session']])
         return jsonify(rtn_sessions)
     else:
         # No key, return a list of all hosts
