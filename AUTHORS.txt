@@ -1,2 +1,4 @@
-Karanbir Singh <kbsingh@centos.org>
 Brian Stinson <brian@bstinson.com>
+David Kirwan <dkirwan@redhat.com>
+Karanbir Singh <kbsingh@centos.org>
+Vipul Sidharth <vipul@redhat.com>
