@@ -43,6 +43,50 @@ def index():
     return "Index route"
 
 
+@main.route("/api/v2/node", methods=["GET"])
+def api_node_get():
+    """
+    this is what black compliant code looks like kids!
+    """
+    apikey = request.args.get("apikey")
+    if apikey == "letmein":
+        return dumps({"msg": "authorised"})
+    return dumps({"msg": "unauthorised"})
+
+
+@main.route("/api/v2/node", methods=["POST"])
+def api_node_post():
+    """
+    this is what black compliant code looks like kids!
+    """
+    apikey = request.form["apikey"]
+    if apikey == "letmein":
+        return dumps({"msg": "authorised"})
+    return dumps({"msg": "unauthorised"})
+
+
+@main.route("/api/v2/node", methods=["PUT"])
+def api_node_put():
+    """
+    this is what black compliant code looks like kids!
+    """
+    apikey = request.form["apikey"]
+    if apikey == "letmein":
+        return dumps({"msg": "authorised"})
+    return dumps({"msg": "unauthorised"})
+
+
+@main.route("/api/v2/node", methods=["DELETE"])
+def api_node_delete():
+    """
+    this is what black compliant code looks like kids!
+    """
+    apikey = request.form["apikey"]
+    if apikey == "letmein":
+        return dumps({"msg": "authorised"})
+    return dumps({"msg": "unauthorised"})
+
+
 @main.errorhandler(404)
 def e404page(ertx):
     print(ertx)
@@ -76,4 +120,4 @@ def uptownfunc(portdata):
 
 
 if __name__ == "__main__":
-    mainfunc()
+    uptownfunc()
