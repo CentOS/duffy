@@ -18,6 +18,8 @@ from hashlib import sha256
 from json import dumps
 from time import time
 
+import click
+
 from flask import (
     Flask,
     abort,
@@ -59,11 +61,18 @@ def e500page(ertx):
     return "500 Error", 500
 
 
-def uptownfunc(portdata="9000", netproc="0.0.0.0"):
+@click.command()
+@click.option(
+    "-p", "--portdata", "portdata", help="Set the port value [0-65536]", default="9696"
+)
+@click.version_option(
+    version=duffy_version, prog_name=click.style("CentOS/Duffy", fg="magenta")
+)
+def uptownfunc(portdata):
     """
     Uptownfucn gonna give Duffy to ya
     """
-    main.run(port=portdata, host=netproc)
+    main.run(port=portdata, host="0.0.0.0")
 
 
 if __name__ == "__main__":
