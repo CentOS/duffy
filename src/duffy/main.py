@@ -38,53 +38,56 @@ except Exception:
 main = Flask(__name__)
 
 
-@main.route("/")
+@main.get("/")
 def index():
     return "Index route"
 
 
-@main.route("/api/v2/node", methods=["GET"])
-def api_node_get():
+@main.get("/api/v2/node")
+@main.post("/api/v2/node")
+@main.put("/api/v2/node")
+@main.delete("/api/v2/node")
+def api_node():
     """
     this is what black compliant code looks like kids!
     """
-    apikey = request.args.get("apikey")
-    if apikey == "letmein":
-        return dumps({"msg": "authorised"})
-    return dumps({"msg": "unauthorised"})
-
-
-@main.route("/api/v2/node", methods=["POST"])
-def api_node_post():
-    """
-    this is what black compliant code looks like kids!
-    """
-    apikey = request.form["apikey"]
-    if apikey == "letmein":
-        return dumps({"msg": "authorised"})
-    return dumps({"msg": "unauthorised"})
-
-
-@main.route("/api/v2/node", methods=["PUT"])
-def api_node_put():
-    """
-    this is what black compliant code looks like kids!
-    """
-    apikey = request.form["apikey"]
-    if apikey == "letmein":
-        return dumps({"msg": "authorised"})
-    return dumps({"msg": "unauthorised"})
-
-
-@main.route("/api/v2/node", methods=["DELETE"])
-def api_node_delete():
-    """
-    this is what black compliant code looks like kids!
-    """
-    apikey = request.form["apikey"]
-    if apikey == "letmein":
-        return dumps({"msg": "authorised"})
-    return dumps({"msg": "unauthorised"})
+    if request.method == "GET":
+        """
+        GET method
+        """
+        apikey = request.args.get("apikey")
+        if apikey == "letmein":
+            return dumps({"msg": "authorised"})
+        return dumps({"msg": "unauthorised"})
+    elif request.method == "POST":
+        """
+        POST method
+        """
+        apikey = request.form["apikey"]
+        if apikey == "letmein":
+            return dumps({"msg": "authorised"})
+        return dumps({"msg": "unauthorised"})
+    elif request.method == "PUT":
+        """
+        PUT method
+        """
+        apikey = request.form["apikey"]
+        if apikey == "letmein":
+            return dumps({"msg": "authorised"})
+        return dumps({"msg": "unauthorised"})
+    elif request.method == "DELETE":
+        """
+        DELETE method
+        """
+        apikey = request.form["apikey"]
+        if apikey == "letmein":
+            return dumps({"msg": "authorised"})
+        return dumps({"msg": "unauthorised"})
+    else:
+        """
+        MISC method
+        """
+        return dumps({"msg": "bad method"})
 
 
 @main.errorhandler(404)
@@ -106,12 +109,8 @@ def e500page(ertx):
 
 
 @click.command()
-@click.option(
-    "-p", "--portdata", "portdata", help="Set the port value [0-65536]", default="9696"
-)
-@click.version_option(
-    version=duffy_version, prog_name=click.style("CentOS/Duffy", fg="magenta")
-)
+@click.option("-p", "--portdata", "portdata", help="Set the port value [0-65536]", default="9696")
+@click.version_option(version=duffy_version, prog_name=click.style("CentOS/Duffy", fg="magenta"))
 def uptownfunc(portdata):
     """
     Uptownfucn gonna give Duffy to ya
