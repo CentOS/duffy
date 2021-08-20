@@ -1,7 +1,24 @@
+"""
+   Copyright 2021 CentOS
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
+
 # -*- coding: utf-8 -*-
 import setuptools
 import codecs
 import os.path
+
 
 # use README.md as readme
 def readme():
@@ -24,6 +41,7 @@ def get_version(rel_path):
     else:
         raise RuntimeError("Unable to find version string.")
 
+
 setuptools.setup(
     name='duffy',
     description='',
@@ -42,7 +60,7 @@ setuptools.setup(
         '': 'src',
     },
     entry_points={
-      'console_scripts': ['duffy=duffy.main:uptownfunc'], # 
+      'console_scripts': ['duffy=duffy.main:uptownfunc'],
     },
     classifiers=[
       'Development Status :: 4 - Beta',
@@ -56,4 +74,3 @@ setuptools.setup(
     ],
     scripts=[],
 )
-
