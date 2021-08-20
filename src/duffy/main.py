@@ -19,17 +19,22 @@ import click
 
 try:
     # Running the installation when built using setuptools
-    from duffy.__init__ import __version__ as duffy_version
+    # from duffy.__init__ import __version__ as duffy_version
+    from duffy import __version__ as duffy_version
     from duffy.api.api import duffy_api
 except Exception:
     # Running the installation from a development environment or Docker image
-    from __init__ import __version__ as duffy_version
+    from duffy import __version__ as duffy_version
     from api.api import duffy_api
 
 
 @click.command()
-@click.option("-p", "--portdata", "portdata", help="Set the port value [0-65536]", default="9696")
-@click.version_option(version=duffy_version, prog_name=click.style("CentOS/Duffy", fg="magenta"))
+@click.option(
+    "-p", "--portdata", "portdata", help="Set the port value [0-65536]", default="9696"
+)
+@click.version_option(
+    version=duffy_version, prog_name=click.style("CentOS/Duffy", fg="magenta")
+)
 def uptownfunc(portdata):
     """
     Uptownfunc gonna give Duffy to ya
