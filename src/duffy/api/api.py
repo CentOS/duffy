@@ -17,6 +17,8 @@
 from hashlib import sha256
 from json import dumps
 from time import time
+from duffy.utils.utils import apikey_check
+
 
 from flask import (
     Flask,
@@ -47,7 +49,7 @@ def api_node():
         GET method
         """
         apikey = request.args.get("apikey")
-        if apikey == "letmein":
+        if apikey_check(apikey):
             return dumps({"msg": "authorised"})
         return dumps({"msg": "unauthorised"})
     elif request.method == "POST":
@@ -55,7 +57,7 @@ def api_node():
         POST method
         """
         apikey = request.form["apikey"]
-        if apikey == "letmein":
+        if apikey_check(apikey):
             return dumps({"msg": "authorised"})
         return dumps({"msg": "unauthorised"})
     elif request.method == "PUT":
@@ -63,7 +65,7 @@ def api_node():
         PUT method
         """
         apikey = request.form["apikey"]
-        if apikey == "letmein":
+        if apikey_check(apikey):
             return dumps({"msg": "authorised"})
         return dumps({"msg": "unauthorised"})
     elif request.method == "DELETE":
@@ -71,7 +73,7 @@ def api_node():
         DELETE method
         """
         apikey = request.form["apikey"]
-        if apikey == "letmein":
+        if apikey_check(apikey):
             return dumps({"msg": "authorised"})
         return dumps({"msg": "unauthorised"})
     else:
