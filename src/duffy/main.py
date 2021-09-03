@@ -16,7 +16,6 @@
 
 import click
 
-
 try:
     # Running the installation when built using setuptools
     # from duffy.__init__ import __version__ as duffy_version
