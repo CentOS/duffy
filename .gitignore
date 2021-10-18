@@ -1,9 +1,0 @@
-*.pyc
-build/
-.cache/
-.ropeproject/
-*.egg
-*.egg-info
-*.db
-*.swp
-.venv/
