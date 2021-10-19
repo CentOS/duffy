@@ -6,7 +6,7 @@ authors = ["Nils Philippsen <nils@redhat.com", "Vipul Siddharth <siddharthvipul1
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.6.2"
 fastapi = "^0.70.0"
 SQLAlchemy = "^1.4.25"
 tox = "^3.24.4"
