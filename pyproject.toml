@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "duffy"
+version = "3.0.0"
+description = "CentOS CI provisioner"
+authors = ["Nils Philippsen <nils@redhat.com", "Vipul Siddharth <siddharthvipul1@gmail.com>", "Akashdeep Dhar <akashdeep@redhat.com>", "Ben Capper <bcapper@redhat.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+fastapi = "^0.70.0"
+SQLAlchemy = "^1.4.25"
+tox = "^3.24.4"
+pytest = "^6.2.5"
+pytest-cov = "^3.0.0"
+
+[tool.poetry.dev-dependencies]
+black = "^21.9b0"
+isort = "^5.9.3"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
