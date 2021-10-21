@@ -9,6 +9,7 @@ license = "MIT"
 python = "^3.6.2"
 fastapi = "^0.70.0"
 SQLAlchemy = "^1.4.25"
+importlib-metadata = {version = "^4.8.1", python = "<3.8"}
 
 [tool.poetry.dev-dependencies]
 black = "^21.9b0"
