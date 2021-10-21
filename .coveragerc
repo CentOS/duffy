@@ -1,0 +1,12 @@
+[run]
+branch = True
+source = duffy
+omit =
+
+[report]
+precision = 2
+fail_under = 100
+exclude_lines =
+    pragma: no cover
+    def __repr__
+show_missing = True
