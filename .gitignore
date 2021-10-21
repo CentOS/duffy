@@ -1,0 +1,6 @@
+# related to package installation
+/dist/
+
+# byte-compiled / optimized Python files
+__pycache__/
+*.py[co]
