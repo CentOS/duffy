@@ -22,13 +22,10 @@ jobs:
              source duffy/bin/activate
              python -m pip install --upgrade poetry
              python -m pip install --upgrade pytest
+             python -m pip install --upgrade tox
 
-      - name: install dependencies via poetry
+
+      - name: execute tox
         run: |
              source duffy/bin/activate
-             poetry install
-
-      - name: Run pytest
-        run: |
-             source duffy/bin/activate
-             pytest
+             tox
