@@ -15,44 +15,21 @@ def test_cli_version():
 
 
 def test_cli_help():
+    """Ensure `duffy --help` works."""
     runner = CliRunner()
     result = runner.invoke(main, ["--help"], terminal_width=80)
     assert result.exit_code == 0
-    assert (
-        result.output
-        == """Usage: main [OPTIONS]
-
-  Duffy is the middle layer running ci.centos.org that manages the provisioning,
-  maintenance and teardown / rebuild of the Nodes (physical hardware for now,
-  VMs coming soon) that are used to run the tests in the CI Cluster.
-
-Options:
-  -p, --portnumb INTEGER          Set the port value [0-65536]
-  -6, --ipv6                      Start the server on an IPv6 address
-  -4, --ipv4                      Start the server on an IPv4 address
-  -l, --loglevel [critical|error|warning|info|debug|trace]
-                                  Set the log level
-  --version                       Show the version and exit.
-  --help                          Show this message and exit.
-"""
-    )
+    assert "Usage: duffy" in result.output
 
 
 def test_cli_suggestion():
     runner = CliRunner()
     result = runner.invoke(main, ["--helo"])
     assert result.exit_code == 2
-    assert (
-        result.output
-        == """Usage: main [OPTIONS]
-Try 'main --help' for help.
-
-Error: No such option: --helo Did you mean --help?
-"""
-    )
+    assert "Error: No such option: --helo" in result.output
 
 
-@pytest.mark.parametrize("parameters", ((), ("--ipv6",)))
+@pytest.mark.parametrize("parameters", ((), ("--host=127.0.0.1",)))
 @mock.patch("duffy.app.cli.uvicorn")
 def test_cli_main(mock_uvicorn, parameters):
     runner = CliRunner()
