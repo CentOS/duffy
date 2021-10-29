@@ -12,6 +12,7 @@ SQLAlchemy = "^1.4.25"
 importlib-metadata = {version = "^4.8.1", python = "<3.8"}
 click = "^8.0.3"
 uvicorn = "^0.15.0"
+PyYAML = "^6.0"
 
 [tool.poetry.dev-dependencies]
 black = "^21.9b0"
