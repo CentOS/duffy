@@ -3,7 +3,7 @@ from pathlib import Path
 import toml
 
 HERE = Path(__file__).parent
-PYPROJECT_TOML_PATH = HERE.parent.parent / "pyproject.toml"
+PYPROJECT_TOML_PATH = HERE.parent / "pyproject.toml"
 
 
 def test___version__():
