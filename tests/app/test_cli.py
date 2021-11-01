@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -5,6 +6,9 @@ from click.testing import CliRunner
 
 from duffy.app.cli import main
 from duffy.version import __version__
+
+HERE = Path(__file__).parent
+EXAMPLE_CONFIG = HERE.parent.parent / "etc" / "duffy-example-config.yaml"
 
 
 def test_cli_version():
@@ -29,9 +33,11 @@ def test_cli_suggestion():
     assert "Error: No such option: --helo" in result.output
 
 
-@pytest.mark.parametrize("parameters", ((), ("--host=127.0.0.1",)))
-@mock.patch("duffy.app.cli.uvicorn")
-def test_cli_main(mock_uvicorn, parameters):
+@pytest.mark.parametrize(
+    "parameters", ((), ("--host=127.0.0.1",), (f"--config={EXAMPLE_CONFIG.absolute()}",))
+)
+@mock.patch("duffy.app.cli.uvicorn.run")
+def test_cli_main(uvicorn_run, parameters):
     runner = CliRunner()
     runner.invoke(main, parameters)
-    mock_uvicorn.run.assert_called_once()
+    uvicorn_run.assert_called_once()

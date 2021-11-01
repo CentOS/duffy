@@ -1,3 +1,5 @@
+import logging
+
 import click
 import uvicorn
 
@@ -5,6 +7,8 @@ from ..configuration import config, read_configuration
 from ..version import __version__
 
 DEFAULT_CONFIG_FILE = "/etc/duffy.yaml"
+
+log = logging.getLogger(__name__)
 
 
 def init_config(ctx, param, filename):
@@ -41,7 +45,7 @@ def init_config(ctx, param, filename):
     default="info",
 )
 @click.version_option(version=__version__, prog_name="Duffy")
-def main(host, port, loglevel):
+def main(reload, host, port, loglevel):
     """
     Duffy is the middle layer running ci.centos.org that manages the
     provisioning, maintenance and teardown / rebuild of the Nodes
@@ -54,8 +58,20 @@ def main(host, port, loglevel):
     print(f" * Port number  : {port}")
     print(f" * Log level    : {loglevel}")
 
-    # Convert loglevel string back to int value
-    loglevel = uvicorn.config.LOG_LEVELS[loglevel.lower()]
+    numeric_loglevel = uvicorn.config.LOG_LEVELS[loglevel.lower()]
+
+    uvicorn_log_config = config.get("logging", uvicorn.config.LOGGING_CONFIG).copy()
+    if uvicorn_log_config.get("loggers", {}).get("duffy"):
+        uvicorn_log_config["loggers"]["duffy"]["level"] = numeric_loglevel
+
+    logging.basicConfig(level=numeric_loglevel)
 
     # Start the show
-    uvicorn.run("duffy.app.main:app", host=host, port=port, log_level=loglevel, reload=reload)
+    uvicorn.run(
+        "duffy.app.main:app",
+        host=host,
+        port=port,
+        log_level=numeric_loglevel,
+        reload=reload,
+        log_config=uvicorn_log_config,
+    )
