@@ -1,7 +1,7 @@
 import click
 import uvicorn
 
-from duffy.version import __version__
+from ..version import __version__
 
 
 @click.command()
