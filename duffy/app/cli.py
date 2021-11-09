@@ -28,7 +28,7 @@ def init_config(ctx, param, filename):
     show_default=True,
 )
 @click.option("-H", "--host", help="Set the host address to listen on.")
-@click.option("-p", "--port", "port", type=int, help="Set the port value [0-65536].")
+@click.option("-p", "--port", type=click.IntRange(1, 65535, clamp=True), help="Set the port value.")
 @click.option(
     "-l",
     "--loglevel",
