@@ -27,6 +27,9 @@ def init_config(ctx, param, filename):
     help="Read option defaults from the specified YAML file.",
     show_default=True,
 )
+@click.option(
+    "--reload/--no-reload", default=False, help="Automatically reload if the code is changed."
+)
 @click.option("-H", "--host", help="Set the host address to listen on.")
 @click.option("-p", "--port", type=click.IntRange(1, 65535, clamp=True), help="Set the port value.")
 @click.option(
@@ -55,4 +58,4 @@ def main(host, port, loglevel):
     loglevel = uvicorn.config.LOG_LEVELS[loglevel.lower()]
 
     # Start the show
-    uvicorn.run("duffy.app.main:app", host=host, port=port, log_level=loglevel)
+    uvicorn.run("duffy.app.main:app", host=host, port=port, log_level=loglevel, reload=reload)
