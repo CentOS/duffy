@@ -24,17 +24,17 @@ def init_config(ctx, param, filename):
     callback=init_config,
     is_eager=True,
     expose_value=False,
-    help="Read option defaults from the specified YAML file",
+    help="Read option defaults from the specified YAML file.",
     show_default=True,
 )
-@click.option("-H", "--host", "host", help="Set the host address to listen on")
-@click.option("-p", "--port", "port", type=int, help="Set the port value [0-65536]")
+@click.option("-H", "--host", help="Set the host address to listen on.")
+@click.option("-p", "--port", "port", type=int, help="Set the port value [0-65536].")
 @click.option(
     "-l",
     "--loglevel",
     "loglevel",
     type=click.Choice(list(uvicorn.config.LOG_LEVELS.keys()), case_sensitive=False),
-    help="Set the log level",
+    help="Set the log level.",
     default="info",
 )
 @click.version_option(version=__version__, prog_name="Duffy")
