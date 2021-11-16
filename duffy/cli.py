@@ -3,8 +3,8 @@ import logging
 import click
 import uvicorn
 
-from ..configuration import config, read_configuration
-from ..version import __version__
+from .configuration import config, read_configuration
+from .version import __version__
 
 DEFAULT_CONFIG_FILE = "/etc/duffy.yaml"
 
