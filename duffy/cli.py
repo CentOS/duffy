@@ -4,6 +4,7 @@ import click
 import uvicorn
 
 from .configuration import config, read_configuration
+from .database.setup import setup_db_schema
 from .version import __version__
 
 DEFAULT_CONFIG_FILE = "/etc/duffy.yaml"
@@ -52,6 +53,15 @@ def cli(ctx, loglevel):
     ctx.obj["loglevel"] = loglevel
     ctx.obj["numeric_loglevel"] = numeric_loglevel = uvicorn.config.LOG_LEVELS[loglevel.lower()]
     logging.basicConfig(level=numeric_loglevel)
+
+
+# Set up the database tables
+
+
+@cli.command()
+def setup_db():
+    """Create tables from the database model."""
+    setup_db_schema()
 
 
 # Run the web app

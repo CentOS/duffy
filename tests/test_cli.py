@@ -33,6 +33,14 @@ def test_cli_suggestion():
     assert "Error: No such option: --helo" in result.output
 
 
+@mock.patch("duffy.cli.setup_db_schema")
+def test_setup_db(setup_db_schema):
+    runner = CliRunner()
+    result = runner.invoke(cli, [f"--config={EXAMPLE_CONFIG.absolute()}", "setup-db"])
+    assert result.exit_code == 0
+    setup_db_schema.assert_called_once_with()
+
+
 @pytest.mark.parametrize(
     "parameters",
     (
