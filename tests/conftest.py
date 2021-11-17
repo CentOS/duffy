@@ -6,6 +6,8 @@ from typing import Iterator, List, Union
 import pytest
 import yaml
 
+from duffy.configuration import read_configuration
+
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "duffy_config")
@@ -51,3 +53,8 @@ def duffy_config_files(request: pytest.FixtureRequest) -> Iterator[List[Union[Pa
     # Remove the files.
     for config_file_obj in config_file_objs:
         os.unlink(config_file_obj.name)
+
+
+@pytest.fixture(autouse=True)
+def duffy_config(duffy_config_files):
+    read_configuration(*duffy_config_files)
