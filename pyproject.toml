@@ -6,7 +6,7 @@ authors = ["Nils Philippsen <nils@redhat.com>", "Vipul Siddharth <siddharthvipul
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.6.2"
+python = "^3.7"
 fastapi = "^0.70.0"
 SQLAlchemy = "^1.4.25"
 importlib-metadata = {version = "^4.8.1", python = "<3.8"}
@@ -25,6 +25,7 @@ pytest-isort = "^2.0.0"
 tox = "^3.24.4"
 fastapi = {version = "^0.70.0", extras = ["test"]}
 flake8 = "^3.9.2"
+pytest-asyncio = "^0.16.0"
 
 [tool.pytest.ini_options]
 addopts = "--black --cov-config .coveragerc --cov=duffy --cov-report term --cov-report xml --cov-report html --flake8 --isort"

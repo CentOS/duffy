@@ -1,23 +1,50 @@
 from typing import Any, Dict
 
+import pytest
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
-from duffy.database import DBSession, model
+from duffy.database import DBSession, SyncDBSession, model
 
 
 class ModelTestBase:
     klass = None
     attrs = {}
 
-    def test_create_obj(self, db_obj):
+    def test_create_obj(self, db_sync_obj):
         pass
 
-    def test_query_obj(self, db_obj):
-        obj = DBSession.execute(select(self.klass)).scalar_one()
+    def test_query_obj_sync(self, db_sync_obj):
+        result = SyncDBSession.execute(select(self.klass))
+        obj = result.scalar_one()
         for key, value in self.attrs.items():
-            assert getattr(obj, key) == value
-        for key, value in db_obj._db_obj_dependencies.items():
-            assert getattr(obj, key) == value
+            objvalue = getattr(obj, key)
+            if isinstance(objvalue, (int, str)):
+                assert objvalue == value
+        for key, value in self._db_obj_get_dependencies().items():
+            objvalue = getattr(obj, key)
+            if isinstance(objvalue, (int, str)):
+                assert objvalue == value
+
+    @pytest.mark.asyncio
+    async def test_query_obj_async(self, db_async_obj):
+        # The selectinload() option tells SQLAlchemy to load related objects and lazy loading breaks
+        # things here. See here for details:
+        #
+        # https://docs.sqlalchemy.org/en/14/orm/extensions/asyncio.html#preventing-implicit-io-when-using-asyncsession
+        #
+        # You can specify which relation you're interested in but because this code doesn't know
+        # anything about the involved ORM class, we specify that we "want it all".
+        result = await DBSession.execute(select(self.klass).options(selectinload("*")))
+        obj = result.scalar_one()
+        for key, value in self.attrs.items():
+            objvalue = getattr(obj, key)
+            if isinstance(objvalue, (int, str)):
+                assert objvalue == value
+        for key, value in self._db_obj_get_dependencies().items():
+            objvalue = getattr(obj, key)
+            if isinstance(objvalue, (int, str)):
+                assert objvalue == value
 
     def _db_obj_get_dependencies(self):
         """Get model test dependencies.
@@ -32,10 +59,10 @@ class TestUser(ModelTestBase):
     klass = model.User
     attrs = {"ssh_key": "1234"}
 
-    def test_projects_backref(self, db_obj):
-        db_obj.projects = [model.Project(name=f"Project {num}") for num in range(1, 6)]
-        for project in db_obj.projects:
-            assert project.users == [db_obj]
+    def test_projects_backref(self, db_sync_obj):
+        db_sync_obj.projects = [model.Project(name=f"Project {num}") for num in range(1, 6)]
+        for project in db_sync_obj.projects:
+            assert project.users == [db_sync_obj]
 
 
 class TestProject(ModelTestBase):
@@ -46,10 +73,10 @@ class TestProject(ModelTestBase):
         user = model.User(ssh_key="6789")
         return {"users": [user]}
 
-    def test_users_backref(self, db_obj):
-        db_obj.users = [model.User(ssh_key="0xc0ffee") for i in range(5)]
-        for user in db_obj.users:
-            assert user.projects == [db_obj]
+    def test_users_backref(self, db_sync_obj):
+        db_sync_obj.users = [model.User(ssh_key="0xc0ffee") for i in range(5)]
+        for user in db_sync_obj.users:
+            assert user.projects == [db_sync_obj]
 
 
 class TestSession(ModelTestBase):
