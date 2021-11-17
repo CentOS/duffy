@@ -1,12 +1,17 @@
-try:
-    from asyncio import current_task
-except ImportError:  # pragma: no cover
-    # Python < 3.7
-    current_task = None
+import asyncio
+from copy import deepcopy
 
-from sqlalchemy import MetaData
-from sqlalchemy.ext.asyncio import AsyncSession, async_scoped_session
+from sqlalchemy import MetaData, create_engine
+from sqlalchemy.engine import Engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_scoped_session,
+    create_async_engine,
+)
 from sqlalchemy.orm import declarative_base, scoped_session, sessionmaker
+
+from ..configuration import config
 
 
 # use custom metadata to specify naming convention
@@ -31,27 +36,43 @@ metadata = MetaData(naming_convention=naming_convention)
 
 Base = declarative_base(metadata=metadata)
 
-# Global session managers: DBSession() and AsyncDBSession() return the thread-local session object
-# appropriate for the current web request.
-maker = sessionmaker(future=True)
-DBSession = scoped_session(maker)
+# Global session manager: DBSession() returns the thread-local session object appropriate for the
+# current web request.
+async_maker = sessionmaker(class_=AsyncSession, future=True)
+DBSession = async_scoped_session(async_maker, scopefunc=asyncio.current_task)
 
-if current_task:  # pragma: no cover
-    async_maker = sessionmaker(class_=AsyncSession, future=True)
-    AsyncDBSession = async_scoped_session(async_maker, scopefunc=current_task)
-else:
-    # Python < 3.7
-    AsyncDBSession = None  # pragma: no cover
+sync_maker = sessionmaker(future=True)
+SyncDBSession = scoped_session(sync_maker)
 
 
-def init_model(engine, async_engine=None):
-    DBSession.remove()
-    DBSession.configure(bind=engine)
+def init_sync_model(sync_engine: Engine = None):
+    if not sync_engine:
+        sync_engine = get_sync_engine()
+    SyncDBSession.remove()
+    SyncDBSession.configure(bind=sync_engine)
 
-    if async_engine:  # pragma: no cover
-        if AsyncDBSession:
-            AsyncDBSession.remove()
-            AsyncDBSession.configure(bind=async_engine)
-        else:
-            # Python < 3.7
-            raise RuntimeError("Async DB sessions need Python >= 3.7")
+
+async def init_async_model(async_engine: AsyncEngine = None):
+    if not async_engine:
+        async_engine = get_async_engine()
+    await DBSession.remove()
+    DBSession.configure(bind=async_engine)
+
+
+def init_model(sync_engine: Engine = None, async_engine: AsyncEngine = None):
+    init_sync_model(sync_engine)
+    asyncio.run(init_async_model(async_engine))
+
+
+def get_sync_engine():
+    sync_config = deepcopy(config["database"]["sqlalchemy"])
+    sync_config["url"] = sync_config.pop("sync_url")
+    sync_config.pop("async_url", None)
+    return create_engine(**sync_config)
+
+
+def get_async_engine():
+    async_config = deepcopy(config["database"]["sqlalchemy"])
+    async_config["url"] = async_config.pop("async_url")
+    async_config.pop("sync_url", None)
+    return create_async_engine(**async_config)
