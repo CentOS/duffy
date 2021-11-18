@@ -5,6 +5,7 @@ import pytest
 from click.testing import CliRunner
 
 from duffy.cli import cli
+from duffy.exceptions import DuffyConfigurationError
 from duffy.version import __version__
 
 HERE = Path(__file__).parent
@@ -49,9 +50,22 @@ def test_setup_db(setup_db_schema):
         (f"--config={EXAMPLE_CONFIG.absolute()}", "serve"),
     ),
 )
+@mock.patch("duffy.database.init_model")
 @mock.patch("duffy.cli.uvicorn.run")
-def test_cli_serve(uvicorn_run, parameters):
+def test_cli_serve(uvicorn_run, init_model, parameters):
     runner = CliRunner()
     result = runner.invoke(cli, parameters)
     assert result.exit_code == 0
+    init_model.assert_called_once()
     uvicorn_run.assert_called_once()
+
+
+@mock.patch("duffy.cli.database.init_model")
+@mock.patch("duffy.cli.uvicorn.run")
+def test_cli_serve_config_broken(uvicorn_run, init_model):
+    init_model.side_effect = DuffyConfigurationError("database.sqlalchemy")
+    runner = CliRunner()
+    result = runner.invoke(cli, ("serve",))
+    assert result.exit_code == 1
+    init_model.assert_called_once()
+    uvicorn_run.assert_not_called()
