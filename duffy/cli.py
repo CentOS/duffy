@@ -1,10 +1,13 @@
 import logging
+import sys
 
 import click
 import uvicorn
 
+from . import database
 from .configuration import config, read_configuration
 from .database.setup import setup_db_schema
+from .exceptions import DuffyConfigurationError
 from .version import __version__
 
 DEFAULT_CONFIG_FILE = "/etc/duffy.yaml"
@@ -101,6 +104,12 @@ def serve(ctx, reload, host, port):
     uvicorn_log_config = config.get("logging", uvicorn.config.LOGGING_CONFIG).copy()
     if uvicorn_log_config.get("loggers", {}).get("duffy"):
         uvicorn_log_config["loggers"]["duffy"]["level"] = numeric_loglevel
+
+    try:
+        database.init_model()
+    except DuffyConfigurationError as exc:
+        log.error("Configuration key missing or wrong: %s", exc.args[0])
+        sys.exit(1)
 
     # Start the show
     uvicorn.run(

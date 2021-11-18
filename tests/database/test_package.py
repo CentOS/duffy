@@ -8,7 +8,7 @@ if not hasattr(mock, "AsyncMock"):
 
 import pytest
 
-from duffy import database
+from duffy import configuration, database, exceptions
 
 TEST_CONFIG = {
     "database": {
@@ -68,14 +68,28 @@ def test_init_model(init_sync_model, init_async_model):
 
 
 @pytest.mark.duffy_config(TEST_CONFIG)
+@pytest.mark.parametrize("testcase", ("works", "config-broken"))
 @mock.patch("duffy.database.create_engine")
-def test_get_sync_engine(create_engine):
-    database.get_sync_engine()
-    create_engine.assert_called_once_with(url="boo")
+def test_get_sync_engine(create_engine, testcase):
+    if testcase == "config-broken":
+        del configuration.config["database"]["sqlalchemy"]
+        with pytest.raises(exceptions.DuffyConfigurationError):
+            database.get_sync_engine()
+        create_engine.assert_not_called()
+    else:
+        database.get_sync_engine()
+        create_engine.assert_called_once_with(url="boo")
 
 
 @pytest.mark.duffy_config(TEST_CONFIG)
+@pytest.mark.parametrize("testcase", ("works", "config-broken"))
 @mock.patch("duffy.database.create_async_engine")
-def test_get_async_engine(create_async_engine):
-    database.get_async_engine()
-    create_async_engine.assert_called_once_with(url="boo")
+def test_get_async_engine(create_async_engine, testcase):
+    if testcase == "config-broken":
+        del configuration.config["database"]["sqlalchemy"]
+        with pytest.raises(exceptions.DuffyConfigurationError):
+            database.get_async_engine()
+        create_async_engine.assert_not_called()
+    else:
+        database.get_async_engine()
+        create_async_engine.assert_called_once_with(url="boo")

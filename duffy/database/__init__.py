@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.orm import declarative_base, scoped_session, sessionmaker
 
 from ..configuration import config
+from ..exceptions import DuffyConfigurationError
 
 
 # use custom metadata to specify naming convention
@@ -64,15 +65,34 @@ def init_model(sync_engine: Engine = None, async_engine: AsyncEngine = None):
     asyncio.run(init_async_model(async_engine))
 
 
+_key_failed_to_config_key = {
+    "sqlalchemy": "database.sqlalchemy",
+    "sync_url": "database.sqlalchemy.sync_url",
+    "async_url": "database.sqlalchemy.async_url",
+}
+
+
 def get_sync_engine():
-    sync_config = deepcopy(config["database"]["sqlalchemy"])
-    sync_config["url"] = sync_config.pop("sync_url")
+    try:
+        sync_config = deepcopy(config["database"]["sqlalchemy"]) or {}
+        sync_config["url"] = sync_config.pop("sync_url")
+    except (AttributeError, KeyError) as exc:
+        key_not_found = exc.args[0]
+        raise DuffyConfigurationError(
+            _key_failed_to_config_key.get(key_not_found, key_not_found)
+        ) from exc
     sync_config.pop("async_url", None)
     return create_engine(**sync_config)
 
 
 def get_async_engine():
-    async_config = deepcopy(config["database"]["sqlalchemy"])
-    async_config["url"] = async_config.pop("async_url")
+    try:
+        async_config = deepcopy(config["database"]["sqlalchemy"]) or {}
+        async_config["url"] = async_config.pop("async_url")
+    except (AttributeError, KeyError) as exc:
+        key_not_found = exc.args[0]
+        raise DuffyConfigurationError(
+            _key_failed_to_config_key.get(key_not_found, key_not_found)
+        ) from exc
     async_config.pop("sync_url", None)
     return create_async_engine(**async_config)
