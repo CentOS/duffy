@@ -43,29 +43,28 @@ def test_setup_db(setup_db_schema):
 
 
 @pytest.mark.parametrize(
-    "parameters",
-    (
-        ("serve",),
-        ("serve", "--host=127.0.0.1"),
-        (f"--config={EXAMPLE_CONFIG.absolute()}", "serve"),
-    ),
+    "config_error, parameters",
+    [
+        (False, parms)
+        for parms in (
+            ("serve",),
+            ("serve", "--host=127.0.0.1"),
+            (f"--config={EXAMPLE_CONFIG.absolute()}", "serve"),
+        )
+    ]
+    + [(True, ("serve",))],
 )
 @mock.patch("duffy.database.init_model")
 @mock.patch("duffy.cli.uvicorn.run")
-def test_cli_serve(uvicorn_run, init_model, parameters):
+def test_serve(uvicorn_run, init_model, config_error, parameters):
+    if config_error:
+        init_model.side_effect = DuffyConfigurationError("database")
     runner = CliRunner()
     result = runner.invoke(cli, parameters)
-    assert result.exit_code == 0
     init_model.assert_called_once()
-    uvicorn_run.assert_called_once()
-
-
-@mock.patch("duffy.cli.database.init_model")
-@mock.patch("duffy.cli.uvicorn.run")
-def test_cli_serve_config_broken(uvicorn_run, init_model):
-    init_model.side_effect = DuffyConfigurationError("database.sqlalchemy")
-    runner = CliRunner()
-    result = runner.invoke(cli, ("serve",))
-    assert result.exit_code == 1
-    init_model.assert_called_once()
-    uvicorn_run.assert_not_called()
+    if not config_error:
+        assert result.exit_code == 0
+        uvicorn_run.assert_called_once()
+    else:
+        assert result.exit_code != 0
+        uvicorn_run.assert_not_called()
