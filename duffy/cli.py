@@ -4,7 +4,7 @@ import sys
 import click
 import uvicorn
 
-from . import database
+from . import database, shell
 from .configuration import config, read_configuration
 from .database.setup import setup_db_schema
 from .exceptions import DuffyConfigurationError
@@ -65,6 +65,28 @@ def cli(ctx, loglevel):
 def setup_db():
     """Create tables from the database model."""
     setup_db_schema()
+
+
+# Interactive shell
+
+
+@cli.command(name="shell")
+@click.option(
+    "-t",
+    "--shell-type",
+    type=click.Choice(shell.get_available_shells(), case_sensitive=False),
+    help="Type of interactive shell to use.",
+    default=None,
+)
+def run_shell(shell_type: str):
+    """Run an interactive shell."""
+    try:
+        database.init_model()
+    except DuffyConfigurationError as exc:
+        log.error("Configuration key missing or wrong: %s", exc.args[0])
+        sys.exit(1)
+
+    shell.embed_shell(shell_type=shell_type)
 
 
 # Run the web app
