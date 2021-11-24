@@ -1,25 +1,9 @@
 import pytest
 
+from duffy.app.main import app
+
 
 class TestMain:
-
-    endpoint_to_methodname = {
-        # legacy API
-        "/Node/get": "get_a_node",
-        "/Node/done": "node_is_done",
-        "/Node/fail": "node_failed",
-        "/Inventory": "get_node_inventory",
-        # versioned API
-        "/api/v1/node/get": "get_a_node",
-        "/api/v1/node/done": "node_is_done",
-        "/api/v1/node/fail": "node_failed",
-        "/api/v1/node": "get_node_inventory",
-    }
-
-    @pytest.mark.asyncio
-    @pytest.mark.parametrize("endpoint", endpoint_to_methodname)
-    async def test_endpoints(self, endpoint, client):
-        methodname = self.endpoint_to_methodname[endpoint]
-        response = await client.get(endpoint)
-        assert response.status_code == 200
-        assert response.json() == {"name": methodname}
+    @pytest.mark.parametrize("path", ("/api/v1/projects",))
+    def test_paths(self, path):
+        assert any(r.path == path for r in app.routes)
