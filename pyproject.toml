@@ -28,6 +28,7 @@ tox = "^3.24.4"
 fastapi = {version = "^0.70.0", extras = ["test"]}
 flake8 = "^3.9.2"
 pytest-asyncio = "^0.16.0"
+httpx = "^0.18.2"
 
 [tool.poetry.extras]
 interactive = ["ipython"]

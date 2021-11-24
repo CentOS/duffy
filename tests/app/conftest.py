@@ -1,9 +1,10 @@
 import pytest
-from fastapi.testclient import TestClient
+from httpx import AsyncClient
 
 from duffy.app.main import app
 
 
-@pytest.fixture(scope="session")
-def client() -> TestClient:
-    return TestClient(app)
+@pytest.fixture
+async def client() -> AsyncClient:
+    async with AsyncClient(app=app, base_url="http://duffy-test.example.com") as client:
+        yield client

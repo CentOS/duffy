@@ -1210,7 +1210,7 @@ interactive = ["ipython"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "711520356c0a352c32ffc0997f7464a93681e4ef77d4d3ce159a1600c1bb46a3"
+content-hash = "85cdce143c1a64c4577aa46fd151ef21f69ad0e4ae41355ef36895a00a5b4831"
 
 [metadata.files]
 aiosqlite = [
