@@ -16,9 +16,10 @@ class TestMain:
         "/api/v1/node": "get_node_inventory",
     }
 
+    @pytest.mark.asyncio
     @pytest.mark.parametrize("endpoint", endpoint_to_methodname)
-    def test_endpoints(self, endpoint, client):
+    async def test_endpoints(self, endpoint, client):
         methodname = self.endpoint_to_methodname[endpoint]
-        response = client.get(endpoint)
+        response = await client.get(endpoint)
         assert response.status_code == 200
         assert response.json() == {"name": methodname}
