@@ -39,10 +39,10 @@ Base = declarative_base(metadata=metadata)
 
 # Global session manager: DBSession() returns the thread-local session object appropriate for the
 # current web request.
-async_maker = sessionmaker(class_=AsyncSession, future=True)
+async_maker = sessionmaker(class_=AsyncSession, expire_on_commit=False, future=True)
 DBSession = async_scoped_session(async_maker, scopefunc=asyncio.current_task)
 
-sync_maker = sessionmaker(future=True)
+sync_maker = sessionmaker(future=True, expire_on_commit=False)
 SyncDBSession = scoped_session(sync_maker)
 
 
