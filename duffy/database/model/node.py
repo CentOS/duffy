@@ -6,14 +6,14 @@ from ..util import DeclEnum
 from .session import Session
 
 
-class NodeType(DeclEnum):
+class NodeType(str, DeclEnum):
     virtual = "virtual"
     physical = "physical"
     opennebula = "opennebula"
     seamicro = "seamicro"
 
 
-class NodeState(DeclEnum):
+class NodeState(str, DeclEnum):
     ready = "ready"
     active = "active"
     contextualizing = "contextualizing"
@@ -35,7 +35,7 @@ class Node(Base):
     comment = Column(UnicodeText, nullable=True)
 
 
-class VirtualNodeFlavour(DeclEnum):
+class VirtualNodeFlavour(str, DeclEnum):
     small = "small"
     medium = "medium"
     large = "large"
