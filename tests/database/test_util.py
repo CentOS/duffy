@@ -1,5 +1,3 @@
-import pickle
-
 import pytest
 from sqlalchemy import Column, Integer
 from sqlalchemy.exc import StatementError
@@ -9,7 +7,7 @@ from duffy.database.util import DeclEnum
 
 
 class UselessEnum(DeclEnum):
-    enval1 = "enval1", "Enum value 1"
+    enval1 = "Enum value 1"
     enval2 = "Enum value 2"
 
 
@@ -21,38 +19,13 @@ class UselessThing(Base):
     useless_enum = Column(UselessEnum.db_type(), nullable=True)
 
 
-class TestEnumSymbol:
-    def test_pickle(self):
-        """Test that EnumSymbol objects can be pickled and unpickled."""
-        obj = UselessEnum.enval1
-        pickled = pickle.loads(pickle.dumps(obj))
-
-        assert obj == pickled
-
-    def test_iter(self):
-        """Test that EnumSymbol objects can be iterated."""
-        obj = UselessEnum.enval1
-        obj_iter = iter(obj)
-
-        assert next(obj_iter) == obj.value
-        assert next(obj_iter) == obj.description
-
-        with pytest.raises(StopIteration):
-            next(obj_iter)
-
-    def test_db_type(self):
-        """Test the db_type() method."""
-        db_type = UselessEnum.db_type()
-
-        assert db_type.enum == UselessEnum
-
-    def test_comparator(self):
-        """Test the __lt__() method."""
-        assert UselessEnum.enval1 < UselessEnum.enval2
-
-
 @pytest.mark.usefixtures("db_sync_model_initialized")
 class TestEnum:
+    def test_db_type_cached(self):
+        """Test that the result of cls.db_type() is cached and reused."""
+        # It needs to exist already because of its use in UselessThing above.
+        assert UselessEnum._db_type is UselessEnum.db_type()
+
     def test_set_enum(self):
         """Test that an enum attribute can be set."""
         obj = UselessThing(useless_enum=UselessEnum.enval1)
