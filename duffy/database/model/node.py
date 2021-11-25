@@ -1,36 +1,16 @@
-from sqlalchemy import Column, ForeignKey, Integer, Table, Text, UnicodeText
+from sqlalchemy import Column, ForeignKey, Integer, Text, UnicodeText
 from sqlalchemy.orm import relationship
 
-from . import Base
-from .util import DeclEnum
+from .. import Base
+from ..util import DeclEnum
+from .session import Session
 
 
-class User(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True, nullable=False)
-    ssh_key = Column(Text, nullable=False)
-
-
-users_projects_table = Table(
-    "users_projects",
-    Base.metadata,
-    Column("user_id", ForeignKey("users.id"), nullable=False),
-    Column("project_id", ForeignKey("projects.id"), nullable=False),
-)
-
-
-class Project(Base):
-    __tablename__ = "projects"
-    id = Column(Integer, primary_key=True, nullable=False)
-    name = Column(UnicodeText, unique=True, nullable=False)
-    users = relationship(User, secondary=users_projects_table, backref="projects")
-
-
-class Session(Base):
-    __tablename__ = "sessions"
-    id = Column(Integer, primary_key=True, nullable=False)
-    project_id = Column(Integer, ForeignKey(Project.id), nullable=False)
-    project = relationship(Project, backref="sessions")
+class NodeType(DeclEnum):
+    virtual = "virtual"
+    physical = "physical"
+    opennebula = "opennebula"
+    seamicro = "seamicro"
 
 
 class NodeState(DeclEnum):
@@ -48,10 +28,10 @@ class Node(Base):
     __tablename__ = "nodes"
     __mapper_args__ = {"polymorphic_on": "type", "with_polymorphic": "*"}
     id = Column(Integer, primary_key=True, nullable=False)
-    type = Column(Text, nullable=False)
+    type = Column(NodeType.db_type(), nullable=False)
     hostname = Column(Text, nullable=False)
     ipaddr = Column(Text, nullable=False)
-    state = Column(NodeState.db_type(), nullable=False)
+    state = Column(NodeState.db_type(), nullable=False, default=NodeState.ready)
     comment = Column(UnicodeText, nullable=True)
 
 
@@ -63,9 +43,15 @@ class VirtualNodeFlavour(DeclEnum):
 
 class VirtualNode(Node):
     __tablename__ = "virtualnodes"
-    __mapper_args__ = {"polymorphic_identity": "virtual"}
+    __mapper_args__ = {"polymorphic_identity": NodeType.virtual}
     id = Column(Integer, ForeignKey(Node.id), primary_key=True, nullable=False)
     flavour = Column(VirtualNodeFlavour.db_type(), nullable=False)
+
+
+class OpenNebulaNode(VirtualNode):
+    __tablename__ = "opennebulanodes"
+    __mapper_args__ = {"polymorphic_identity": NodeType.opennebula}
+    id = Column(Integer, ForeignKey(VirtualNode.id), primary_key=True, nullable=False)
 
 
 class Chassis(Base):
@@ -77,10 +63,16 @@ class Chassis(Base):
 
 class PhysicalNode(Node):
     __tablename__ = "physicalnodes"
-    __mapper_args__ = {"polymorphic_identity": "physical"}
+    __mapper_args__ = {"polymorphic_identity": NodeType.physical}
     id = Column(Integer, ForeignKey(Node.id), primary_key=True, nullable=False)
-    chassis_id = Column(Integer, ForeignKey(Chassis.id), nullable=False)
+    chassis_id = Column(Integer, ForeignKey(Chassis.id), nullable=True)
     chassis = relationship(Chassis)
+
+
+class SeaMicroNode(PhysicalNode):
+    __tablename__ = "seamicronodes"
+    __mapper_args__ = {"polymorphic_identity": NodeType.seamicro}
+    id = Column(Integer, ForeignKey(PhysicalNode.id), primary_key=True, nullable=False)
 
 
 class SessionNode(Base):

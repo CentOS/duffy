@@ -55,35 +55,19 @@ class ModelTestBase:
         return {}
 
 
-class TestUser(ModelTestBase):
-    klass = model.User
-    attrs = {"ssh_key": "1234"}
-
-    def test_projects_backref(self, db_sync_obj):
-        db_sync_obj.projects = [model.Project(name=f"Project {num}") for num in range(1, 6)]
-        for project in db_sync_obj.projects:
-            assert project.users == [db_sync_obj]
-
-
 class TestProject(ModelTestBase):
     klass = model.Project
-    attrs = {"name": "My Fancy Project"}
-
-    def _db_obj_get_dependencies(self):
-        user = model.User(ssh_key="6789")
-        return {"users": [user]}
-
-    def test_users_backref(self, db_sync_obj):
-        db_sync_obj.users = [model.User(ssh_key="0xc0ffee") for i in range(5)]
-        for user in db_sync_obj.users:
-            assert user.projects == [db_sync_obj]
+    attrs = {
+        "name": "My Fancy Project",
+        "ssh_key": "this is a public ssh key",
+    }
 
 
 class TestSession(ModelTestBase):
     klass = model.Session
 
     def _db_obj_get_dependencies(self):
-        project = model.Project(name="My Other Project")
+        project = model.Project(name="My Other Project", ssh_key="my other public SSH key")
         return {"project": project}
 
 
@@ -106,11 +90,21 @@ def _gen_node_attrs(**addl_attrs: Dict[str, Any]) -> dict:
 
 class TestVirtualNode(ModelTestBase):
     klass = model.VirtualNode
-    attrs = _gen_node_attrs(flavour="large", comment="Hello!")
+    attrs = _gen_node_attrs(flavour="medium", comment="Hello!")
+
+
+class TestOpenNebulaNode(ModelTestBase):
+    klass = model.OpenNebulaNode
+    attrs = _gen_node_attrs(flavour="large", comment="Good Day!")
 
 
 class TestPhysicalNode(ModelTestBase):
     klass = model.PhysicalNode
+    attrs = _gen_node_attrs()
+
+
+class TestSeaMicroNode(ModelTestBase):
+    klass = model.SeaMicroNode
     attrs = _gen_node_attrs()
 
     def _db_obj_get_dependencies(self):
@@ -122,9 +116,9 @@ class TestSessionNode(ModelTestBase):
     attrs = {"distro_type": "CentOS", "distro_version": "8Stream"}
 
     def _db_obj_get_dependencies(self):
-        project = model.Project(name="World Domination")
+        project = model.Project(name="World Domination", ssh_key="Muahahahaha!")
         session = model.Session(project=project)
         chassis = model.Chassis(name="Celestion Greenback")
-        node = model.PhysicalNode(**_gen_node_attrs(chassis=chassis))
+        node = model.SeaMicroNode(**_gen_node_attrs(chassis=chassis))
 
         return {"session": session, "node": node}
