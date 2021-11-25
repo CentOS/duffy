@@ -37,7 +37,7 @@ def get_shell_variables(shell_type: str):
     # Insert all DB model classes into the local namespace.
     for objname in dir(model):
         obj = getattr(model, objname)
-        if isinstance(obj, type) and obj.__module__ == "duffy.database.model":
+        if isinstance(obj, type) and obj.__module__.startswith("duffy.database.model."):
             variables[objname] = obj
 
     return variables
