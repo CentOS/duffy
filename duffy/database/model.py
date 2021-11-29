@@ -46,7 +46,7 @@ class NodeState(DeclEnum):
 
 class Node(Base):
     __tablename__ = "nodes"
-    __mapper_args__ = {"polymorphic_on": "type"}
+    __mapper_args__ = {"polymorphic_on": "type", "with_polymorphic": "*"}
     id = Column(Integer, primary_key=True, nullable=False)
     type = Column(Text, nullable=False)
     hostname = Column(Text, nullable=False)
