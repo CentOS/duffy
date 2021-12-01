@@ -1,11 +1,6 @@
 from sys import version_info
 from unittest import mock
 
-if not hasattr(mock, "AsyncMock"):
-    # This is missing on Python 3.7. The tests will be skipped but ensure that decorators don't
-    # break.
-    mock.AsyncMock = None
-
 import pytest
 
 from duffy import configuration, database, exceptions
@@ -34,7 +29,6 @@ def test_init_sync_model(get_sync_engine, SyncDBSession):
     SyncDBSession.configure.assert_called_once_with(bind=sentinel)
 
 
-@pytest.mark.skipif(version_info < (3, 8), reason="requires Python >= 3.8")
 @pytest.mark.asyncio
 @pytest.mark.duffy_config(TEST_CONFIG)
 @mock.patch("duffy.database.DBSession", new_callable=mock.AsyncMock)
@@ -53,7 +47,6 @@ async def test_init_async_model(get_async_engine, DBSession):
     DBSession.configure.assert_called_once_with(bind=sentinel)
 
 
-@pytest.mark.skipif(version_info < (3, 8), reason="requires Python >= 3.8")
 @pytest.mark.asyncio
 @mock.patch("duffy.database.init_async_model")
 @mock.patch("duffy.database.init_sync_model")

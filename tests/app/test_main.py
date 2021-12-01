@@ -7,6 +7,8 @@ class TestMain:
     @pytest.mark.parametrize(
         "path",
         (
+            "/api/v1/chassis",
+            "/api/v1/nodes",
             "/api/v1/projects",
             "/api/v1/sessions",
         ),
