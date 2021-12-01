@@ -2,7 +2,7 @@ from sqlalchemy import Column, ForeignKey, Integer, Text, UnicodeText
 from sqlalchemy.orm import relationship
 
 from .. import Base
-from ..util import DeclEnum
+from ..util import CreatableMixin, DeclEnum, RetirableMixin
 from .session import Session
 
 
@@ -24,9 +24,13 @@ class NodeState(str, DeclEnum):
     failed = "failed"
 
 
-class Node(Base):
+class Node(Base, CreatableMixin, RetirableMixin):
     __tablename__ = "nodes"
-    __mapper_args__ = {"polymorphic_on": "type", "with_polymorphic": "*"}
+    __mapper_args__ = {
+        "polymorphic_on": "type",
+        "with_polymorphic": "*",
+        "eager_defaults": True,
+    }
     id = Column(Integer, primary_key=True, nullable=False)
     type = Column(NodeType.db_type(), nullable=False)
     hostname = Column(Text, nullable=False)
@@ -54,8 +58,9 @@ class OpenNebulaNode(VirtualNode):
     id = Column(Integer, ForeignKey(VirtualNode.id), primary_key=True, nullable=False)
 
 
-class Chassis(Base):
+class Chassis(Base, CreatableMixin, RetirableMixin):
     __tablename__ = "chassis"
+    __mapper_args__ = {"eager_defaults": True}
     id = Column(Integer, primary_key=True)
     name = Column(UnicodeText, nullable=False, unique=True)
     description = Column(UnicodeText, nullable=True)
