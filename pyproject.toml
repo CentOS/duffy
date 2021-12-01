@@ -6,10 +6,9 @@ authors = ["Nils Philippsen <nils@redhat.com>", "Vipul Siddharth <siddharthvipul
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 fastapi = "^0.70.0"
 SQLAlchemy = "^1.4.25"
-importlib-metadata = {version = "^4.8.1", python = "<3.8"}
 click = "^8.0.3"
 uvicorn = "^0.15.0"
 PyYAML = "^6.0"

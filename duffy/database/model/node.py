@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, Text, UnicodeText
+from sqlalchemy import Column, ForeignKey, Index, Integer, Text, UnicodeText
 from sqlalchemy.orm import relationship
 
 from .. import Base
@@ -31,6 +31,23 @@ class Node(Base, CreatableMixin, RetirableMixin):
         "with_polymorphic": "*",
         "eager_defaults": True,
     }
+    __table_args__ = (
+        Index(
+            "active_hostname_index",
+            "hostname",
+            unique=True,
+            sqlite_where=Column("retired_at") == None,  # noqa: E711
+            postgresql_where=Column("retired_at") == None,  # noqa: E711
+        ),
+        Index(
+            "active_ipaddr_index",
+            "ipaddr",
+            unique=True,
+            sqlite_where=Column("retired_at") == None,  # noqa: E711
+            postgresql_where=Column("retired_at") == None,  # noqa: E711
+        ),
+    )
+
     id = Column(Integer, primary_key=True, nullable=False)
     type = Column(NodeType.db_type(), nullable=False)
     hostname = Column(Text, nullable=False)
