@@ -15,7 +15,7 @@ router = APIRouter(prefix="/chassis")
 
 
 # http get http://localhost:8080/api/v1/chassis
-@router.get("", response_model=ChassisResultCollection)
+@router.get("", response_model=ChassisResultCollection, tags=["chassis"])
 async def get_all_chassis():
     """
     Return all chassis
@@ -27,10 +27,10 @@ async def get_all_chassis():
 
 
 # http get http://localhost:8080/api/v1/chassis/2
-@router.get("/{id}", response_model=ChassisResult)
+@router.get("/{id}", response_model=ChassisResult, tags=["chassis"])
 async def get_chassis(id: int):
     """
-    Return the chassis with the specified ID
+    Return the chassis with the specified **ID**
     """
     chassis = (await DBSession.execute(select(Chassis).filter_by(id=id))).scalar_one_or_none()
 
@@ -42,10 +42,10 @@ async def get_chassis(id: int):
 
 # http --json post http://localhost:8080/api/v1/chassis name="A Chassis with a unique name" \
 #      description="A funky but optional description."
-@router.post("", status_code=HTTP_201_CREATED, response_model=ChassisResult)
+@router.post("", status_code=HTTP_201_CREATED, response_model=ChassisResult, tags=["chassis"])
 async def create_chassis(data: ChassisCreateModel):
     """
-    Create a chassis with the specified name and optional description
+    Create a chassis with the specified **name** and optional **description**
     """
     chassis = Chassis(name=data.name, description=data.description)
 
@@ -59,10 +59,10 @@ async def create_chassis(data: ChassisCreateModel):
 
 
 # http delete http://localhost:8080/api/v1/chassis/2
-@router.delete("/{id}", response_model=ChassisResult)
+@router.delete("/{id}", response_model=ChassisResult, tags=["chassis"])
 async def delete_chassis(id: int):
     """
-    Delete the chassis with the specified ID
+    Delete the chassis with the specified **ID**
     """
     chassis = (await DBSession.execute(select(Chassis).filter_by(id=id))).scalar_one_or_none()
 

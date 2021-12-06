@@ -15,7 +15,7 @@ router = APIRouter(prefix="/tenants")
 
 
 # http get http://localhost:8080/api/v1/tenants
-@router.get("", response_model=TenantResultCollection)
+@router.get("", response_model=TenantResultCollection, tags=["tenants"])
 async def get_all_tenants():
     """
     Return all tenants
@@ -27,10 +27,10 @@ async def get_all_tenants():
 
 
 # http get http://localhost:8080/api/v1/tenants/2
-@router.get("/{id}", response_model=TenantResult)
+@router.get("/{id}", response_model=TenantResult, tags=["tenants"])
 async def get_tenant(id: int):
     """
-    Return the tenant with the specified ID
+    Return the tenant with the specified **ID**
     """
     tenant = (await DBSession.execute(select(Tenant).filter_by(id=id))).scalar_one_or_none()
 
@@ -41,10 +41,10 @@ async def get_tenant(id: int):
 
 
 # http --json post http://localhost:8080/api/v1/tenants name="A tenant with a unique name"
-@router.post("", status_code=HTTP_201_CREATED, response_model=TenantResult)
+@router.post("", status_code=HTTP_201_CREATED, response_model=TenantResult, tags=["tenants"])
 async def create_tenant(data: TenantCreateModel):
     """
-    Create a tenant with the specified name
+    Create a tenant with the specified **name**
     """
     tenant = Tenant(name=data.name, is_admin=data.is_admin, ssh_key=data.ssh_key)
 
@@ -58,10 +58,10 @@ async def create_tenant(data: TenantCreateModel):
 
 
 # http delete http://localhost:8080/api/v1/tenant/2
-@router.delete("/{id}", response_model=TenantResult)
+@router.delete("/{id}", response_model=TenantResult, tags=["tenants"])
 async def delete_tenant(id: int):
     """
-    Delete the tenant with the specified ID
+    Delete the tenant with the specified **ID**
     """
     tenant = (await DBSession.execute(select(Tenant).filter_by(id=id))).scalar_one_or_none()
 

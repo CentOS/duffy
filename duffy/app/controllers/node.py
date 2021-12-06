@@ -16,16 +16,22 @@ from ...database.model import Chassis, Node, OpenNebulaNode, SeaMicroNode
 router = APIRouter(prefix="/nodes")
 
 
-@router.get("", response_model=NodeResultCollection)
+@router.get("", response_model=NodeResultCollection, tags=["nodes"])
 async def get_all_nodes():
+    """
+    Return all nodes
+    """
     query = select(Node).options(selectinload("*"))
     results = await DBSession.execute(query)
 
     return {"action": "get", "nodes": results.scalars().all()}
 
 
-@router.get("/{id}", response_model=NodeResult)
+@router.get("/{id}", response_model=NodeResult, tags=["nodes"])
 async def get_node(id: int):
+    """
+    Return the node with the specified **ID**
+    """
     query = select(Node).filter_by(id=id).options(selectinload("*"))
     result = await DBSession.execute(query)
     node = result.scalar_one_or_none()
@@ -36,8 +42,12 @@ async def get_node(id: int):
     return {"action": "get", "node": node}
 
 
-@router.post("", status_code=HTTP_201_CREATED, response_model=NodeResult)
+@router.post("", status_code=HTTP_201_CREATED, response_model=NodeResult, tags=["nodes"])
 async def create_node(data: concrete_node_create_models):
+    """
+    Create a node with the specified **type**, **hostname**, **ip address**, **comment** and
+    **flavour**
+    """
     data.ipaddr = str(data.ipaddr)
 
     args = {
@@ -74,8 +84,11 @@ async def create_node(data: concrete_node_create_models):
     return {"action": "post", "node": node}
 
 
-@router.delete("/{id}", response_model=NodeResult)
+@router.delete("/{id}", response_model=NodeResult, tags=["nodes"])
 async def delete_node(id: int):
+    """
+    Deletes the node with the specified **ID**
+    """
     node = (
         await DBSession.execute(select(Node).filter_by(id=id).options(selectinload("*")))
     ).scalar_one_or_none()

@@ -16,7 +16,7 @@ router = APIRouter(prefix="/sessions")
 
 
 # http get http://localhost:8080/api/v1/sessions
-@router.get("", response_model=SessionResultCollection)
+@router.get("", response_model=SessionResultCollection, tags=["sessions"])
 async def get_all_sessions():
     """
     Returns all sessions
@@ -27,10 +27,10 @@ async def get_all_sessions():
 
 
 # http get http://localhost:8080/api/v1/sessions/2
-@router.get("/{id}", response_model=SessionResult)
+@router.get("/{id}", response_model=SessionResult, tags=["sessions"])
 async def get_session(id: int):
     """
-    Returns a session with the specified ID
+    Returns a session with the specified **ID**
     """
     session = (
         await DBSession.execute(
@@ -43,10 +43,10 @@ async def get_session(id: int):
 
 
 # http --json post http://localhost:8080/api/v1/sessions tenant_id=2
-@router.post("", status_code=HTTP_201_CREATED, response_model=SessionResult)
+@router.post("", status_code=HTTP_201_CREATED, response_model=SessionResult, tags=["sessions"])
 async def create_session(data: SessionCreateModel):
     """
-    Creates a session with the specified tenant ID
+    Creates a session with the specified **tenant ID**
     """
     tenant = (
         await DBSession.execute(select(Tenant).filter_by(id=data.tenant_id))
@@ -65,10 +65,10 @@ async def create_session(data: SessionCreateModel):
 
 
 # http delete http://localhost:8080/api/v1/sessions/2
-@router.delete("/{id}", response_model=SessionResult)
+@router.delete("/{id}", response_model=SessionResult, tags=["sessions"])
 async def delete_session(id: int):
     """
-    Deletes the session with the specified ID
+    Deletes the session with the specified **ID**
     """
     session = (
         await DBSession.execute(
