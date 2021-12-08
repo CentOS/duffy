@@ -1,5 +1,6 @@
 import logging
 import sys
+from typing import Tuple
 
 import click
 import uvicorn
@@ -8,6 +9,7 @@ from . import database, shell
 from .configuration import config, read_configuration
 from .database.setup import setup_db_schema
 from .exceptions import DuffyConfigurationError
+from .tasks import start_worker
 from .version import __version__
 
 DEFAULT_CONFIG_FILE = "/etc/duffy.yaml"
@@ -87,6 +89,16 @@ def run_shell(shell_type: str):
         sys.exit(1)
 
     shell.embed_shell(shell_type=shell_type)
+
+
+# Run the backend task worker
+
+
+@cli.command(context_settings={"ignore_unknown_options": True, "help_option_names": []})
+@click.argument("worker_args", nargs=-1, type=click.UNPROCESSED)
+def worker(worker_args: Tuple[str]):
+    """Start a Celery worker to process backend tasks."""
+    start_worker(worker_args=worker_args)
 
 
 # Run the web app
