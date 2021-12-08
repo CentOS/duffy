@@ -86,6 +86,16 @@ def test_shell(init_model, embed_shell, config_error, shell_type):
         init_model.assert_not_called()
 
 
+@mock.patch("duffy.cli.start_worker")
+def test_worker(start_worker):
+    runner = CliRunner()
+
+    result = runner.invoke(cli, ["worker", "a", "-b", "c", "--dee"])
+
+    assert result.exit_code == 0
+    start_worker.assert_called_once_with(worker_args=("a", "-b", "c", "--dee"))
+
+
 @pytest.mark.parametrize(
     "config_error, parameters",
     [
