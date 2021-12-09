@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -10,7 +10,7 @@ from .common import APIResult, CreatableMixin, RetirableMixin
 
 class TenantBase(BaseModel, ABC):
     name: str
-    is_admin: bool
+    is_admin: Optional[bool]
     ssh_key: str
 
     class Config:
