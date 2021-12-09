@@ -52,7 +52,12 @@ class Node(Base, CreatableMixin, RetirableMixin):
     type = Column(NodeType.db_type(), nullable=False)
     hostname = Column(Text, nullable=False)
     ipaddr = Column(Text, nullable=False)
-    state = Column(NodeState.db_type(), nullable=False, default=NodeState.ready)
+    state = Column(
+        NodeState.db_type(),
+        nullable=False,
+        default=NodeState.ready,
+        server_default=NodeState.ready.value,
+    )
     comment = Column(UnicodeText, nullable=True)
 
 
