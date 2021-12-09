@@ -64,7 +64,7 @@ class DeclEnumType(SchemaType, TypeDecorator):
 
     @classmethod
     def _type_name(cls, clsname):
-        return "ck_" + camel_case_to_lower_with_underscores(clsname)
+        return camel_case_to_lower_with_underscores(clsname) + "_enum"
 
     def _set_table(self, table, column):
         self.impl._set_table(table, column)
