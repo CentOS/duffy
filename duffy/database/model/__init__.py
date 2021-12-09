@@ -10,5 +10,5 @@ from .node import (  # noqa: F401
     SessionNode,
     VirtualNode,
 )
-from .project import Project  # noqa: F401
 from .session import Session  # noqa: F401
+from .tenant import Tenant  # noqa: F401

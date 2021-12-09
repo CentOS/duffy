@@ -4,7 +4,7 @@ from typing import List
 from pydantic import BaseModel
 
 from .common import APIResult, CreatableMixin, RetirableMixin
-from .project import ProjectModel
+from .tenant import TenantModel
 
 # session model
 
@@ -15,12 +15,12 @@ class SessionBase(BaseModel, ABC):
 
 
 class SessionCreateModel(SessionBase):
-    project_id: int
+    tenant_id: int
 
 
 class SessionModel(SessionBase, CreatableMixin, RetirableMixin):
     id: int
-    project: ProjectModel
+    tenant: TenantModel
 
 
 # API results
