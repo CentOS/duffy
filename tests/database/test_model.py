@@ -55,10 +55,11 @@ class ModelTestBase:
         return {}
 
 
-class TestProject(ModelTestBase):
-    klass = model.Project
+class TestTenant(ModelTestBase):
+    klass = model.Tenant
     attrs = {
-        "name": "My Fancy Project",
+        "name": "My Fancy Tenant",
+        "is_admin": False,
         "ssh_key": "this is a public ssh key",
     }
 
@@ -67,8 +68,8 @@ class TestSession(ModelTestBase):
     klass = model.Session
 
     def _db_obj_get_dependencies(self):
-        project = model.Project(name="My Other Project", ssh_key="my other public SSH key")
-        return {"project": project}
+        tenant = model.Tenant(name="My Other Tenant", ssh_key="my other public SSH key")
+        return {"tenant": tenant}
 
 
 class TestChassis(ModelTestBase):
@@ -116,8 +117,8 @@ class TestSessionNode(ModelTestBase):
     attrs = {"distro_type": "CentOS", "distro_version": "8Stream"}
 
     def _db_obj_get_dependencies(self):
-        project = model.Project(name="World Domination", ssh_key="Muahahahaha!")
-        session = model.Session(project=project)
+        tenant = model.Tenant(name="World Domination", is_admin=True, ssh_key="Muahahahaha!")
+        session = model.Session(tenant=tenant)
         chassis = model.Chassis(name="Celestion Greenback")
         node = model.SeaMicroNode(**_gen_node_attrs(chassis=chassis))
 

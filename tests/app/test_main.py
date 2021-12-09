@@ -10,7 +10,7 @@ class TestMain:
     api_paths = (
         "/api/v1/chassis",
         "/api/v1/nodes",
-        "/api/v1/projects",
+        "/api/v1/tenants",
         "/api/v1/sessions",
     )
 

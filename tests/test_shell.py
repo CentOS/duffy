@@ -35,7 +35,7 @@ def test_get_shell_variables(IPython, with_ipython, with_autoawait):
 
     assert variables["SyncDBSession"] is database.SyncDBSession
     # Do a spot check of one model class.
-    assert variables["Project"] is model.Project
+    assert variables["Tenant"] is model.Tenant
 
     if with_ipython and with_autoawait:
         assert variables["DBSession"] is database.DBSession
