@@ -13,7 +13,7 @@ class TestSession(BaseTestController):
     }
 
     async def test_create_unknown_tenant(self, client):
-        response = await self._create_obj(client, add_attrs={"tenant_id": 1})
+        response = await self._create_obj(client, attrs={"tenant_id": 1})
         assert response.status_code == HTTP_422_UNPROCESSABLE_ENTITY
         result = response.json()
         assert "detail" in result

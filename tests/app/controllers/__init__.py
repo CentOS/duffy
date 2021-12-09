@@ -44,10 +44,18 @@ class BaseTestController:
                 ...
 
                 response = await self._create_obj(
-                    client, add_attrs={"foo_id": bar1["id"]}
+                    client, attrs={"foo_id": bar1["id"]}
                 )
                 result = response.json()
                 bar2 = result["bar"]
+
+                ...
+
+                response = await self._create_obj(
+                    client, attrs={"new_attrs": {...}}, merge_cls_attrs=False
+                )
+                result = response.json()
+                bar3 = result["bar"]
 
                 ...
     """
@@ -63,8 +71,11 @@ class BaseTestController:
         return self.name + "s"
 
     @classmethod
-    async def _create_obj(cls, client, add_attrs: dict = None):
-        attrs = {**(cls.attrs or {}), **(add_attrs or {})}
+    async def _create_obj(cls, client, attrs: dict = None, merge_cls_attrs: bool = True):
+        if merge_cls_attrs:
+            attrs = {**(cls.attrs or {}), **(attrs or {})}
+        else:
+            attrs = attrs or {}
 
         for name, value in attrs.items():
             try:
@@ -137,7 +148,7 @@ class BaseTestController:
         create_response = await self._create_obj(client)
 
         response = await self._create_obj(
-            client, add_attrs=self._add_attrs_from_response(create_response)
+            client, attrs=self._add_attrs_from_response(create_response)
         )
         if self.unique:
             assert response.status_code == HTTP_409_CONFLICT

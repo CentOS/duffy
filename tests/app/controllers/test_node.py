@@ -30,7 +30,7 @@ class TestSeaMicroNode(BaseTestController):
     unique = True
 
     async def test_create_unknown_chassis(self, client):
-        response = await self._create_obj(client, add_attrs={"chassis_id": 1})
+        response = await self._create_obj(client, attrs={"chassis_id": 1})
         assert response.status_code == HTTP_422_UNPROCESSABLE_ENTITY
         result = response.json()
         assert "detail" in result
