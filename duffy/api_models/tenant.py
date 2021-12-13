@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import UUID4, BaseModel
 
 from .common import APIResult, CreatableMixin, RetirableMixin
 
@@ -18,7 +18,7 @@ class TenantBase(BaseModel, ABC):
 
 
 class TenantCreateModel(TenantBase):
-    pass
+    api_key: UUID4
 
 
 class TenantModel(TenantBase, CreatableMixin, RetirableMixin):
