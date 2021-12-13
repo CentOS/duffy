@@ -16,6 +16,7 @@ alembic = "^1.7.5"
 ipython = {version = "^7.29.0", optional = true}
 psycopg2 = {version = "^2.9.2", optional = true}
 celery = {version = "^5.2.1", extras = ["redis"]}
+bcrypt = "^3.2.0"
 
 [tool.poetry.dev-dependencies]
 black = "^21.9b0"

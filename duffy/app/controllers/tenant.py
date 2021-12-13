@@ -40,14 +40,15 @@ async def get_tenant(id: int):
     return {"action": "get", "tenant": tenant}
 
 
-# http --json post http://localhost:8080/api/v1/tenants name="A tenant with a unique name"
+# http --json post http://localhost:8080/api/v1/tenants name="Unique name"
 @router.post("", status_code=HTTP_201_CREATED, response_model=TenantResult, tags=["tenants"])
 async def create_tenant(data: TenantCreateModel):
     """
     Create a tenant with the specified **name**
     """
-    tenant = Tenant(name=data.name, is_admin=data.is_admin, ssh_key=data.ssh_key)
-
+    tenant = Tenant(
+        name=data.name, is_admin=data.is_admin, api_key=data.api_key, ssh_key=data.ssh_key
+    )
     DBSession.add(tenant)
     try:
         await DBSession.commit()

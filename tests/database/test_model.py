@@ -1,4 +1,5 @@
 from typing import Any, Dict
+from uuid import uuid4
 
 import pytest
 from sqlalchemy import select
@@ -69,15 +70,28 @@ class TestTenant(ModelTestBase):
     attrs = {
         "name": "My Fancy Tenant",
         "is_admin": False,
+        "api_key": uuid4(),
         "ssh_key": "this is a public ssh key",
     }
+    no_validate_attrs = ("api_key",)
+
+    @pytest.mark.parametrize("wrong_key", (False, True))
+    def test_validate_api_key(self, wrong_key, db_sync_obj):
+        if wrong_key:
+            assert not db_sync_obj.validate_api_key(uuid4())
+        else:
+            assert db_sync_obj.validate_api_key(self.attrs["api_key"])
 
 
 class TestSession(ModelTestBase):
     klass = model.Session
 
     def _db_obj_get_dependencies(self):
-        tenant = model.Tenant(name="My Other Tenant", ssh_key="my other public SSH key")
+        tenant = model.Tenant(
+            name="My Other Tenant",
+            api_key=uuid4(),
+            ssh_key="my other public SSH key",
+        )
         return {"tenant": tenant}
 
 
@@ -126,7 +140,12 @@ class TestSessionNode(ModelTestBase):
     attrs = {"distro_type": "CentOS", "distro_version": "8Stream"}
 
     def _db_obj_get_dependencies(self):
-        tenant = model.Tenant(name="World Domination", is_admin=True, ssh_key="Muahahahaha!")
+        tenant = model.Tenant(
+            name="World Domination",
+            is_admin=True,
+            api_key=uuid4(),
+            ssh_key="Muahahahaha!",
+        )
         session = model.Session(tenant=tenant)
         chassis = model.Chassis(name="Celestion Greenback")
         node = model.SeaMicroNode(**_gen_node_attrs(chassis=chassis))
