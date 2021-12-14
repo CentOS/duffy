@@ -66,7 +66,11 @@ def cli(ctx, loglevel):
 @cli.command()
 def setup_db():
     """Create tables from the database model."""
-    setup_db_schema()
+    try:
+        setup_db_schema()
+    except DuffyConfigurationError as exc:
+        log.error("Configuration key missing or wrong: %s", exc.args[0])
+        sys.exit(1)
 
 
 # Interactive shell

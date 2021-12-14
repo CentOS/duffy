@@ -35,12 +35,19 @@ def test_cli_suggestion():
     assert "Error: No such option: --helo" in result.output
 
 
+@pytest.mark.parametrize("config_error", (False, True))
 @mock.patch("duffy.cli.setup_db_schema")
-def test_setup_db(setup_db_schema):
+def test_setup_db(setup_db_schema, config_error, caplog):
+    if config_error:
+        setup_db_schema.side_effect = DuffyConfigurationError("database")
     runner = CliRunner()
     result = runner.invoke(cli, [f"--config={EXAMPLE_CONFIG.absolute()}", "setup-db"])
-    assert result.exit_code == 0
     setup_db_schema.assert_called_once_with()
+    if not config_error:
+        assert result.exit_code == 0
+    else:
+        assert result.exit_code != 0
+        assert "Configuration key missing or wrong: database" in caplog.messages
 
 
 @pytest.mark.parametrize(
