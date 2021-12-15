@@ -18,6 +18,9 @@ class BaseTestController:
                 the API. Values can be tuples of other controller test
                 classes and an item name to create such objects and use
                 the respective items in the result.
+        no_response_attrs:
+                A sequence of attribute names which are not returned in
+                a response from the API endpoint.
         unique: Whether or not objects with the same attributes can
                 exist more than once. If it is a string, check whether
                 it is in the error detail (case-insensitively). If it is
@@ -63,6 +66,7 @@ class BaseTestController:
     name = None
     path = None
     attrs = {}
+    no_response_attrs = ()
     unique = False
 
     @property
@@ -95,13 +99,17 @@ class BaseTestController:
         return response
 
     @classmethod
-    def _verify_item(cls, item, attrs=None):
+    def _verify_item(cls, item, attrs=None, no_response_attrs=None):
         if not attrs:
             attrs = cls.attrs
+        if not no_response_attrs:
+            no_response_attrs = cls.no_response_attrs
         # The `id` attribute of any created object must be 1 because no objects exist in the
         # database before running this test, the `db_*_model_initialized` fixtures take care of it.
         assert item["id"] == 1
         for key, value in attrs.items():
+            if key in no_response_attrs:
+                continue
             try:
                 subcls, _ = cls.attrs[key]
             except (TypeError, ValueError):
@@ -126,6 +134,8 @@ class BaseTestController:
 
         retval = {}
         for name, value in cls.attrs.items():
+            if name in cls.no_response_attrs:
+                continue
             try:
                 subcls, item = value
             except (TypeError, ValueError):
