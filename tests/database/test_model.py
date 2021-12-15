@@ -10,6 +10,7 @@ from duffy.database import DBSession, SyncDBSession, model
 class ModelTestBase:
     klass = None
     attrs = {}
+    no_validate_attrs = ()
 
     def test_create_obj(self, db_sync_obj):
         pass
@@ -18,10 +19,14 @@ class ModelTestBase:
         result = SyncDBSession.execute(select(self.klass))
         obj = result.scalar_one()
         for key, value in self.attrs.items():
+            if key in self.no_validate_attrs:
+                continue
             objvalue = getattr(obj, key)
             if isinstance(objvalue, (int, str)):
                 assert objvalue == value
         for key, value in self._db_obj_get_dependencies().items():
+            if key in self.no_validate_attrs:
+                continue
             objvalue = getattr(obj, key)
             if isinstance(objvalue, (int, str)):
                 assert objvalue == value
@@ -38,10 +43,14 @@ class ModelTestBase:
         result = await DBSession.execute(select(self.klass).options(selectinload("*")))
         obj = result.scalar_one()
         for key, value in self.attrs.items():
+            if key in self.no_validate_attrs:
+                continue
             objvalue = getattr(obj, key)
             if isinstance(objvalue, (int, str)):
                 assert objvalue == value
         for key, value in self._db_obj_get_dependencies().items():
+            if key in self.no_validate_attrs:
+                continue
             objvalue = getattr(obj, key)
             if isinstance(objvalue, (int, str)):
                 assert objvalue == value
