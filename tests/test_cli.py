@@ -58,9 +58,7 @@ def test_shell(init_model, embed_shell, config_error, shell_type):
         args.append(f"--shell-type={shell_type}")
 
     if config_error:
-        init_model.side_effect = DuffyConfigurationError(
-            "Configuration key missing or wrong: database"
-        )
+        init_model.side_effect = DuffyConfigurationError("database")
 
     runner = CliRunner()
 
