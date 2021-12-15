@@ -5,7 +5,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from duffy.database import DBSession, SyncDBSession, model
+from duffy.database import DBSession, SyncDBSession, model, types
 
 
 class ModelTestBase:
@@ -104,7 +104,7 @@ def _gen_node_attrs(**addl_attrs: Dict[str, Any]) -> dict:
     attrs = {
         "hostname": "lolcathost",
         "ipaddr": "192.0.2.10",  # TEST-NET-1
-        "state": model.NodeState.ready,
+        "state": types.NodeState.ready,
     }
 
     attrs.update(addl_attrs)
