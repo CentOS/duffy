@@ -2,26 +2,9 @@ from sqlalchemy import Column, ForeignKey, Index, Integer, Text, UnicodeText
 from sqlalchemy.orm import relationship
 
 from .. import Base
-from ..util import CreatableMixin, DeclEnum, RetirableMixin
+from ..types import NodeState, NodeType, VirtualNodeFlavour
+from ..util import CreatableMixin, RetirableMixin
 from .session import Session
-
-
-class NodeType(str, DeclEnum):
-    virtual = "virtual"
-    physical = "physical"
-    opennebula = "opennebula"
-    seamicro = "seamicro"
-
-
-class NodeState(str, DeclEnum):
-    ready = "ready"
-    active = "active"
-    contextualizing = "contextualizing"
-    deployed = "deployed"
-    deprovisioning = "deprovisioning"
-    done = "done"
-    failing = "failing"
-    failed = "failed"
 
 
 class Node(Base, CreatableMixin, RetirableMixin):
@@ -59,12 +42,6 @@ class Node(Base, CreatableMixin, RetirableMixin):
         server_default=NodeState.ready.value,
     )
     comment = Column(UnicodeText, nullable=True)
-
-
-class VirtualNodeFlavour(str, DeclEnum):
-    small = "small"
-    medium = "medium"
-    large = "large"
 
 
 class VirtualNode(Node):

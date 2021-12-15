@@ -3,7 +3,7 @@ from typing import List, Literal, Optional, Union
 
 from pydantic import BaseModel, IPvAnyAddress
 
-from ..database.model import NodeState, NodeType, VirtualNodeFlavour
+from ..database.types import NodeState, NodeType, VirtualNodeFlavour
 from .chassis import ChassisModel
 from .common import APIResult, CreatableMixin, RetirableMixin
 
