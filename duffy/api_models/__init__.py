@@ -18,10 +18,13 @@ from .node import (  # noqa: F401
     concrete_node_models,
 )
 from .session import (  # noqa: F401
+    PhysicalSessionNodeModel,
     SessionCreateModel,
     SessionModel,
+    SessionNodeModel,
     SessionResult,
     SessionResultCollection,
+    VirtualSessionNodeModel,
 )
 from .tenant import (  # noqa: F401
     TenantCreateModel,
