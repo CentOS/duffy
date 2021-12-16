@@ -8,9 +8,15 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from starlette.status import HTTP_201_CREATED, HTTP_404_NOT_FOUND, HTTP_422_UNPROCESSABLE_ENTITY
 
-from ...api_models import SessionCreateModel, SessionResult, SessionResultCollection
+from ...api_models import (
+    PhysicalNodesSpec,
+    SessionCreateModel,
+    SessionResult,
+    SessionResultCollection,
+)
 from ...database import DBSession
-from ...database.model import Session, SessionNode, Tenant
+from ...database.model import PhysicalNode, Session, SessionNode, Tenant, VirtualNode
+from ...database.types import NodeState
 
 router = APIRouter(prefix="/sessions")
 
@@ -69,6 +75,36 @@ async def create_session(data: SessionCreateModel):
 
     session = Session(tenant=tenant)
     DBSession.add(session)
+
+    for nodes_spec in data.nodes_specs:
+        nodes_spec_dict = nodes_spec.dict()
+        quantity = nodes_spec_dict.pop("quantity")
+        nodes_spec_dict.pop("type")
+
+        if isinstance(nodes_spec, PhysicalNodesSpec):
+            node_cls = PhysicalNode
+        else:  # isinstance(nodes_spec, VirtualNodesSpec)
+            node_cls = VirtualNode
+
+        query = (
+            select(node_cls).filter_by(state=NodeState.active, **nodes_spec_dict).limit(quantity)
+        )
+
+        nodes_to_reserve = (await DBSession.execute(query)).scalars().all()
+
+        if len(nodes_to_reserve) < quantity:
+            raise HTTPException(HTTP_422_UNPROCESSABLE_ENTITY, f"can't reserve nodes: {nodes_spec}")
+
+        # take the nodes out of circulation
+        for node in nodes_to_reserve:
+            node.state = NodeState.contextualizing
+            session_node = SessionNode(
+                session=session,
+                node=node,
+                distro_type=nodes_spec.distro_type,
+                distro_version=nodes_spec.distro_version,
+            )
+            DBSession.add(session_node)
 
     # Meh. Reload the session instance to be able to explicily load all the related objects.
     await DBSession.flush()

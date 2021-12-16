@@ -1,12 +1,31 @@
 from abc import ABC
 from typing import List, Literal, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, conint
 
 from ..database.types import NodeType, VirtualNodeFlavour
 from .common import APIResult, CreatableMixin, RetirableMixin
 from .node import NodeBase
 from .tenant import TenantModel
+
+# nodes spec model
+
+
+class NodesSpecBase(BaseModel, ABC):
+    type: NodeType
+    quantity: conint(ge=1)
+    distro_type: str
+    distro_version: str
+
+
+class VirtualNodesSpec(NodesSpecBase):
+    type: Literal[NodeType.virtual]
+    flavour: VirtualNodeFlavour
+
+
+class PhysicalNodesSpec(NodesSpecBase):
+    type: Literal[NodeType.physical]
+
 
 # nodes in sessions model
 
@@ -41,6 +60,7 @@ class SessionBase(BaseModel, ABC):
 
 class SessionCreateModel(SessionBase):
     tenant_id: int
+    nodes_specs: List[Union[PhysicalNodesSpec, VirtualNodesSpec]]
 
 
 class SessionModel(SessionBase, CreatableMixin, RetirableMixin):
