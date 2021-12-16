@@ -10,7 +10,7 @@ from starlette.status import HTTP_201_CREATED, HTTP_404_NOT_FOUND, HTTP_422_UNPR
 
 from ...api_models import SessionCreateModel, SessionResult, SessionResultCollection
 from ...database import DBSession
-from ...database.model import Session, Tenant
+from ...database.model import Session, SessionNode, Tenant
 
 router = APIRouter(prefix="/sessions")
 
@@ -21,7 +21,10 @@ async def get_all_sessions():
     """
     Returns all sessions
     """
-    query = select(Session).options(selectinload(Session.tenant))
+    query = select(Session).options(
+        selectinload(Session.tenant),
+        selectinload(Session.session_nodes).selectinload(SessionNode.node),
+    )
     results = await DBSession.execute(query)
     return {"action": "get", "sessions": results.scalars().all()}
 
@@ -34,7 +37,12 @@ async def get_session(id: int):
     """
     session = (
         await DBSession.execute(
-            select(Session).filter_by(id=id).options(selectinload(Session.tenant))
+            select(Session)
+            .filter_by(id=id)
+            .options(
+                selectinload(Session.tenant),
+                selectinload(Session.session_nodes).selectinload(SessionNode.node),
+            )
         )
     ).scalar_one_or_none()
     if not session:
@@ -61,6 +69,20 @@ async def create_session(data: SessionCreateModel):
 
     session = Session(tenant=tenant)
     DBSession.add(session)
+
+    # Meh. Reload the session instance to be able to explicily load all the related objects.
+    await DBSession.flush()
+    session = (
+        await DBSession.execute(
+            select(Session)
+            .filter_by(id=session.id)
+            .options(
+                selectinload(Session.tenant),
+                selectinload(Session.session_nodes).selectinload(SessionNode.node),
+            )
+        )
+    ).scalar_one()
+
     try:
         await DBSession.commit()
     except IntegrityError as exc:  # pragma: no cover
@@ -76,7 +98,12 @@ async def delete_session(id: int):
     """
     session = (
         await DBSession.execute(
-            select(Session).filter_by(id=id).options(selectinload(Session.tenant))
+            select(Session)
+            .filter_by(id=id)
+            .options(
+                selectinload(Session.tenant),
+                selectinload(Session.session_nodes).selectinload(SessionNode.node),
+            )
         )
     ).scalar_one_or_none()
     if not session:

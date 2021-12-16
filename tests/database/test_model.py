@@ -100,10 +100,17 @@ class TestChassis(ModelTestBase):
     attrs = {"name": "hufty"}
 
 
-def _gen_node_attrs(**addl_attrs: Dict[str, Any]) -> dict:
+def _gen_node_attrs(index: int = None, **addl_attrs: Dict[str, Any]) -> dict:
+    lastoctet = 10
+    if index:
+        suffix = f"-{index}"
+        lastoctet += index
+    else:
+        suffix = ""
+
     attrs = {
-        "hostname": "lolcathost",
-        "ipaddr": "192.0.2.10",  # TEST-NET-1
+        "hostname": f"lolcathost{suffix}",
+        "ipaddr": f"192.0.2.{lastoctet}",  # TEST-NET-1
         "state": types.NodeState.ready,
     }
 
@@ -135,6 +142,7 @@ class TestSeaMicroNode(ModelTestBase):
         return {"chassis": model.Chassis(name="Infinity Polydome K")}
 
 
+@pytest.mark.asyncio
 class TestSessionNode(ModelTestBase):
     klass = model.SessionNode
     attrs = {"distro_type": "CentOS", "distro_version": "8Stream"}
@@ -151,3 +159,21 @@ class TestSessionNode(ModelTestBase):
         node = model.SeaMicroNode(**_gen_node_attrs(chassis=chassis))
 
         return {"session": session, "node": node}
+
+    @pytest.mark.parametrize("node_type", ("physical", "virtual"))
+    async def test_pydantic_view(self, node_type, db_async_obj):
+        if node_type == "virtual":
+            node = model.OpenNebulaNode(**_gen_node_attrs(index=1, flavour="medium"))
+            db_async_obj.node = node
+        else:
+            node = db_async_obj.node
+
+        result = db_async_obj.pydantic_view
+
+        assert result.type == node.type
+        assert result.hostname == node.hostname
+        assert str(result.ipaddr) == node.ipaddr
+        assert result.distro_type == db_async_obj.distro_type
+        assert result.distro_version == db_async_obj.distro_version
+        if node_type == "virtual":
+            assert result.flavour == node.flavour

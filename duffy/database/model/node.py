@@ -1,6 +1,7 @@
 from sqlalchemy import Column, ForeignKey, Index, Integer, Text, UnicodeText
 from sqlalchemy.orm import relationship
 
+from ...api_models import PhysicalSessionNodeModel, SessionNodeModel, VirtualSessionNodeModel
 from .. import Base
 from ..types import NodeState, NodeType, VirtualNodeFlavour
 from ..util import CreatableMixin, RetirableMixin
@@ -86,8 +87,26 @@ class SeaMicroNode(PhysicalNode):
 class SessionNode(Base):
     __tablename__ = "sessions_nodes"
     session_id = Column(Integer, ForeignKey(Session.id), primary_key=True, nullable=False)
-    session = relationship(Session)
+    session = relationship(Session, back_populates="session_nodes")
     node_id = Column(Integer, ForeignKey(Node.id), primary_key=True, nullable=False)
     node = relationship(Node)
     distro_type = Column(UnicodeText, nullable=False)
     distro_version = Column(Text, nullable=False)
+
+    @property
+    def pydantic_view(self) -> SessionNodeModel:
+        args = {
+            "type": self.node.type,
+            "hostname": self.node.hostname,
+            "ipaddr": self.node.ipaddr,
+            "distro_type": self.distro_type,
+            "distro_version": self.distro_version,
+        }
+
+        if isinstance(self.node, PhysicalNode):
+            model_cls = PhysicalSessionNodeModel
+        else:  # isinstance(self.node, VirtualNode):
+            model_cls = VirtualSessionNodeModel
+            args["flavour"] = self.node.flavour
+
+        return model_cls(**args)
