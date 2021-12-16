@@ -43,6 +43,10 @@ class Node(Base, CreatableMixin, RetirableMixin):
     )
     comment = Column(UnicodeText, nullable=True)
 
+    # currently configured distro type & version
+    distro_type = Column(UnicodeText, nullable=True)
+    distro_version = Column(UnicodeText, nullable=True)
+
 
 class VirtualNode(Node):
     __tablename__ = "virtualnodes"

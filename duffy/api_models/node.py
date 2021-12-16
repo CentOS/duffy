@@ -15,6 +15,8 @@ class NodeBase(BaseModel, ABC):
     hostname: str
     ipaddr: IPvAnyAddress
     comment: Optional[str]
+    distro_type: Optional[str]
+    distro_version: Optional[str]
 
     class Config:
         orm_mode = True
