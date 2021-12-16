@@ -51,10 +51,14 @@ async def create_session(data: SessionCreateModel):
     tenant = (
         await DBSession.execute(select(Tenant).filter_by(id=data.tenant_id))
     ).scalar_one_or_none()
+
     if not tenant:
         raise HTTPException(
             HTTP_422_UNPROCESSABLE_ENTITY, f"can't find tenant with id {data.tenant_id}"
         )
+    if not tenant.active:
+        raise HTTPException(HTTP_422_UNPROCESSABLE_ENTITY, f"tenant '{tenant.name}' isn't active")
+
     session = Session(tenant=tenant)
     DBSession.add(session)
     try:

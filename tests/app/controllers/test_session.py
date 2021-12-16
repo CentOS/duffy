@@ -1,6 +1,10 @@
 import re
+import uuid
 
 from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
+
+from duffy.database import DBSession
+from duffy.database.model import Tenant
 
 from . import BaseTestController
 from .test_tenant import TestTenant as _TestTenant
@@ -20,3 +24,15 @@ class TestSession(BaseTestController):
         assert response.status_code == HTTP_422_UNPROCESSABLE_ENTITY
         result = response.json()
         assert re.match(r"^can't find tenant with id \d+$", result["detail"])
+
+    async def test_create_retired_tenant(self, client):
+        # Create the tenant manually and set it as retired
+        tenant = Tenant(name="Happily retired", active=False, api_key=uuid.uuid4(), ssh_key="BOO")
+        DBSession.add(tenant)
+        await DBSession.flush()
+
+        response = await self._create_obj(client, attrs={"tenant_id": tenant.id})
+
+        assert response.status_code == HTTP_422_UNPROCESSABLE_ENTITY
+        result = response.json()
+        assert re.match(r"^tenant .* isn't active$", result["detail"])
