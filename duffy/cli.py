@@ -1,8 +1,10 @@
+import asyncio
 import logging
 import sys
 from typing import Tuple
 
 import click
+from click.core import Context
 import uvicorn
 
 from . import database, shell
@@ -148,6 +150,12 @@ def serve(ctx, reload, host, port):
     except DuffyConfigurationError as exc:
         log.error("Configuration key missing or wrong: %s", exc.args[0])
         sys.exit(1)
+    except KeyboardInterrupt:
+        log.error("Interrupted by keyboard input")
+        database.asyncio.BaseEventLoop.stop()
+        database.asyncio.BaseEventLoop.close()
+        sys.exit(1)
+
 
     # Start the show
     uvicorn.run(
