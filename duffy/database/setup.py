@@ -63,12 +63,16 @@ def _gen_test_data_objs():
             "hostname": "node-seamicro-1.example.net",
             "ipaddr": "192.168.0.11",
             "chassis": chassis,
+            "distro_type": "centos",
+            "distro_version": "8Stream",
         },
         {
             "type": "seamicro",
             "hostname": "node-seamicro-2.example.net",
             "ipaddr": "192.168.0.12",
             "chassis": chassis,
+            "distro_type": "fedora",
+            "distro_version": "35",
         },
     ]
 
@@ -81,12 +85,20 @@ def _gen_test_data_objs():
         lastoctetbase = int(lastoctetbase)
         for index in range(1, quantity + 1):
             lastoctet = lastoctetbase + index
+            if index % 2:
+                distro_type = "fedora"
+                distro_version = "35"
+            else:
+                distro_type = "centos"
+                distro_version = "8Stream"
             node_specs.append(
                 {
                     "type": "opennebula",
                     "hostname": f"node-opennebula-{flavour}-{index}.example.net",
                     "ipaddr": f"{ipprefix}.{lastoctet}",
                     "flavour": flavour,
+                    "distro_type": distro_type,
+                    "distro_version": distro_version,
                 }
             )
 
