@@ -2,7 +2,7 @@ from unittest import mock
 
 import pytest
 
-from duffy.database import setup
+from duffy.database import model, setup
 
 from ..util import noop_context
 
@@ -53,3 +53,11 @@ def test_setup_db_schema(get_sync_engine, inspect, metadata, Config, stamp, db_e
         engine.begin.assert_not_called()
         metadata.create_all.assert_not_called()
         Config.assert_not_called()
+
+
+@mock.patch("duffy.database.setup.SyncDBSession")
+def test_setup_db_test_data(SyncDBSession):
+    setup.setup_db_test_data()
+    SyncDBSession.begin.assert_called_once_with()
+    for model_cls in (model.Chassis, model.PhysicalNode, model.VirtualNode):
+        assert any(isinstance(call.args[0], model_cls) for call in SyncDBSession.add.call_args_list)

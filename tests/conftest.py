@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from duffy.configuration import read_configuration
 from duffy.database import Base, DBSession, SyncDBSession, init_async_model, init_sync_model
+from duffy.database.setup import _gen_test_data_objs
 
 # Configuration fixtures
 
@@ -171,3 +172,25 @@ async def db_async_obj(request, db_async_model_initialized):
         yield obj
 
         await DBSession.rollback()
+
+
+@pytest.fixture
+def db_sync_test_data(db_sync_model_initialized):
+    """A fixture to fill the DB with test data.
+
+    Use this in synchronous tests.
+    """
+    with SyncDBSession.begin():
+        for obj in _gen_test_data_objs():
+            SyncDBSession.add(obj)
+
+
+@pytest.fixture
+async def db_async_test_data(db_async_model_initialized):
+    """A fixture to fill the DB with test data.
+
+    Use this in asynchronous tests.
+    """
+    async with DBSession.begin():
+        for obj in _gen_test_data_objs():
+            DBSession.add(obj)

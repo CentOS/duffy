@@ -7,7 +7,7 @@ import uvicorn
 
 from . import database, shell
 from .configuration import config, read_configuration
-from .database.setup import setup_db_schema
+from .database.setup import setup_db_schema, setup_db_test_data
 from .exceptions import DuffyConfigurationError
 from .tasks import start_worker
 from .version import __version__
@@ -64,10 +64,16 @@ def cli(ctx, loglevel):
 
 
 @cli.command()
-def setup_db():
+@click.option(
+    "--test-data/--no-test-data", default=False, help="Initialized database with test data."
+)
+def setup_db(test_data):
     """Create tables from the database model."""
     try:
         setup_db_schema()
+        if test_data:
+            database.init_model()
+            setup_db_test_data()
     except DuffyConfigurationError as exc:
         log.error("Configuration key missing or wrong: %s", exc.args[0])
         sys.exit(1)
