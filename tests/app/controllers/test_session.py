@@ -3,10 +3,15 @@ import uuid
 
 import pytest
 from sqlalchemy import func, select
-from starlette.status import HTTP_201_CREATED, HTTP_422_UNPROCESSABLE_ENTITY
+from starlette.status import (
+    HTTP_200_OK,
+    HTTP_201_CREATED,
+    HTTP_404_NOT_FOUND,
+    HTTP_422_UNPROCESSABLE_ENTITY,
+)
 
 from duffy.database import DBSession
-from duffy.database.model import Node, PhysicalNode, Tenant, VirtualNode
+from duffy.database.model import Node, PhysicalNode, Session, Tenant, VirtualNode
 
 from . import BaseTestController
 from .test_tenant import TestTenant as _TestTenant
@@ -127,3 +132,39 @@ class TestSessionWorkflow:
         else:  # not can_reserve
             assert response.status_code == HTTP_422_UNPROCESSABLE_ENTITY
             assert result["detail"].startswith("can't reserve nodes:")
+
+    @pytest.mark.parametrize("testcase", ("normal", "unknown-session", "retired-session"))
+    async def test_update_session(self, testcase, client):
+        if testcase != "unknown-session":
+            tenant = await self._get_tenant_obj()
+            request_payload = {"tenant_id": tenant.id, "nodes_specs": self.nodes_specs}
+            create_response = await client.post(self.path, json=request_payload)
+            create_result = create_response.json()
+            created_session = create_result["session"]
+            session_id = created_session["id"]
+            # smoke test
+            assert created_session["active"] is True
+            assert created_session["retired_at"] is None
+
+            if testcase == "retired-session":
+                async with DBSession.begin():
+                    retired_session = (
+                        await DBSession.execute(select(Session).filter_by(id=session_id))
+                    ).scalar_one()
+                    retired_session.active = False
+        else:
+            session_id = 1
+
+        update_response = await client.put(f"{self.path}/{session_id}", json={"active": False})
+        update_result = update_response.json()
+        if testcase == "normal":
+            assert update_response.status_code == HTTP_200_OK
+            updated_session = update_result["session"]
+            assert updated_session["id"] == session_id
+            assert updated_session["active"] is False
+            assert updated_session["retired_at"] is not None
+        elif testcase == "unknown-session":
+            assert update_response.status_code == HTTP_404_NOT_FOUND
+        else:  # testcase == "retired-session"
+            assert update_response.status_code == HTTP_422_UNPROCESSABLE_ENTITY
+            assert re.match(r"^session .* is retired$", update_result["detail"])

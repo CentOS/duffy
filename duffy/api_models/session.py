@@ -63,6 +63,10 @@ class SessionCreateModel(SessionBase):
     nodes_specs: List[Union[PhysicalNodesSpec, VirtualNodesSpec]]
 
 
+class SessionUpdateModel(SessionBase):
+    active: bool
+
+
 class SessionModel(SessionBase, CreatableMixin, RetirableMixin):
     id: int
     tenant: TenantModel
