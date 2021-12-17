@@ -155,7 +155,7 @@ class RetirableMixin:
         if not value:
             # only set retired_at if previously unset
             if not self.retired_at:
-                self.retired_at = utcnow()
+                self.retired_at = dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc)
         else:
             self.retired_at = None
 

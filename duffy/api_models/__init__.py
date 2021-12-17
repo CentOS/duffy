@@ -25,6 +25,7 @@ from .session import (  # noqa: F401
     SessionNodeModel,
     SessionResult,
     SessionResultCollection,
+    SessionUpdateModel,
     VirtualNodesSpec,
     VirtualSessionNodeModel,
 )

@@ -13,6 +13,7 @@ from ...api_models import (
     SessionCreateModel,
     SessionResult,
     SessionResultCollection,
+    SessionUpdateModel,
 )
 from ...database import DBSession
 from ...database.model import PhysicalNode, Session, SessionNode, Tenant, VirtualNode
@@ -124,6 +125,37 @@ async def create_session(data: SessionCreateModel):
     except IntegrityError as exc:  # pragma: no cover
         raise HTTPException(HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
     return {"action": "post", "session": session}
+
+
+# http --json put http://localhost:8080/api/v1/sessions/2 active:=false
+@router.put("/{id}", response_model=SessionResult, tags=["sessions"])
+async def update_session(id: int, data: SessionUpdateModel):
+    session = (
+        await DBSession.execute(
+            select(Session)
+            .filter_by(id=id)
+            .options(
+                selectinload(Session.tenant),
+                selectinload(Session.session_nodes).selectinload(SessionNode.node),
+            )
+        )
+    ).scalar_one_or_none()
+
+    if not session:
+        raise HTTPException(HTTP_404_NOT_FOUND)
+
+    if not session.active:
+        raise HTTPException(HTTP_422_UNPROCESSABLE_ENTITY, f"session {id} is retired")
+
+    session.active = data.active
+
+    # mark nodes to be deprovisioned
+    for session_node in session.session_nodes:
+        session_node.node.state = NodeState.deprovisioning
+
+    await DBSession.commit()
+
+    return {"action": "put", "session": session}
 
 
 # http delete http://localhost:8080/api/v1/sessions/2
