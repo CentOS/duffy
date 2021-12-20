@@ -2,11 +2,16 @@
 This is the session controller.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
-from starlette.status import HTTP_201_CREATED, HTTP_404_NOT_FOUND, HTTP_422_UNPROCESSABLE_ENTITY
+from starlette.status import (
+    HTTP_201_CREATED,
+    HTTP_403_FORBIDDEN,
+    HTTP_404_NOT_FOUND,
+    HTTP_422_UNPROCESSABLE_ENTITY,
+)
 
 from ...api_models import (
     PhysicalNodesSpec,
@@ -18,16 +23,20 @@ from ...api_models import (
 from ...database import DBSession
 from ...database.model import PhysicalNode, Session, SessionNode, Tenant, VirtualNode
 from ...database.types import NodeState
+from . import check_adminship, check_credentials
 
 router = APIRouter(prefix="/sessions")
 
 
 # http get http://localhost:8080/api/v1/sessions
 @router.get("", response_model=SessionResultCollection, tags=["sessions"])
-async def get_all_sessions():
+async def get_all_sessions(name: str = Depends(check_credentials)):
     """
     Returns all sessions
     """
+    if not await check_adminship(name):
+        raise HTTPException(HTTP_403_FORBIDDEN)
+
     query = select(Session).options(
         selectinload(Session.tenant),
         selectinload(Session.session_nodes).selectinload(SessionNode.node),
@@ -38,7 +47,7 @@ async def get_all_sessions():
 
 # http get http://localhost:8080/api/v1/sessions/2
 @router.get("/{id}", response_model=SessionResult, tags=["sessions"])
-async def get_session(id: int):
+async def get_session(id: int, name: str = Depends(check_credentials)):
     """
     Returns a session with the specified **ID**
     """
@@ -59,7 +68,7 @@ async def get_session(id: int):
 
 # http --json post http://localhost:8080/api/v1/sessions tenant_id=2
 @router.post("", status_code=HTTP_201_CREATED, response_model=SessionResult, tags=["sessions"])
-async def create_session(data: SessionCreateModel):
+async def create_session(data: SessionCreateModel, name: str = Depends(check_credentials)):
     """
     Creates a session with the specified **tenant ID**
     """
@@ -160,10 +169,14 @@ async def update_session(id: int, data: SessionUpdateModel):
 
 # http delete http://localhost:8080/api/v1/sessions/2
 @router.delete("/{id}", response_model=SessionResult, tags=["sessions"])
-async def delete_session(id: int):
+async def delete_session(id: int, name: str = Depends(check_credentials)):
     """
     Deletes the session with the specified **ID**
     """
+
+    if not await check_adminship(name):
+        raise HTTPException(HTTP_403_FORBIDDEN)
+
     session = (
         await DBSession.execute(
             select(Session)

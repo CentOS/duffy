@@ -1,9 +1,14 @@
-from fastapi import APIRouter, HTTPException
+"""
+This is the node controller.
+"""
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from starlette.status import (
     HTTP_201_CREATED,
+    HTTP_403_FORBIDDEN,
     HTTP_404_NOT_FOUND,
     HTTP_409_CONFLICT,
     HTTP_422_UNPROCESSABLE_ENTITY,
@@ -12,15 +17,20 @@ from starlette.status import (
 from ...api_models import NodeResult, NodeResultCollection, concrete_node_create_models
 from ...database import DBSession
 from ...database.model import Chassis, Node, OpenNebulaNode, SeaMicroNode
+from . import check_adminship, check_credentials
 
 router = APIRouter(prefix="/nodes")
 
 
 @router.get("", response_model=NodeResultCollection, tags=["nodes"])
-async def get_all_nodes():
+async def get_all_nodes(name: str = Depends(check_credentials)):
     """
     Return all nodes
     """
+
+    if not await check_adminship(name):
+        raise HTTPException(HTTP_403_FORBIDDEN)
+
     query = select(Node).options(selectinload("*"))
     results = await DBSession.execute(query)
 
@@ -28,10 +38,14 @@ async def get_all_nodes():
 
 
 @router.get("/{id}", response_model=NodeResult, tags=["nodes"])
-async def get_node(id: int):
+async def get_node(id: int, name: str = Depends(check_credentials)):
     """
     Return the node with the specified **ID**
     """
+
+    if not await check_adminship(name):
+        raise HTTPException(HTTP_403_FORBIDDEN)
+
     query = select(Node).filter_by(id=id).options(selectinload("*"))
     result = await DBSession.execute(query)
     node = result.scalar_one_or_none()
@@ -43,12 +57,15 @@ async def get_node(id: int):
 
 
 @router.post("", status_code=HTTP_201_CREATED, response_model=NodeResult, tags=["nodes"])
-async def create_node(data: concrete_node_create_models):
+async def create_node(data: concrete_node_create_models, name: str = Depends(check_credentials)):
     """
     Create a node with the specified **type**, **hostname**, **ip address**, **comment** and
     **flavour**
     """
     data.ipaddr = str(data.ipaddr)
+
+    if not await check_adminship(name):
+        raise HTTPException(HTTP_403_FORBIDDEN)
 
     args = {
         "hostname": data.hostname,
@@ -85,10 +102,14 @@ async def create_node(data: concrete_node_create_models):
 
 
 @router.delete("/{id}", response_model=NodeResult, tags=["nodes"])
-async def delete_node(id: int):
+async def delete_node(id: int, name: str = Depends(check_credentials)):
     """
     Deletes the node with the specified **ID**
     """
+
+    if not await check_adminship(name):
+        raise HTTPException(HTTP_403_FORBIDDEN)
+
     node = (
         await DBSession.execute(select(Node).filter_by(id=id).options(selectinload("*")))
     ).scalar_one_or_none()

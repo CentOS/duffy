@@ -3,7 +3,7 @@ import logging
 from fastapi import FastAPI
 
 from ..version import __version__
-from .controllers import chassis, node, session, tenant
+from .controllers import auth, chassis, node, session, tenant
 
 log = logging.getLogger(__name__)
 
@@ -17,6 +17,7 @@ tags_metadata = [
     {"name": "sessions", "description": "Operations with sessions"},
     {"name": "tenants", "description": "Operations with tenants"},
     {"name": "chassis", "description": "Operations with chassis"},
+    {"name": "token", "description": "Operations with authentication requests"},
 ]
 
 app = FastAPI(
@@ -35,3 +36,4 @@ app.include_router(chassis.router, prefix=PREFIX)
 app.include_router(node.router, prefix=PREFIX)
 app.include_router(tenant.router, prefix=PREFIX)
 app.include_router(session.router, prefix=PREFIX)
+app.include_router(auth.router, prefix=PREFIX)
