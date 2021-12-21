@@ -7,7 +7,12 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from starlette.status import HTTP_201_CREATED, HTTP_404_NOT_FOUND, HTTP_422_UNPROCESSABLE_ENTITY
+from starlette.status import (
+    HTTP_201_CREATED,
+    HTTP_403_FORBIDDEN,
+    HTTP_404_NOT_FOUND,
+    HTTP_422_UNPROCESSABLE_ENTITY,
+)
 
 from ...api_models import (
     PhysicalNodesSpec,
@@ -18,6 +23,7 @@ from ...api_models import (
 )
 from ...database.model import PhysicalNode, Session, SessionNode, Tenant, VirtualNode
 from ...database.types import NodeState
+from ..auth import req_tenant
 from ..database import req_db_async_session
 
 router = APIRouter(prefix="/sessions")
@@ -25,7 +31,10 @@ router = APIRouter(prefix="/sessions")
 
 # http get http://localhost:8080/api/v1/sessions
 @router.get("", response_model=SessionResultCollection, tags=["sessions"])
-async def get_all_sessions(db_async_session: AsyncSession = Depends(req_db_async_session)):
+async def get_all_sessions(
+    db_async_session: AsyncSession = Depends(req_db_async_session),
+    tenant: Tenant = Depends(req_tenant),
+):
     """
     Returns all sessions
     """
@@ -33,13 +42,19 @@ async def get_all_sessions(db_async_session: AsyncSession = Depends(req_db_async
         selectinload(Session.tenant),
         selectinload(Session.session_nodes).selectinload(SessionNode.node),
     )
+    if not tenant.is_admin:
+        query = query.filter_by(tenant=tenant)
     results = await db_async_session.execute(query)
     return {"action": "get", "sessions": results.scalars().all()}
 
 
 # http get http://localhost:8080/api/v1/sessions/2
 @router.get("/{id}", response_model=SessionResult, tags=["sessions"])
-async def get_session(id: int, db_async_session: AsyncSession = Depends(req_db_async_session)):
+async def get_session(
+    id: int,
+    db_async_session: AsyncSession = Depends(req_db_async_session),
+    tenant: Tenant = Depends(req_tenant),
+):
     """
     Returns a session with the specified **ID**
     """
@@ -55,6 +70,8 @@ async def get_session(id: int, db_async_session: AsyncSession = Depends(req_db_a
     ).scalar_one_or_none()
     if not session:
         raise HTTPException(HTTP_404_NOT_FOUND)
+    if not tenant.is_admin and session.tenant != tenant:
+        raise HTTPException(HTTP_403_FORBIDDEN)
     return {"action": "get", "session": session}
 
 
@@ -63,20 +80,26 @@ async def get_session(id: int, db_async_session: AsyncSession = Depends(req_db_a
 async def create_session(
     data: SessionCreateModel,
     db_async_session: AsyncSession = Depends(req_db_async_session),
+    tenant: Tenant = Depends(req_tenant),
 ):
     """
     Creates a session with the specified **tenant ID**
     """
-    tenant = (
-        await db_async_session.execute(select(Tenant).filter_by(id=data.tenant_id))
-    ).scalar_one_or_none()
+    if tenant.is_admin and data.tenant_id is not None:
+        tenant = (
+            await db_async_session.execute(select(Tenant).filter_by(id=data.tenant_id))
+        ).scalar_one_or_none()
 
-    if not tenant:
-        raise HTTPException(
-            HTTP_422_UNPROCESSABLE_ENTITY, f"can't find tenant with id {data.tenant_id}"
-        )
-    elif not tenant.active:
-        raise HTTPException(HTTP_422_UNPROCESSABLE_ENTITY, f"tenant '{tenant.name}' isn't active")
+        if not tenant:
+            raise HTTPException(
+                HTTP_422_UNPROCESSABLE_ENTITY, f"can't find tenant with id {data.tenant_id}"
+            )
+        elif not tenant.active:
+            raise HTTPException(
+                HTTP_422_UNPROCESSABLE_ENTITY, f"tenant '{tenant.name}' isn't active"
+            )
+    elif not tenant.is_admin and data.tenant_id is not None and data.tenant_id != tenant.id:
+        raise HTTPException(HTTP_403_FORBIDDEN, "can't create session for other tenant")
 
     session = Session(tenant=tenant)
     db_async_session.add(session)
@@ -137,6 +160,7 @@ async def update_session(
     id: int,
     data: SessionUpdateModel,
     db_async_session: AsyncSession = Depends(req_db_async_session),
+    tenant: Tenant = Depends(req_tenant),
 ):
     session = (
         await db_async_session.execute(
@@ -151,6 +175,9 @@ async def update_session(
 
     if not session:
         raise HTTPException(HTTP_404_NOT_FOUND)
+
+    if not tenant.is_admin and session.tenant != tenant:
+        raise HTTPException(HTTP_403_FORBIDDEN)
 
     if not session.active:
         raise HTTPException(HTTP_422_UNPROCESSABLE_ENTITY, f"session {id} is retired")
@@ -168,10 +195,16 @@ async def update_session(
 
 # http delete http://localhost:8080/api/v1/sessions/2
 @router.delete("/{id}", response_model=SessionResult, tags=["sessions"])
-async def delete_session(id: int, db_async_session: AsyncSession = Depends(req_db_async_session)):
+async def delete_session(
+    id: int,
+    db_async_session: AsyncSession = Depends(req_db_async_session),
+    tenant: Tenant = Depends(req_tenant),
+):
     """
     Deletes the session with the specified **ID**
     """
+    if not tenant.is_admin:
+        raise HTTPException(HTTP_403_FORBIDDEN)
     session = (
         await db_async_session.execute(
             select(Session)

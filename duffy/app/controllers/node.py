@@ -5,20 +5,25 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from starlette.status import (
     HTTP_201_CREATED,
+    HTTP_403_FORBIDDEN,
     HTTP_404_NOT_FOUND,
     HTTP_409_CONFLICT,
     HTTP_422_UNPROCESSABLE_ENTITY,
 )
 
 from ...api_models import NodeResult, NodeResultCollection, concrete_node_create_models
-from ...database.model import Chassis, Node, OpenNebulaNode, SeaMicroNode
+from ...database.model import Chassis, Node, OpenNebulaNode, SeaMicroNode, Tenant
+from ..auth import req_tenant
 from ..database import req_db_async_session
 
 router = APIRouter(prefix="/nodes")
 
 
 @router.get("", response_model=NodeResultCollection, tags=["nodes"])
-async def get_all_nodes(db_async_session: AsyncSession = Depends(req_db_async_session)):
+async def get_all_nodes(
+    db_async_session: AsyncSession = Depends(req_db_async_session),
+    tenant: Tenant = Depends(req_tenant),
+):
     """
     Return all nodes
     """
@@ -29,7 +34,11 @@ async def get_all_nodes(db_async_session: AsyncSession = Depends(req_db_async_se
 
 
 @router.get("/{id}", response_model=NodeResult, tags=["nodes"])
-async def get_node(id: int, db_async_session: AsyncSession = Depends(req_db_async_session)):
+async def get_node(
+    id: int,
+    db_async_session: AsyncSession = Depends(req_db_async_session),
+    tenant: Tenant = Depends(req_tenant),
+):
     """
     Return the node with the specified **ID**
     """
@@ -47,11 +56,15 @@ async def get_node(id: int, db_async_session: AsyncSession = Depends(req_db_asyn
 async def create_node(
     data: concrete_node_create_models,
     db_async_session: AsyncSession = Depends(req_db_async_session),
+    tenant: Tenant = Depends(req_tenant),
 ):
     """
     Create a node with the specified **type**, **hostname**, **ip address**, **comment** and
     **flavour**
     """
+    if not tenant.is_admin:
+        raise HTTPException(HTTP_403_FORBIDDEN)
+
     data.ipaddr = str(data.ipaddr)
 
     args = {
@@ -89,10 +102,17 @@ async def create_node(
 
 
 @router.delete("/{id}", response_model=NodeResult, tags=["nodes"])
-async def delete_node(id: int, db_async_session: AsyncSession = Depends(req_db_async_session)):
+async def delete_node(
+    id: int,
+    db_async_session: AsyncSession = Depends(req_db_async_session),
+    tenant: Tenant = Depends(req_tenant),
+):
     """
     Deletes the node with the specified **ID**
     """
+    if not tenant.is_admin:
+        raise HTTPException(HTTP_403_FORBIDDEN)
+
     node = (
         await db_async_session.execute(select(Node).filter_by(id=id).options(selectinload("*")))
     ).scalar_one_or_none()

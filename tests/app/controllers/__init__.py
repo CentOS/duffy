@@ -1,7 +1,15 @@
 import re
 
 import pytest
-from starlette.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
+from starlette.status import (
+    HTTP_200_OK,
+    HTTP_201_CREATED,
+    HTTP_403_FORBIDDEN,
+    HTTP_404_NOT_FOUND,
+    HTTP_409_CONFLICT,
+)
+
+from duffy.database.setup import _gen_test_api_key
 
 
 @pytest.mark.asyncio
@@ -30,6 +38,9 @@ class BaseTestController:
                 it is in the error detail (case-insensitively). If it is
                 a regular expression pattern object, check if it can
                 matched anywhere in the error detail string.
+        create_unprivileged:
+                Whether or not non-admin users are allowed to create
+                objects.
 
     Example:
         class TestFooController(BaseTestController):
@@ -72,6 +83,7 @@ class BaseTestController:
     attrs = {}
     no_response_attrs = ()
     unique = False
+    create_unprivileged = False
 
     @property
     def name_plural(self):
@@ -79,11 +91,26 @@ class BaseTestController:
         return self.name + "s"
 
     @classmethod
-    async def _create_obj(cls, client, attrs: dict = None, merge_cls_attrs: bool = True):
+    async def _create_obj(
+        cls,
+        client,
+        attrs: dict = None,
+        merge_cls_attrs: bool = True,
+        client_kwargs: dict = None,
+        subcls_client_kwargs: dict = None,
+    ):
         if merge_cls_attrs:
             attrs = {**(cls.attrs or {}), **(attrs or {})}
         else:
             attrs = attrs or {}
+
+        if client_kwargs is None:
+            client_kwargs = {}
+
+        if subcls_client_kwargs is None:
+            subcls_client_kwargs = client_kwargs
+        else:
+            subcls_client_kwargs = {**client_kwargs, **subcls_client_kwargs}
 
         for name, value in attrs.items():
             try:
@@ -92,14 +119,16 @@ class BaseTestController:
                 pass
             else:
                 if isinstance(subcls, type) and issubclass(subcls, BaseTestController):
-                    subresponse = await subcls._create_obj(client)
+                    subresponse = await subcls._create_obj(
+                        client, client_kwargs=subcls_client_kwargs
+                    )
                     subresult = subresponse.json()
                     value = subresult[subcls.name]
                     for elem in item.split("."):
                         value = value[elem]
                 attrs[name] = value
 
-        response = await client.post(cls.path, json=attrs)
+        response = await client.post(cls.path, json=attrs, **client_kwargs)
         return response
 
     @classmethod
@@ -121,12 +150,28 @@ class BaseTestController:
                     continue
             assert item[key] == value
 
-    async def test_create_obj(self, client):
+    @pytest.mark.parametrize(
+        "unprivileged",
+        (
+            False,
+            pytest.param(True, marks=pytest.mark.client_auth_as("tenant")),
+        ),
+    )
+    async def test_create_obj(self, unprivileged, client, auth_admin):
         """Test that objects can be created on the API endpoint."""
-        response = await self._create_obj(client)
-        assert response.status_code == HTTP_201_CREATED
-        result = response.json()
-        self._verify_item(result[self.name])
+        # Ensure that dependencies are created as admin tenant.
+        response = await self._create_obj(
+            client,
+            subcls_client_kwargs={
+                "auth": (auth_admin.name, str(_gen_test_api_key(auth_admin.name)))
+            },
+        )
+        if not unprivileged or self.create_unprivileged:
+            assert response.status_code == HTTP_201_CREATED
+            result = response.json()
+            self._verify_item(result[self.name])
+        else:
+            assert response.status_code == HTTP_403_FORBIDDEN
 
     @classmethod
     def _add_attrs_from_response(cls, response):
@@ -203,10 +248,20 @@ class BaseTestController:
         attrs = {**self.attrs, **self._add_attrs_from_response(create_response)}
         self._verify_item(obj, attrs=attrs)
 
-    @pytest.mark.parametrize("testcase", ("found", "not found"))
-    async def test_delete_obj(self, client, testcase):
+    @pytest.mark.parametrize(
+        "testcase",
+        (
+            "found",
+            "not found",
+            pytest.param("not admin", marks=pytest.mark.client_auth_as("tenant")),
+        ),
+    )
+    async def test_delete_obj(self, client, testcase, auth_admin):
         if testcase != "not found":
-            create_response = await self._create_obj(client)
+            create_response = await self._create_obj(
+                client,
+                client_kwargs={"auth": (auth_admin.name, str(_gen_test_api_key(auth_admin.name)))},
+            )
             obj_id = create_response.json()[self.name]["id"]
         else:
             obj_id = -1
@@ -215,5 +270,7 @@ class BaseTestController:
 
         if testcase == "found":
             assert response.status_code == HTTP_200_OK
+        elif testcase == "not admin":
+            assert response.status_code == HTTP_403_FORBIDDEN
         else:
             assert response.status_code == HTTP_404_NOT_FOUND
