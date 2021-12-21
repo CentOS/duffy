@@ -6,10 +6,16 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette.status import HTTP_201_CREATED, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
+from starlette.status import (
+    HTTP_201_CREATED,
+    HTTP_403_FORBIDDEN,
+    HTTP_404_NOT_FOUND,
+    HTTP_409_CONFLICT,
+)
 
 from ...api_models import TenantCreateModel, TenantResult, TenantResultCollection
 from ...database.model import Tenant
+from ..auth import req_tenant
 from ..database import req_db_async_session
 
 router = APIRouter(prefix="/tenants")
@@ -17,11 +23,16 @@ router = APIRouter(prefix="/tenants")
 
 # http get http://localhost:8080/api/v1/tenants
 @router.get("", response_model=TenantResultCollection, tags=["tenants"])
-async def get_all_tenants(db_async_session: AsyncSession = Depends(req_db_async_session)):
+async def get_all_tenants(
+    db_async_session: AsyncSession = Depends(req_db_async_session),
+    tenant: Tenant = Depends(req_tenant),
+):
     """
     Return all tenants
     """
     query = select(Tenant)
+    if not tenant.is_admin:
+        query = query.filter_by(id=tenant.id)
     results = await db_async_session.execute(query)
 
     return {"action": "get", "tenants": results.scalars().all()}
@@ -32,16 +43,22 @@ async def get_all_tenants(db_async_session: AsyncSession = Depends(req_db_async_
 async def get_tenant(
     id: int,
     db_async_session: AsyncSession = Depends(req_db_async_session),
+    tenant: Tenant = Depends(req_tenant),
 ):
     """
     Return the tenant with the specified **ID**
     """
-    tenant = (await db_async_session.execute(select(Tenant).filter_by(id=id))).scalar_one_or_none()
+    retrieved_tenant = (
+        await db_async_session.execute(select(Tenant).filter_by(id=id))
+    ).scalar_one_or_none()
 
-    if not tenant:
+    if not retrieved_tenant:
         raise HTTPException(HTTP_404_NOT_FOUND)
 
-    return {"action": "get", "tenant": tenant}
+    if retrieved_tenant != tenant and not tenant.is_admin:
+        raise HTTPException(HTTP_403_FORBIDDEN)
+
+    return {"action": "get", "tenant": retrieved_tenant}
 
 
 # http --json post http://localhost:8080/api/v1/tenants name="Unique name"
@@ -49,20 +66,24 @@ async def get_tenant(
 async def create_tenant(
     data: TenantCreateModel,
     db_async_session: AsyncSession = Depends(req_db_async_session),
+    tenant: Tenant = Depends(req_tenant),
 ):
     """
     Create a tenant with the specified **name**
     """
-    tenant = Tenant(
+    if not tenant.is_admin:
+        raise HTTPException(HTTP_403_FORBIDDEN)
+
+    created_tenant = Tenant(
         name=data.name, is_admin=data.is_admin, api_key=data.api_key, ssh_key=data.ssh_key
     )
-    db_async_session.add(tenant)
+    db_async_session.add(created_tenant)
     try:
         await db_async_session.commit()
     except IntegrityError as exc:
         raise HTTPException(HTTP_409_CONFLICT, str(exc))
 
-    return {"action": "post", "tenant": tenant}
+    return {"action": "post", "tenant": created_tenant}
 
 
 # http delete http://localhost:8080/api/v1/tenant/2
@@ -70,10 +91,14 @@ async def create_tenant(
 async def delete_tenant(
     id: int,
     db_async_session: AsyncSession = Depends(req_db_async_session),
+    tenant: Tenant = Depends(req_tenant),
 ):
     """
     Delete the tenant with the specified **ID**
     """
+    if not tenant.is_admin:
+        raise HTTPException(HTTP_403_FORBIDDEN)
+
     tenant = (await db_async_session.execute(select(Tenant).filter_by(id=id))).scalar_one_or_none()
 
     if not tenant:

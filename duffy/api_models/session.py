@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import List, Literal, Union
+from typing import List, Literal, Optional, Union
 
 from pydantic import BaseModel, conint
 
@@ -59,7 +59,7 @@ class SessionBase(BaseModel, ABC):
 
 
 class SessionCreateModel(SessionBase):
-    tenant_id: int
+    tenant_id: Optional[int]
     nodes_specs: List[Union[PhysicalNodesSpec, VirtualNodesSpec]]
 
 
