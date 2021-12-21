@@ -18,20 +18,20 @@ class TestMain:
     def test_paths(self, path):
         assert any(r.path == path for r in app.routes)
 
-    async def test_openapi_json(self, client):
-        response = await client.get("/openapi.json")
+    async def test_openapi_json(self, unauthenticated_client):
+        response = await unauthenticated_client.get("/openapi.json")
         result = response.json()
         assert isinstance(result["openapi"], str)
         assert all(x in result["paths"] for x in self.api_paths)
 
-    async def test_swagger_docs(self, client):
+    async def test_swagger_docs(self, unauthenticated_client):
         """Test that Swagger UI docs render and can be parsed."""
-        response = await client.get("/docs")
+        response = await unauthenticated_client.get("/docs")
         parser = HTMLParser()
         parser.feed(response.text)
 
-    async def test_redoc_docs(self, client):
+    async def test_redoc_docs(self, unauthenticated_client):
         """Test that ReDoc docs render and can be parsed."""
-        response = await client.get("/redoc")
+        response = await unauthenticated_client.get("/redoc")
         parser = HTMLParser()
         parser.feed(response.text)

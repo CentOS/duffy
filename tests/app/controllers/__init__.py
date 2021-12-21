@@ -6,8 +6,12 @@ from starlette.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_404_NOT_FOUND, 
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures(
-    "db_sync_schema", "db_sync_model_initialized", "db_async_schema", "db_async_model_initialized"
+    "db_sync_schema",
+    "db_sync_model_initialized",
+    "db_async_schema",
+    "db_async_model_initialized",
 )
+@pytest.mark.auth_tenant(is_admin=True)
 class BaseTestController:
     """A class testing controllers.
 
@@ -104,9 +108,6 @@ class BaseTestController:
             attrs = cls.attrs
         if not no_response_attrs:
             no_response_attrs = cls.no_response_attrs
-        # The `id` attribute of any created object must be 1 because no objects exist in the
-        # database before running this test, the `db_*_model_initialized` fixtures take care of it.
-        assert item["id"] == 1
         for key, value in attrs.items():
             if key in no_response_attrs:
                 continue
@@ -175,8 +176,11 @@ class BaseTestController:
         """Test that an object can be retrieved via the API endpoint."""
         if testcase != "not found":
             create_response = await self._create_obj(client)
+            obj_id = create_response.json()[self.name]["id"]
+        else:
+            obj_id = -1
 
-        response = await client.get(f"{self.path}/1")
+        response = await client.get(f"{self.path}/{obj_id}")
 
         if testcase == "found":
             assert response.status_code == HTTP_200_OK
@@ -193,17 +197,21 @@ class BaseTestController:
         response = await client.get(self.path)
         result = response.json()
         assert self.name_plural in result
-        obj = result[self.name_plural][0]
-        assert obj["id"] == 1
+        objs = result[self.name_plural]
+        obj = objs[-1]
+        assert obj["id"] == len(objs)
         attrs = {**self.attrs, **self._add_attrs_from_response(create_response)}
         self._verify_item(obj, attrs=attrs)
 
     @pytest.mark.parametrize("testcase", ("found", "not found"))
     async def test_delete_obj(self, client, testcase):
         if testcase != "not found":
-            await self._create_obj(client)
+            create_response = await self._create_obj(client)
+            obj_id = create_response.json()[self.name]["id"]
+        else:
+            obj_id = -1
 
-        response = await client.delete(f"{self.path}/1")
+        response = await client.delete(f"{self.path}/{obj_id}")
 
         if testcase == "found":
             assert response.status_code == HTTP_200_OK
