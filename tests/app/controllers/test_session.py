@@ -27,9 +27,8 @@ class TestSession(BaseTestController):
     }
     no_response_attrs = ("nodes_specs",)
 
-    async def test_create_unknown_tenant(self, client):
-        # setting tenant_id manually will skip the code which would create the tenant
-        response = await self._create_obj(client, attrs={"tenant_id": 1})
+    async def test_create_unknown_tenant(self, client, auth_tenant):
+        response = await self._create_obj(client, attrs={"tenant_id": auth_tenant.id + 1})
         assert response.status_code == HTTP_422_UNPROCESSABLE_ENTITY
         result = response.json()
         assert re.match(r"^can't find tenant with id \d+$", result["detail"])
@@ -69,22 +68,14 @@ class TestSessionWorkflow:
         },
     ]
 
-    @staticmethod
-    async def _get_tenant_obj(db_async_session):
-        return (
-            await db_async_session.execute(select(Tenant).filter_by(name="tenant"))
-        ).scalar_one()
-
     @pytest.mark.parametrize("can_reserve", (True, False))
-    async def test_request_session(self, can_reserve, client, db_async_session):
-        tenant = await self._get_tenant_obj(db_async_session)
-
+    async def test_request_session(self, can_reserve, client, db_async_session, auth_tenant):
         if not can_reserve:
             for node in (await db_async_session.execute(select(Node))).scalars():
                 node.state = "deployed"
             await db_async_session.flush()
 
-        request_payload = {"tenant_id": tenant.id, "nodes_specs": self.nodes_specs}
+        request_payload = {"tenant_id": auth_tenant.id, "nodes_specs": self.nodes_specs}
         response = await client.post(self.path, json=request_payload)
         result = response.json()
 
@@ -135,10 +126,9 @@ class TestSessionWorkflow:
             assert result["detail"].startswith("can't reserve nodes:")
 
     @pytest.mark.parametrize("testcase", ("normal", "unknown-session", "retired-session"))
-    async def test_update_session(self, testcase, client, db_async_session):
+    async def test_update_session(self, testcase, client, db_async_session, auth_tenant):
         if testcase != "unknown-session":
-            tenant = await self._get_tenant_obj(db_async_session)
-            request_payload = {"tenant_id": tenant.id, "nodes_specs": self.nodes_specs}
+            request_payload = {"tenant_id": auth_tenant.id, "nodes_specs": self.nodes_specs}
             create_response = await client.post(self.path, json=request_payload)
             create_result = create_response.json()
             created_session = create_result["session"]

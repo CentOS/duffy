@@ -9,6 +9,7 @@ from duffy.exceptions import DuffyConfigurationError
 from ..util import noop_context
 
 
+@pytest.mark.client_auth_as(None)
 @pytest.mark.asyncio
 class TestMain:
     api_paths = (
