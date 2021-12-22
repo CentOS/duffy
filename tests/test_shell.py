@@ -1,8 +1,10 @@
 from unittest import mock
 
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
-from duffy import database, exceptions, shell
+from duffy import exceptions, shell
 from duffy.database import model
 
 from .util import noop_context
@@ -33,15 +35,15 @@ def test_get_shell_variables(IPython, with_ipython, with_autoawait):
 
     variables = shell.get_shell_variables("ipython" if with_ipython else "python")
 
-    assert variables["SyncDBSession"] is database.SyncDBSession
+    assert isinstance(variables["db_sync_session"], Session)
     # Do a spot check of one model class.
     assert variables["Tenant"] is model.Tenant
 
     if with_ipython and with_autoawait:
-        assert variables["DBSession"] is database.DBSession
+        assert isinstance(variables["db_async_session"], AsyncSession)
     else:
-        # The asynchronous DBSession must only be made available if the shell does its part.
-        assert "DBSession" not in variables
+        # The asynchronous db_async_session must only be made available if the shell does its part.
+        assert "db_async_session" not in variables
 
 
 @mock.patch("duffy.shell.code")

@@ -1,8 +1,12 @@
 from html.parser import HTMLParser
+from unittest import mock
 
 import pytest
 
-from duffy.app.main import app
+from duffy.app.main import app, init_model
+from duffy.exceptions import DuffyConfigurationError
+
+from ..util import noop_context
 
 
 @pytest.mark.asyncio
@@ -35,3 +39,23 @@ class TestMain:
         response = await client.get("/redoc")
         parser = HTMLParser()
         parser.feed(response.text)
+
+    @pytest.mark.parametrize("config_error", (False, True))
+    @mock.patch("duffy.database.init_async_model")
+    @mock.patch("duffy.database.init_sync_model")
+    async def test_init_model(self, init_sync_model, init_async_model, config_error):
+        if config_error:
+            init_sync_model.side_effect = DuffyConfigurationError("database")
+            expectation = pytest.raises(SystemExit)
+        else:
+            expectation = noop_context()
+
+        with expectation as excinfo:
+            await init_model()
+
+        init_sync_model.assert_called_once_with()
+        if config_error:
+            init_async_model.assert_not_awaited()
+            assert excinfo.value.code != 0
+        else:
+            init_async_model.assert_awaited_once_with()

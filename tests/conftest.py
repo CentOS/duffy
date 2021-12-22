@@ -9,7 +9,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from duffy.configuration import read_configuration
-from duffy.database import Base, DBSession, SyncDBSession, init_async_model, init_sync_model
+from duffy.database import (
+    Base,
+    async_session_maker,
+    init_async_model,
+    init_sync_model,
+    sync_session_maker,
+)
 from duffy.database.setup import _gen_test_data_objs
 
 # Configuration fixtures
@@ -124,7 +130,7 @@ async def db_async_schema(db_async_engine):
 def db_sync_model_initialized(db_sync_engine, db_sync_schema):
     """Fixture to initialize the synchronous DB model.
 
-    This configures SyncDBSession so it's usable in tests.
+    This is used so db_sync_session is usable in tests.
     """
     init_sync_model(sync_engine=db_sync_engine)
 
@@ -133,64 +139,84 @@ def db_sync_model_initialized(db_sync_engine, db_sync_schema):
 async def db_async_model_initialized(db_async_engine, db_async_schema):
     """Fixture to initialize the asynchronous DB model.
 
-    This configures DBSession so it's usable in tests.
+    This is used so db_async_session is usable in tests.
     """
     await init_async_model(async_engine=db_async_engine)
 
 
 @pytest.fixture
-def db_sync_obj(request, db_sync_model_initialized):
+def db_sync_session(db_sync_model_initialized):
+    """Fixture setting up a synchronous DB session."""
+    db_session = sync_session_maker()
+    try:
+        yield db_session
+    finally:
+        db_session.close()
+
+
+@pytest.fixture
+async def db_async_session(db_async_model_initialized):
+    """Fixture setting up an asynchronous DB session."""
+    db_session = async_session_maker()
+    try:
+        yield db_session
+    finally:
+        await db_session.close()
+
+
+@pytest.fixture
+def db_sync_obj(request, db_sync_session):
     """Fixture to create an object of a tested model type.
 
     This is for synchronous test functions/methods."""
-    with SyncDBSession.begin():
+    with db_sync_session.begin():
         db_obj_dependencies = request.instance._db_obj_get_dependencies()
         attrs = {**request.instance.attrs, **db_obj_dependencies}
         obj = request.instance.klass(**attrs)
         obj._db_obj_dependencies = db_obj_dependencies
-        SyncDBSession.add(obj)
-        SyncDBSession.flush()
+        db_sync_session.add(obj)
+        db_sync_session.flush()
 
         yield obj
 
-        SyncDBSession.rollback()
+        db_sync_session.rollback()
 
 
 @pytest.fixture
-async def db_async_obj(request, db_async_model_initialized):
+async def db_async_obj(request, db_async_session):
     """Fixture to create an object of a tested model type.
 
     This is for asynchronous test functions/methods."""
-    async with DBSession.begin():
+    async with db_async_session.begin():
         db_obj_dependencies = request.instance._db_obj_get_dependencies()
         attrs = {**request.instance.attrs, **db_obj_dependencies}
         obj = request.instance.klass(**attrs)
         obj._db_obj_dependencies = db_obj_dependencies
-        DBSession.add(obj)
-        await DBSession.flush()
+        db_async_session.add(obj)
+        await db_async_session.flush()
 
         yield obj
 
-        await DBSession.rollback()
+        await db_async_session.rollback()
 
 
 @pytest.fixture
-def db_sync_test_data(db_sync_model_initialized):
+def db_sync_test_data(db_sync_session):
     """A fixture to fill the DB with test data.
 
     Use this in synchronous tests.
     """
-    with SyncDBSession.begin():
+    with db_sync_session.begin():
         for obj in _gen_test_data_objs():
-            SyncDBSession.add(obj)
+            db_sync_session.add(obj)
 
 
 @pytest.fixture
-async def db_async_test_data(db_async_model_initialized):
+async def db_async_test_data(db_async_session):
     """A fixture to fill the DB with test data.
 
     Use this in asynchronous tests.
     """
-    async with DBSession.begin():
+    async with db_async_session.begin():
         for obj in _gen_test_data_objs():
-            DBSession.add(obj)
+            db_async_session.add(obj)

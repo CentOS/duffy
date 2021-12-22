@@ -5,7 +5,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from duffy.database import DBSession, SyncDBSession, model, types
+from duffy.database import model, types
 
 
 class ModelTestBase:
@@ -16,8 +16,8 @@ class ModelTestBase:
     def test_create_obj(self, db_sync_obj):
         pass
 
-    def test_query_obj_sync(self, db_sync_obj):
-        result = SyncDBSession.execute(select(self.klass))
+    def test_query_obj_sync(self, db_sync_obj, db_sync_session):
+        result = db_sync_session.execute(select(self.klass))
         obj = result.scalar_one()
         for key, value in self.attrs.items():
             if key in self.no_validate_attrs:
@@ -33,7 +33,7 @@ class ModelTestBase:
                 assert objvalue == value
 
     @pytest.mark.asyncio
-    async def test_query_obj_async(self, db_async_obj):
+    async def test_query_obj_async(self, db_async_obj, db_async_session):
         # The selectinload() option tells SQLAlchemy to load related objects and lazy loading breaks
         # things here. See here for details:
         #
@@ -41,7 +41,7 @@ class ModelTestBase:
         #
         # You can specify which relation you're interested in but because this code doesn't know
         # anything about the involved ORM class, we specify that we "want it all".
-        result = await DBSession.execute(select(self.klass).options(selectinload("*")))
+        result = await db_async_session.execute(select(self.klass).options(selectinload("*")))
         obj = result.scalar_one()
         for key, value in self.attrs.items():
             if key in self.no_validate_attrs:

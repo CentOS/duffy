@@ -3,13 +3,8 @@ from copy import deepcopy
 
 from sqlalchemy import MetaData, create_engine
 from sqlalchemy.engine import Engine
-from sqlalchemy.ext.asyncio import (
-    AsyncEngine,
-    AsyncSession,
-    async_scoped_session,
-    create_async_engine,
-)
-from sqlalchemy.orm import declarative_base, scoped_session, sessionmaker
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 from ..configuration import config
 from ..exceptions import DuffyConfigurationError
@@ -37,27 +32,20 @@ metadata = MetaData(naming_convention=naming_convention)
 
 Base = declarative_base(metadata=metadata)
 
-# Global session manager: DBSession() returns the thread-local session object appropriate for the
-# current web request.
-async_maker = sessionmaker(class_=AsyncSession, expire_on_commit=False, future=True)
-DBSession = async_scoped_session(async_maker, scopefunc=asyncio.current_task)
-
-sync_maker = sessionmaker(future=True, expire_on_commit=False)
-SyncDBSession = scoped_session(sync_maker)
+async_session_maker = sessionmaker(class_=AsyncSession, expire_on_commit=False, future=True)
+sync_session_maker = sessionmaker(future=True, expire_on_commit=False)
 
 
 def init_sync_model(sync_engine: Engine = None):
     if not sync_engine:
         sync_engine = get_sync_engine()
-    SyncDBSession.remove()
-    SyncDBSession.configure(bind=sync_engine)
+    sync_session_maker.configure(bind=sync_engine)
 
 
 async def init_async_model(async_engine: AsyncEngine = None):
     if not async_engine:
         async_engine = get_async_engine()
-    await DBSession.remove()
-    DBSession.configure(bind=async_engine)
+    async_session_maker.configure(bind=async_engine)
 
 
 def init_model(sync_engine: Engine = None, async_engine: AsyncEngine = None):

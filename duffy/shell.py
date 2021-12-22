@@ -24,7 +24,7 @@ def get_available_shells():
 
 def get_shell_variables(shell_type: str):
     variables = {
-        "SyncDBSession": database.SyncDBSession,
+        "db_sync_session": database.sync_session_maker(),
         "sqlalchemy": sqlalchemy,
         "select": sqlalchemy.select,
     }
@@ -32,7 +32,7 @@ def get_shell_variables(shell_type: str):
     if shell_type == "ipython" and IPython.InteractiveShell.autoawait:
         # Since IPython 7.0, Python 3.6, you can `await` coroutines in the IPython REPL, so we
         # inject the asynchronous database session object into the namespace of the shell.
-        variables["DBSession"] = database.DBSession
+        variables["db_async_session"] = database.async_session_maker()
 
     # Insert all DB model classes into the local namespace.
     for objname in dir(model):
