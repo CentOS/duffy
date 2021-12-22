@@ -149,12 +149,6 @@ def serve(ctx, reload, host, port):
     if uvicorn_log_config.get("loggers", {}).get("duffy"):
         uvicorn_log_config["loggers"]["duffy"]["level"] = numeric_loglevel
 
-    try:
-        database.init_model()
-    except DuffyConfigurationError as exc:
-        log.error("Configuration key missing or wrong: %s", exc.args[0])
-        sys.exit(1)
-
     # Start the show
     uvicorn.run(
         "duffy.app.main:app",

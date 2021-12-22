@@ -55,9 +55,13 @@ def test_setup_db_schema(get_sync_engine, inspect, metadata, Config, stamp, db_e
         Config.assert_not_called()
 
 
-@mock.patch("duffy.database.setup.SyncDBSession")
-def test_setup_db_test_data(SyncDBSession):
+@mock.patch("duffy.database.setup.sync_session_maker")
+def test_setup_db_test_data(sync_session_maker):
+    sync_session_maker.return_value = db_sync_session = mock.MagicMock()
     setup.setup_db_test_data()
-    SyncDBSession.begin.assert_called_once_with()
+    sync_session_maker.assert_called_once_with()
+    db_sync_session.begin.assert_called_once_with()
     for model_cls in (model.Chassis, model.PhysicalNode, model.VirtualNode):
-        assert any(isinstance(call.args[0], model_cls) for call in SyncDBSession.add.call_args_list)
+        assert any(
+            isinstance(call.args[0], model_cls) for call in db_sync_session.add.call_args_list
+        )

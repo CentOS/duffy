@@ -108,28 +108,16 @@ def test_worker(start_worker):
 
 
 @pytest.mark.parametrize(
-    "config_error, parameters",
+    "parameters",
     [
-        (False, parms)
-        for parms in (
-            ("serve",),
-            ("serve", "--host=127.0.0.1"),
-            (f"--config={EXAMPLE_CONFIG.absolute()}", "serve"),
-        )
-    ]
-    + [(True, ("serve",))],
+        ("serve",),
+        ("serve", "--host=127.0.0.1"),
+        (f"--config={EXAMPLE_CONFIG.absolute()}", "serve"),
+    ],
 )
-@mock.patch("duffy.database.init_model")
 @mock.patch("duffy.cli.uvicorn.run")
-def test_serve(uvicorn_run, init_model, config_error, parameters):
-    if config_error:
-        init_model.side_effect = DuffyConfigurationError("database")
+def test_serve(uvicorn_run, parameters):
     runner = CliRunner()
     result = runner.invoke(cli, parameters)
-    init_model.assert_called_once()
-    if not config_error:
-        assert result.exit_code == 0
-        uvicorn_run.assert_called_once()
-    else:
-        assert result.exit_code != 0
-        uvicorn_run.assert_not_called()
+    assert result.exit_code == 0
+    uvicorn_run.assert_called_once()

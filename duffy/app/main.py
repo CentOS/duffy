@@ -1,7 +1,10 @@
 import logging
+import sys
 
 from fastapi import FastAPI
 
+from .. import database
+from ..exceptions import DuffyConfigurationError
 from ..version import __version__
 from .controllers import chassis, node, session, tenant
 
@@ -27,6 +30,7 @@ app = FastAPI(
     openapi_tags=tags_metadata,
 )
 
+
 # API v1
 
 PREFIX = "/api/v1"
@@ -35,3 +39,16 @@ app.include_router(chassis.router, prefix=PREFIX)
 app.include_router(node.router, prefix=PREFIX)
 app.include_router(tenant.router, prefix=PREFIX)
 app.include_router(session.router, prefix=PREFIX)
+
+
+# DB model initialization
+
+
+@app.on_event("startup")
+async def init_model():
+    try:
+        database.init_sync_model()
+        await database.init_async_model()
+    except DuffyConfigurationError as exc:
+        log.error("Configuration key missing or wrong: %s", exc.args[0])
+        sys.exit(1)

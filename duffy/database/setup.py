@@ -9,7 +9,7 @@ from sqlalchemy import inspect
 from ..configuration import config
 
 # Import the DB model here so its classes are considered by metadata.create_all() below.
-from . import SyncDBSession, get_sync_engine, metadata, model  # noqa: F401
+from . import get_sync_engine, metadata, model, sync_session_maker  # noqa: F401
 
 HERE = Path(__file__).parent
 
@@ -118,10 +118,11 @@ def _gen_test_data_objs():
 
 
 def setup_db_test_data():
+    db_sync_session = sync_session_maker()
     print("Creating test data")
-    with SyncDBSession.begin():
+    with db_sync_session.begin():
         for obj in _gen_test_data_objs():
-            SyncDBSession.add(obj)
+            db_sync_session.add(obj)
 
     print("Caution! Created tenants with deterministic API keys:")
     print("\tadmin:", _gen_test_api_key("admin"))
