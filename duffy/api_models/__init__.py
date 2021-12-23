@@ -32,6 +32,7 @@ from .session import (  # noqa: F401
 from .tenant import (  # noqa: F401
     TenantCreateModel,
     TenantCreateResult,
+    TenantCreateResultModel,
     TenantModel,
     TenantResult,
     TenantResultCollection,
