@@ -13,7 +13,12 @@ from starlette.status import (
     HTTP_409_CONFLICT,
 )
 
-from ...api_models import TenantCreateModel, TenantResult, TenantResultCollection
+from ...api_models import (
+    TenantCreateModel,
+    TenantCreateResult,
+    TenantResult,
+    TenantResultCollection,
+)
 from ...database.model import Tenant
 from ..auth import req_tenant
 from ..database import req_db_async_session
@@ -62,7 +67,7 @@ async def get_tenant(
 
 
 # http --json post http://localhost:8080/api/v1/tenants name="Unique name"
-@router.post("", status_code=HTTP_201_CREATED, response_model=TenantResult, tags=["tenants"])
+@router.post("", status_code=HTTP_201_CREATED, response_model=TenantCreateResult, tags=["tenants"])
 async def create_tenant(
     data: TenantCreateModel,
     db_async_session: AsyncSession = Depends(req_db_async_session),
@@ -75,7 +80,10 @@ async def create_tenant(
         raise HTTPException(HTTP_403_FORBIDDEN)
 
     created_tenant = Tenant(
-        name=data.name, is_admin=data.is_admin, api_key=data.api_key, ssh_key=data.ssh_key
+        name=data.name,
+        is_admin=data.is_admin,
+        api_key=data.api_key,
+        ssh_key=data.ssh_key.get_secret_value(),
     )
     db_async_session.add(created_tenant)
     try:
