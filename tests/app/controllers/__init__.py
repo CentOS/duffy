@@ -30,9 +30,11 @@ class BaseTestController:
                 the API. Values can be tuples of other controller test
                 classes and an item name to create such objects and use
                 the respective items in the result.
-        no_response_attrs:
-                A sequence of attribute names which are not returned in
-                a response from the API endpoint.
+        no_verify_attrs:
+                A sequence of attribute names which should not be
+                checked, e.g. because they are not returned in a
+                response from the API endpoint or are expected to
+                differ.
         unique: Whether or not objects with the same attributes can
                 exist more than once. If it is a string, check whether
                 it is in the error detail (case-insensitively). If it is
@@ -81,7 +83,7 @@ class BaseTestController:
     name = None
     path = None
     attrs = {}
-    no_response_attrs = ()
+    no_verify_attrs = ()
     unique = False
     create_unprivileged = False
 
@@ -132,13 +134,13 @@ class BaseTestController:
         return response
 
     @classmethod
-    def _verify_item(cls, item, attrs=None, no_response_attrs=None):
+    def _verify_item(cls, item, attrs=None, no_verify_attrs=None):
         if not attrs:
             attrs = cls.attrs
-        if not no_response_attrs:
-            no_response_attrs = cls.no_response_attrs
+        if not no_verify_attrs:
+            no_verify_attrs = cls.no_verify_attrs
         for key, value in attrs.items():
-            if key in no_response_attrs:
+            if key in no_verify_attrs:
                 continue
             try:
                 subcls, _ = cls.attrs[key]
@@ -180,7 +182,7 @@ class BaseTestController:
 
         retval = {}
         for name, value in cls.attrs.items():
-            if name in cls.no_response_attrs:
+            if name in cls.no_verify_attrs:
                 continue
             try:
                 subcls, item = value

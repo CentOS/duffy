@@ -24,7 +24,7 @@ class TestSession(BaseTestController):
         # don't bother with actually allocating nodes here
         "nodes_specs": [],
     }
-    no_response_attrs = ("nodes_specs",)
+    no_verify_attrs = ("nodes_specs",)
     create_unprivileged = True
 
     @staticmethod

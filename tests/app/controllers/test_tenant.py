@@ -17,7 +17,7 @@ class TestTenant(BaseTestController):
         "api_key": str(uuid.uuid4()),
         "ssh_key": "With a honky SSH key!",
     }
-    no_response_attrs = ("api_key",)
+    no_verify_attrs = ("api_key", "ssh_key")
     unique = "unique"
 
     async def test_with_is_admin_set(self, client):

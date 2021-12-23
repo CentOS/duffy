@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import List, Optional
 
-from pydantic import UUID4, BaseModel
+from pydantic import UUID4, BaseModel, SecretStr
 
 from .common import APIResult, CreatableMixin, RetirableMixin
 
@@ -11,7 +11,7 @@ from .common import APIResult, CreatableMixin, RetirableMixin
 class TenantBase(BaseModel, ABC):
     name: str
     is_admin: Optional[bool]
-    ssh_key: str
+    ssh_key: SecretStr
 
     class Config:
         orm_mode = True
@@ -30,6 +30,11 @@ class TenantModel(TenantBase, CreatableMixin, RetirableMixin):
 
 class TenantResult(APIResult):
     tenant: TenantModel
+
+
+class TenantCreateResult(TenantResult):
+    class Config:
+        json_encoders = {SecretStr: lambda v: v.get_secret_value() if v else None}
 
 
 class TenantResultCollection(APIResult):
