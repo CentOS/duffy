@@ -2,6 +2,8 @@
 This is the tenant controller.
 """
 
+from uuid import uuid4
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -16,6 +18,8 @@ from starlette.status import (
 from ...api_models import (
     TenantCreateModel,
     TenantCreateResult,
+    TenantCreateResultModel,
+    TenantModel,
     TenantResult,
     TenantResultCollection,
 )
@@ -79,19 +83,27 @@ async def create_tenant(
     if not tenant.is_admin:
         raise HTTPException(HTTP_403_FORBIDDEN)
 
+    api_key = uuid4()
+
     created_tenant = Tenant(
         name=data.name,
         is_admin=data.is_admin,
-        api_key=data.api_key,
+        api_key=api_key,
         ssh_key=data.ssh_key.get_secret_value(),
     )
     db_async_session.add(created_tenant)
     try:
-        await db_async_session.commit()
+        await db_async_session.flush()
     except IntegrityError as exc:
         raise HTTPException(HTTP_409_CONFLICT, str(exc))
 
-    return {"action": "post", "tenant": created_tenant}
+    api_tenant = TenantCreateResultModel(
+        api_key=api_key, **TenantModel.from_orm(created_tenant).dict()
+    )
+
+    await db_async_session.commit()
+
+    return {"action": "post", "tenant": api_tenant}
 
 
 # http delete http://localhost:8080/api/v1/tenant/2

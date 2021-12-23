@@ -1,8 +1,10 @@
 import uuid
 
 import pytest
+from sqlalchemy import select
 from starlette.status import HTTP_201_CREATED, HTTP_403_FORBIDDEN
 
+from duffy.database.model import Tenant
 from duffy.database.setup import _gen_test_api_key
 
 from . import BaseTestController
@@ -14,17 +16,27 @@ class TestTenant(BaseTestController):
     path = "/api/v1/tenants"
     attrs = {
         "name": "Some Honky Tenant!",
-        "api_key": str(uuid.uuid4()),
         "ssh_key": "With a honky SSH key!",
     }
-    no_verify_attrs = ("api_key", "ssh_key")
+    no_verify_attrs = ("ssh_key",)
     unique = "unique"
 
-    async def test_with_is_admin_set(self, client):
+    async def test_create_obj_with_is_admin_set(self, client):
         response = await self._create_obj(client, attrs={"is_admin": False})
         assert response.status_code == HTTP_201_CREATED
         result = response.json()
         self._verify_item(result[self.name])
+
+    async def test_create_obj_verify_api_key(self, client, db_async_session):
+        response = await self._create_obj(client)
+        assert response.status_code == HTTP_201_CREATED
+        result = response.json()
+        api_tenant = result[self.name]
+        api_key = uuid.UUID(api_tenant["api_key"])
+        created_tenant = (
+            await db_async_session.execute(select(Tenant).filter_by(id=api_tenant["id"]))
+        ).scalar_one()
+        assert created_tenant.validate_api_key(api_key)
 
     @pytest.mark.client_auth_as("tenant")
     async def test_retrieve_obj_other_tenant(self, client, auth_admin):

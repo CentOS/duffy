@@ -18,11 +18,15 @@ class TenantBase(BaseModel, ABC):
 
 
 class TenantCreateModel(TenantBase):
-    api_key: UUID4
+    pass
 
 
 class TenantModel(TenantBase, CreatableMixin, RetirableMixin):
     id: int
+
+
+class TenantCreateResultModel(TenantModel):
+    api_key: UUID4
 
 
 # API results
@@ -33,6 +37,8 @@ class TenantResult(APIResult):
 
 
 class TenantCreateResult(TenantResult):
+    tenant: TenantCreateResultModel
+
     class Config:
         json_encoders = {SecretStr: lambda v: v.get_secret_value() if v else None}
 
