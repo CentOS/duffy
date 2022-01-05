@@ -159,3 +159,84 @@ def serve(reload, host, port, loglevel):
         reload=reload,
         log_config=uvicorn_log_config,
     )
+
+
+# Run the web app - Duffy Metaclient for Legacy Support
+
+
+@cli.command()
+@click.option(
+    "--reload/--no-reload", default=False, help="Automatically reload if the code is changed."
+)
+@click.option("-H", "--host", default=None, help="Set the host address to listen on.")
+@click.option(
+    "-p",
+    "--port",
+    type=click.IntRange(1, 65535, clamp=True),
+    default=None,
+    help="Set the port value.",
+)
+@click.option(
+    "-D",
+    "--dest",
+    default=None,
+    help="Set the destination address of Duffy deployment.",
+)
+@click.option(
+    "-l",
+    "--loglevel",
+    "loglevel",
+    type=click.Choice(list(uvicorn.config.LOG_LEVELS.keys()), case_sensitive=False),
+    help="Set the log level.",
+    default=None,
+)
+@click.pass_context
+def serve_legacy(ctx, reload, host, port, dest, loglevel):
+    """Serve the Duffy Metaclient for Legacy Support app.
+
+    Duffy is the middle layer running ci.centos.org that manages the
+    provisioning, maintenance and teardown / rebuild of the Nodes
+    (physical hardware for now, VMs coming soon) that are used to run
+    the tests in the CI Cluster.
+
+    This metaclient exposes older endpoints for legacy support and
+    connects them to the path operations introduced by the newer version
+    of the Duffy endpoint, until the support for the older endpoints is
+    deprecated.
+    """
+    config_metaclient = config.get("metaclient", {})
+    if host is None:
+        host = config_metaclient.get("host", "127.0.0.1")
+    if port is None:
+        port = config_metaclient.get("port", 9090)
+    if dest is None:
+        dest = config_metaclient.get("dest", "http://127.0.0.1:8080")
+    if loglevel is None:
+        loglevel = config_metaclient.get("loglevel", "info")
+
+    numeric_loglevel = uvicorn.config.LOG_LEVELS[loglevel.lower()]
+    logging.basicConfig(level=numeric_loglevel)
+
+    # Report for duty
+    print(" * Starting Duffy Metaclient for Legacy Support...")
+    print(f" * Host address        : {host}")
+    print(f" * Port number         : {port}")
+    print(f" * Destination address : {dest}")
+    print(f" * Log level           : {loglevel}")
+    print(f" * Serving API docs on http://{host}:{port}/docs")
+
+    uvicorn_log_config = copy.deepcopy(
+        config_metaclient.get("logging", uvicorn.config.LOGGING_CONFIG)
+    )
+    if uvicorn_log_config.get("loggers", {}).get("duffy"):
+        uvicorn_log_config["loggers"]["duffy"]["level"] = numeric_loglevel
+
+    # Start the show
+    uvicorn.run(
+        "duffy.legacy.main:app",
+        host=host,
+        port=port,
+        log_level=numeric_loglevel,
+        reload=reload,
+        log_config=uvicorn_log_config,
+    )

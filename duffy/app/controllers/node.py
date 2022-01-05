@@ -21,7 +21,6 @@ router = APIRouter(prefix="/nodes")
 @router.get("", response_model=NodeResultCollection, tags=["nodes"])
 async def get_all_nodes(
     db_async_session: AsyncSession = Depends(req_db_async_session),
-    tenant: Tenant = Depends(req_tenant),
 ):
     """
     Return all nodes

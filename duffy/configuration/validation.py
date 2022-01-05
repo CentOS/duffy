@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Literal, Optional
+from typing import Dict, Literal, Optional
 
 from pydantic import AnyUrl, BaseModel, conint, stricturl
 
@@ -55,9 +55,17 @@ class AppModel(BaseModel):
     logging: Optional[LoggingModel]
 
 
+class LegacyModel(BaseModel):
+    host: Optional[str]
+    port: Optional[conint(gt=0, lt=65536)]
+    dest: Optional[str]
+    loglevel: Optional[LogLevel]
+    logging: Optional[LoggingModel]
+    usermap: Dict[str, str]
+
+
 class ConfigModel(BaseModel):
     app: Optional[AppModel]
-
     celery: Optional[CeleryConfigModel]
-
     database: Optional[DatabaseConfigModel]
+    metaclient: Optional[LegacyModel]
