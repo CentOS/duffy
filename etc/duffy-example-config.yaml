@@ -2,14 +2,17 @@
 loglevel: warning
 host: 0.0.0.0
 port: 8080
+
 celery:
   broker_url: "redis://localhost:6379"
   result_backend: "redis://localhost:6379"
+
 database:
   sqlalchemy:
     sync_url: "sqlite:///:memory:"
     # the DB dialect must be async-compatible
     async_url: "sqlite+aiosqlite:///:memory:"
+
 logging:
   version: 1
   disable_existing_loggers: false
