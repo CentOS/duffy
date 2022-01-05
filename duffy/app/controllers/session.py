@@ -1,6 +1,7 @@
 """
 This is the session controller.
 """
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
@@ -22,7 +23,7 @@ from ...api_models import (
 )
 from ...database.model import Node, Session, SessionNode, Tenant
 from ...database.types import NodeState
-from ..auth import req_tenant
+from ..auth import req_tenant, req_tenant_optional
 from ..database import req_db_async_session
 
 router = APIRouter(prefix="/sessions")
@@ -32,16 +33,20 @@ router = APIRouter(prefix="/sessions")
 @router.get("", response_model=SessionResultCollection, tags=["sessions"])
 async def get_all_sessions(
     db_async_session: AsyncSession = Depends(req_db_async_session),
-    tenant: Tenant = Depends(req_tenant),
+    tenant: Optional[Tenant] = Depends(req_tenant_optional),
 ):
     """
     Returns all sessions
     """
-    query = select(Session).options(
-        selectinload(Session.tenant),
-        selectinload(Session.session_nodes).selectinload(SessionNode.node),
+    query = (
+        select(Session)
+        .options(
+            selectinload(Session.tenant),
+            selectinload(Session.session_nodes).selectinload(SessionNode.node),
+        )
+        .filter_by(active=True)
     )
-    if not tenant.is_admin:
+    if tenant and not tenant.is_admin:
         query = query.filter_by(tenant=tenant)
     results = await db_async_session.execute(query)
     return {"action": "get", "sessions": results.scalars().all()}

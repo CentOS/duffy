@@ -161,3 +161,33 @@ def test_serve(uvicorn_run, testcase, duffy_config_files):
     result = runner.invoke(cli, parameters)
     assert result.exit_code == 0
     uvicorn_run.assert_called_once()
+
+
+@pytest.mark.duffy_config(EXAMPLE_CONFIG, clear=True)
+@pytest.mark.parametrize("testcase", ("default", "with-options", "missing-logging-config"))
+@mock.patch("duffy.cli.uvicorn.run")
+def test_serve_legacy(uvicorn_run, testcase, duffy_config_files):
+    (config_file,) = duffy_config_files
+
+    if testcase in ("default", "missing-logging-config"):
+        parameters = (f"--config={config_file.absolute()}", "serve-legacy")
+    elif testcase == "with-options":
+        parameters = (
+            f"--config={config_file.absolute()}",
+            "serve-legacy",
+            "--host=127.0.0.1",
+            "--port=9090",
+            "--dest=http://127.0.0.1:8080",
+            "--loglevel=info",
+        )
+
+    if testcase == "missing-logging-config":
+        config = copy.deepcopy(EXAMPLE_CONFIG)
+        del config["metaclient"]["logging"]
+        with config_file.open("w") as fp:
+            yaml.dump(config, fp)
+
+    runner = CliRunner()
+    result = runner.invoke(cli, parameters)
+    assert result.exit_code == 0
+    uvicorn_run.assert_called_once()
