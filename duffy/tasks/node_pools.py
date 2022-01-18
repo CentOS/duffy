@@ -3,7 +3,9 @@ from typing import Any, Dict, Iterator, List, Optional, Union
 import jinja2
 
 from ..configuration import config
+from ..database.model import Node
 from ..util import merge_dicts
+from .mechanisms import Mechanism
 
 
 class NodePool(dict):
@@ -86,9 +88,22 @@ class AbstractNodePool(NodePool, cls_type="abstract"):
 
 
 class ConcreteNodePool(NodePool, cls_type="concrete"):
+    def __init__(
+        self, *, name: str, extends: Optional[Union[List[str], str]] = None, **configuration
+    ):
+        super().__init__(name=name, extends=extends, **configuration)
+
+        self.mechanism = Mechanism.from_configuration(self, self["mechanism"])
+
     @classmethod
     def iter_pools(cls) -> Iterator["ConcreteNodePool"]:
         for pool in super().iter_pools():
             # filter for pools of this class or children
             if isinstance(pool, cls):
                 yield pool
+
+    def provision(self, nodes: List[Node]) -> Dict[str, Any]:
+        return self.mechanism.provision(nodes=nodes)
+
+    def deprovision(self, nodes: List[Node]) -> Dict[str, Any]:
+        return self.mechanism.deprovision(nodes=nodes)

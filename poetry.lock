@@ -38,6 +38,46 @@ python-versions = ">=3.6"
 vine = "5.0.0"
 
 [[package]]
+name = "ansible"
+version = "5.3.0"
+description = "Radically simple IT automation"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[package.dependencies]
+ansible-core = ">=2.12.2,<2.13.0"
+
+[[package]]
+name = "ansible-core"
+version = "2.12.2"
+description = "Radically simple IT automation"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[package.dependencies]
+cryptography = "*"
+jinja2 = "*"
+packaging = "*"
+PyYAML = "*"
+resolvelib = ">=0.5.3,<0.6.0"
+
+[[package]]
+name = "ansible-runner"
+version = "2.1.1"
+description = "\"Consistent Ansible Python API and CLI with container and process isolation runtime capabilities\""
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+pexpect = ">=4.5"
+python-daemon = "*"
+pyyaml = "*"
+six = "*"
+
+[[package]]
 name = "anyio"
 version = "3.5.0"
 description = "High level compatibility layer for multiple asynchronous event loop implementations"
@@ -317,6 +357,25 @@ tomli = {version = "*", optional = true, markers = "extra == \"toml\""}
 toml = ["tomli"]
 
 [[package]]
+name = "cryptography"
+version = "36.0.1"
+description = "cryptography is a package which provides cryptographic recipes and primitives to Python developers."
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+cffi = ">=1.12"
+
+[package.extras]
+docs = ["sphinx (>=1.6.5,!=1.8.0,!=3.1.0,!=3.1.1)", "sphinx-rtd-theme"]
+docstest = ["pyenchant (>=1.6.11)", "twine (>=1.12.0)", "sphinxcontrib-spelling (>=4.0.1)"]
+pep8test = ["black", "flake8", "flake8-import-order", "pep8-naming"]
+sdist = ["setuptools_rust (>=0.11.4)"]
+ssh = ["bcrypt (>=3.1.5)"]
+test = ["pytest (>=6.2.0)", "pytest-cov", "pytest-subtests", "pytest-xdist", "pretend", "iso8601", "pytz", "hypothesis (>=1.11.4,!=3.79.2)"]
+
+[[package]]
 name = "databases"
 version = "0.5.5"
 description = "Async database support for Python."
@@ -380,6 +439,14 @@ doh = ["h2 (>=4.1.0)", "httpx (>=0.21.1)", "requests (>=2.23.0,<3.0.0)", "reques
 idna = ["idna (>=2.1,<4.0)"]
 trio = ["trio (>=0.14,<0.20)"]
 wmi = ["wmi (>=1.5.1,<2.0.0)"]
+
+[[package]]
+name = "docutils"
+version = "0.18.1"
+description = "Docutils -- Python Documentation Utilities"
+category = "main"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
 name = "email-validator"
@@ -646,7 +713,7 @@ testing = ["Django (<3.1)", "colorama", "docopt", "pytest (<7.0.0)"]
 name = "jinja2"
 version = "3.0.3"
 description = "A very fast and expressive template engine."
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 
@@ -655,6 +722,14 @@ MarkupSafe = ">=2.0"
 
 [package.extras]
 i18n = ["Babel (>=2.7)"]
+
+[[package]]
+name = "jmespath"
+version = "0.10.0"
+description = "JSON Matching Expressions"
+category = "main"
+optional = false
+python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [[package]]
 name = "kombu"
@@ -683,6 +758,14 @@ sqlalchemy = ["sqlalchemy"]
 sqs = ["boto3 (>=1.9.12)", "pycurl (>=7.44.1,<7.45.0)", "urllib3 (>=1.26.7)"]
 yaml = ["PyYAML (>=3.10)"]
 zookeeper = ["kazoo (>=1.3.1)"]
+
+[[package]]
+name = "lockfile"
+version = "0.12.2"
+description = "Platform-independent file locking module"
+category = "main"
+optional = false
+python-versions = "*"
 
 [[package]]
 name = "mako"
@@ -814,7 +897,7 @@ name = "pexpect"
 version = "4.8.0"
 description = "Pexpect allows easy control of interactive console applications."
 category = "main"
-optional = true
+optional = false
 python-versions = "*"
 
 [package.dependencies]
@@ -876,7 +959,7 @@ name = "ptyprocess"
 version = "0.7.0"
 description = "Run a subprocess in a pseudo terminal"
 category = "main"
-optional = true
+optional = false
 python-versions = "*"
 
 [[package]]
@@ -1035,6 +1118,21 @@ isort = ">=4.0"
 tests = ["mock"]
 
 [[package]]
+name = "python-daemon"
+version = "2.3.0"
+description = "Library to implement a well-behaved Unix daemon process."
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+docutils = "*"
+lockfile = ">=0.10"
+
+[package.extras]
+test = ["coverage", "docutils", "testscenarios (>=0.4)", "testtools"]
+
+[[package]]
 name = "python-multipart"
 version = "0.0.5"
 description = "A streaming multipart parser for Python"
@@ -1102,6 +1200,20 @@ urllib3 = ">=1.21.1,<1.27"
 [package.extras]
 socks = ["PySocks (>=1.5.6,!=1.5.7)", "win-inet-pton"]
 use_chardet_on_py3 = ["chardet (>=3.0.2,<5)"]
+
+[[package]]
+name = "resolvelib"
+version = "0.5.5"
+description = "Resolve abstract dependencies into concrete ones"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.extras]
+examples = ["html5lib", "packaging", "pygraphviz", "requests"]
+lint = ["black", "flake8"]
+release = ["setl", "towncrier"]
+test = ["commentjson", "packaging", "pytest"]
 
 [[package]]
 name = "rfc3986"
@@ -1383,11 +1495,12 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 interactive = ["ipython"]
 legacy = ["httpx"]
 postgresql = ["psycopg2"]
+tasks = ["ansible-runner", "ansible-core", "ansible", "Jinja2", "jmespath"]
 
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "ee803ee3ccb19aa9d14666d5a2506aafac59d86f20e094c5f8b2316d7d2c603c"
+content-hash = "cef2427d5d1884abacd15fbec34f3a53508f380c1e51729fd24988b9297ff877"
 
 [metadata.files]
 aiosqlite = [
@@ -1401,6 +1514,16 @@ alembic = [
 amqp = [
     {file = "amqp-5.0.9-py3-none-any.whl", hash = "sha256:9cd81f7b023fc04bbb108718fbac674f06901b77bfcdce85b10e2a5d0ee91be5"},
     {file = "amqp-5.0.9.tar.gz", hash = "sha256:1e5f707424e544078ca196e72ae6a14887ce74e02bd126be54b7c03c971bef18"},
+]
+ansible = [
+    {file = "ansible-5.3.0.tar.gz", hash = "sha256:50020dab43f6c59debdeb57f45c90ec6db78d4fa574edc6d75bc52e05cbd3639"},
+]
+ansible-core = [
+    {file = "ansible-core-2.12.2.tar.gz", hash = "sha256:bc79e1723a5a92cbc105d581b25b66840d15bb5f4c98925c936ef5a71f92e7c3"},
+]
+ansible-runner = [
+    {file = "ansible-runner-2.1.1.tar.gz", hash = "sha256:7684612f7543c5f07f3e8135667eeb22a9dbd98f625cc69901ba9924329ef24f"},
+    {file = "ansible_runner-2.1.1-py3-none-any.whl", hash = "sha256:75f41f3a6126c326b2099f69be52f5adce92f2ef62d130f30151b8d9e2bdbbdc"},
 ]
 anyio = [
     {file = "anyio-3.5.0-py3-none-any.whl", hash = "sha256:b5fa16c5ff93fa1046f2eeb5bbff2dad4d3514d6cda61d02816dba34fa8c3c2e"},
@@ -1577,6 +1700,28 @@ coverage = [
     {file = "coverage-6.3.1-pp36.pp37.pp38-none-any.whl", hash = "sha256:463e52616ea687fd323888e86bf25e864a3cc6335a043fad6bbb037dbf49bbe2"},
     {file = "coverage-6.3.1.tar.gz", hash = "sha256:6c3f6158b02ac403868eea390930ae64e9a9a2a5bbfafefbb920d29258d9f2f8"},
 ]
+cryptography = [
+    {file = "cryptography-36.0.1-cp36-abi3-macosx_10_10_universal2.whl", hash = "sha256:73bc2d3f2444bcfeac67dd130ff2ea598ea5f20b40e36d19821b4df8c9c5037b"},
+    {file = "cryptography-36.0.1-cp36-abi3-macosx_10_10_x86_64.whl", hash = "sha256:2d87cdcb378d3cfed944dac30596da1968f88fb96d7fc34fdae30a99054b2e31"},
+    {file = "cryptography-36.0.1-cp36-abi3-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:74d6c7e80609c0f4c2434b97b80c7f8fdfaa072ca4baab7e239a15d6d70ed73a"},
+    {file = "cryptography-36.0.1-cp36-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_24_aarch64.whl", hash = "sha256:6c0c021f35b421ebf5976abf2daacc47e235f8b6082d3396a2fe3ccd537ab173"},
+    {file = "cryptography-36.0.1-cp36-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:5d59a9d55027a8b88fd9fd2826c4392bd487d74bf628bb9d39beecc62a644c12"},
+    {file = "cryptography-36.0.1-cp36-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0a817b961b46894c5ca8a66b599c745b9a3d9f822725221f0e0fe49dc043a3a3"},
+    {file = "cryptography-36.0.1-cp36-abi3-manylinux_2_24_x86_64.whl", hash = "sha256:94ae132f0e40fe48f310bba63f477f14a43116f05ddb69d6fa31e93f05848ae2"},
+    {file = "cryptography-36.0.1-cp36-abi3-musllinux_1_1_aarch64.whl", hash = "sha256:7be0eec337359c155df191d6ae00a5e8bbb63933883f4f5dffc439dac5348c3f"},
+    {file = "cryptography-36.0.1-cp36-abi3-musllinux_1_1_x86_64.whl", hash = "sha256:e0344c14c9cb89e76eb6a060e67980c9e35b3f36691e15e1b7a9e58a0a6c6dc3"},
+    {file = "cryptography-36.0.1-cp36-abi3-win32.whl", hash = "sha256:4caa4b893d8fad33cf1964d3e51842cd78ba87401ab1d2e44556826df849a8ca"},
+    {file = "cryptography-36.0.1-cp36-abi3-win_amd64.whl", hash = "sha256:391432971a66cfaf94b21c24ab465a4cc3e8bf4a939c1ca5c3e3a6e0abebdbcf"},
+    {file = "cryptography-36.0.1-pp37-pypy37_pp73-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:bb5829d027ff82aa872d76158919045a7c1e91fbf241aec32cb07956e9ebd3c9"},
+    {file = "cryptography-36.0.1-pp37-pypy37_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ebc15b1c22e55c4d5566e3ca4db8689470a0ca2babef8e3a9ee057a8b82ce4b1"},
+    {file = "cryptography-36.0.1-pp37-pypy37_pp73-manylinux_2_24_x86_64.whl", hash = "sha256:596f3cd67e1b950bc372c33f1a28a0692080625592ea6392987dba7f09f17a94"},
+    {file = "cryptography-36.0.1-pp38-pypy38_pp73-macosx_10_10_x86_64.whl", hash = "sha256:30ee1eb3ebe1644d1c3f183d115a8c04e4e603ed6ce8e394ed39eea4a98469ac"},
+    {file = "cryptography-36.0.1-pp38-pypy38_pp73-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:ec63da4e7e4a5f924b90af42eddf20b698a70e58d86a72d943857c4c6045b3ee"},
+    {file = "cryptography-36.0.1-pp38-pypy38_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ca238ceb7ba0bdf6ce88c1b74a87bffcee5afbfa1e41e173b1ceb095b39add46"},
+    {file = "cryptography-36.0.1-pp38-pypy38_pp73-manylinux_2_24_x86_64.whl", hash = "sha256:ca28641954f767f9822c24e927ad894d45d5a1e501767599647259cbf030b903"},
+    {file = "cryptography-36.0.1-pp38-pypy38_pp73-win_amd64.whl", hash = "sha256:39bdf8e70eee6b1c7b289ec6e5d84d49a6bfa11f8b8646b5b3dfe41219153316"},
+    {file = "cryptography-36.0.1.tar.gz", hash = "sha256:53e5c1dc3d7a953de055d77bef2ff607ceef7a2aac0353b5d630ab67f7423638"},
+]
 databases = [
     {file = "databases-0.5.5-py3-none-any.whl", hash = "sha256:97d9b9647216d1ab53ca61c059412b5c7b6e1f0bf8ce985477982ebcc7f278f3"},
     {file = "databases-0.5.5.tar.gz", hash = "sha256:02c6b016c1c951c21cca281dc8e2e002c60dc44026c0084aabbd8c37514aeb37"},
@@ -1596,6 +1741,10 @@ distlib = [
 dnspython = [
     {file = "dnspython-2.2.0-py3-none-any.whl", hash = "sha256:081649da27ced5e75709a1ee542136eaba9842a0fe4c03da4fb0a3d3ed1f3c44"},
     {file = "dnspython-2.2.0.tar.gz", hash = "sha256:e79351e032d0b606b98d38a4b0e6e2275b31a5b85c873e587cc11b73aca026d6"},
+]
+docutils = [
+    {file = "docutils-0.18.1-py2.py3-none-any.whl", hash = "sha256:23010f129180089fbcd3bc08cfefccb3b890b0050e1ca00c867036e9d161b98c"},
+    {file = "docutils-0.18.1.tar.gz", hash = "sha256:679987caf361a7539d76e584cbeddc311e3aee937877c87346f31debc63e9d06"},
 ]
 email-validator = [
     {file = "email_validator-1.1.3-py2.py3-none-any.whl", hash = "sha256:5675c8ceb7106a37e40e2698a57c056756bf3f272cfa8682a4f87ebd95d8440b"},
@@ -1722,9 +1871,17 @@ jinja2 = [
     {file = "Jinja2-3.0.3-py3-none-any.whl", hash = "sha256:077ce6014f7b40d03b47d1f1ca4b0fc8328a692bd284016f806ed0eaca390ad8"},
     {file = "Jinja2-3.0.3.tar.gz", hash = "sha256:611bb273cd68f3b993fabdc4064fc858c5b47a973cb5aa7999ec1ba405c87cd7"},
 ]
+jmespath = [
+    {file = "jmespath-0.10.0-py2.py3-none-any.whl", hash = "sha256:cdf6525904cc597730141d61b36f2e4b8ecc257c420fa2f4549bac2c2d0cb72f"},
+    {file = "jmespath-0.10.0.tar.gz", hash = "sha256:b85d0567b8666149a93172712e68920734333c0ce7e89b78b3e987f71e5ed4f9"},
+]
 kombu = [
     {file = "kombu-5.2.3-py3-none-any.whl", hash = "sha256:eeaeb8024f3a5cfc71c9250e45cddb8493f269d74ada2f74909a93c59c4b4179"},
     {file = "kombu-5.2.3.tar.gz", hash = "sha256:81a90c1de97e08d3db37dbf163eaaf667445e1068c98bfd89f051a40e9f6dbbd"},
+]
+lockfile = [
+    {file = "lockfile-0.12.2-py2.py3-none-any.whl", hash = "sha256:6c3cb24f344923d30b2785d5ad75182c8ea7ac1b6171b08657258ec7429d50fa"},
+    {file = "lockfile-0.12.2.tar.gz", hash = "sha256:6aed02de03cba24efabcd600b30540140634fc06cfa603822d508d5361e9f799"},
 ]
 mako = [
     {file = "Mako-1.1.6-py2.py3-none-any.whl", hash = "sha256:afaf8e515d075b22fad7d7b8b30e4a1c90624ff2f3733a06ec125f5a5f043a57"},
@@ -2004,6 +2161,10 @@ pytest-isort = [
     {file = "pytest-isort-2.0.0.tar.gz", hash = "sha256:821a8c5c9c4f3a3c52cfa9c541fbe89ac9e28728125125af53724c4c3f129117"},
     {file = "pytest_isort-2.0.0-py3-none-any.whl", hash = "sha256:ab949c593213dad38ba75db32a0ce361fcddd11d4152be4a2c93b85104cc4376"},
 ]
+python-daemon = [
+    {file = "python-daemon-2.3.0.tar.gz", hash = "sha256:bda993f1623b1197699716d68d983bb580043cf2b8a66a01274d9b8297b0aeaf"},
+    {file = "python_daemon-2.3.0-py2.py3-none-any.whl", hash = "sha256:191c7b67b8f7aac58849abf54e19fe1957ef7290c914210455673028ad454989"},
+]
 python-multipart = [
     {file = "python-multipart-0.0.5.tar.gz", hash = "sha256:f7bb5f611fc600d15fa47b3974c8aa16e93724513b49b5f95c81e6624c83fa43"},
 ]
@@ -2129,6 +2290,10 @@ regex = [
 requests = [
     {file = "requests-2.27.1-py2.py3-none-any.whl", hash = "sha256:f22fa1e554c9ddfd16e6e41ac79759e17be9e492b3587efa038054674760e72d"},
     {file = "requests-2.27.1.tar.gz", hash = "sha256:68d7c56fd5a8999887728ef304a6d12edc7be74f1cfa47714fc8b414525c9a61"},
+]
+resolvelib = [
+    {file = "resolvelib-0.5.5-py2.py3-none-any.whl", hash = "sha256:b0143b9d074550a6c5163a0f587e49c49017434e3cdfe853941725f5455dd29c"},
+    {file = "resolvelib-0.5.5.tar.gz", hash = "sha256:123de56548c90df85137425a3f51eb93df89e2ba719aeb6a8023c032758be950"},
 ]
 rfc3986 = [
     {file = "rfc3986-1.5.0-py2.py3-none-any.whl", hash = "sha256:a86d6e1f5b1dc238b218b012df0aa79409667bb209e58da56d0b94704e712a97"},

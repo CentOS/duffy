@@ -29,11 +29,12 @@ class TestNodePool:
         assert NodePool.subcls_per_cls_type["foo"] == FooNodePool
         assert FooNodePool.cls_type == "foo"
 
+    @pytest.mark.usefixtures("test_mechanism")
     @pytest.mark.parametrize("cls_type", ("abstract", "concrete"))
     @pytest.mark.parametrize("extends", (None, "foo", ["foo", "bar"]))
     @pytest.mark.parametrize("pool_defined_error", (False, True))
     def test___init__(self, cls_type, extends, pool_defined_error):
-        test_config = {"test": 1}
+        test_config = {"test": 1, "mechanism": {"type": "test", "test": {}}}
 
         _extends = extends
         if not _extends:
@@ -132,6 +133,10 @@ class TestNodePool:
 
 @mock.patch.dict(NodePool.known_pools, clear=True)
 class TestConcreteNodePool:
+    def test___init__(self, test_mechanism):
+        pool = ConcreteNodePool(name="test", mechanism={"type": "test", "test": {}})
+        assert isinstance(pool.mechanism, test_mechanism)
+
     def test_iter_pools(self):
         read_configuration(EXAMPLE_CONFIG)
 
@@ -140,3 +145,14 @@ class TestConcreteNodePool:
         expected = set(config["nodepools"]["concrete"])
 
         assert set(pool.name for pool in ConcreteNodePool.iter_pools()) == expected
+
+    @pytest.mark.usefixtures("test_mechanism")
+    @pytest.mark.parametrize("method", ("provision", "deprovision"))
+    def test_provision_deprovision(self, method):
+        pool = ConcreteNodePool(name="test", mechanism={"type": "test", "test": {}})
+        pool.mechanism = mock.Mock()
+
+        sentinel = [object()]
+        getattr(pool, method)(sentinel)
+
+        getattr(pool.mechanism, method).assert_called_once_with(nodes=sentinel)
