@@ -10,4 +10,5 @@ fail_under = 100
 exclude_lines =
     pragma: no cover
     def __repr__
+    if TYPE_CHECKING:
 show_missing = True

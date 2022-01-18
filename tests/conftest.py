@@ -220,3 +220,15 @@ async def db_async_test_data(db_async_session):
     async with db_async_session.begin():
         for obj in _gen_test_data_objs():
             db_async_session.add(obj)
+
+
+@pytest.fixture(scope="session")
+def test_mechanism():
+    """A fixture which provides a no-op "test" mechanism."""
+    # This is scoped for the session to ensure that only one mechanism class for type "test" exists.
+    from duffy.tasks.mechanisms import Mechanism
+
+    class TestMechanism(Mechanism, mech_type="test"):
+        pass
+
+    return TestMechanism

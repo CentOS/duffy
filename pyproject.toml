@@ -18,6 +18,11 @@ psycopg2 = {version = "^2.9.2", optional = true}
 celery = {version = "^5.2.1", extras = ["redis"]}
 httpx = {version = "^0.18.2", optional = true}
 bcrypt = "^3.2.0"
+ansible = {version = "^5.2.0", optional = true}
+ansible-core = {version = "^2.12.1", optional = true}
+ansible-runner = {version = "^2.1.1", optional = true}
+Jinja2 = {version = "^3.0.3", optional = true}
+jmespath = {version = "^0.10.0", optional = true}
 
 [tool.poetry.dev-dependencies]
 black = "^21.9b0"
@@ -32,10 +37,16 @@ fastapi = {version = "^0.70.0", extras = ["test"]}
 flake8 = "^3.9.2"
 pytest-asyncio = "^0.16.0"
 httpx = "^0.18.2"
+ansible = "^5.2.0"
+ansible-core = "^2.12.1"
+ansible-runner = "^2.1.1"
+Jinja2 = "^3.0.3"
+jmespath = "^0.10.0"
 
 [tool.poetry.extras]
 interactive = ["ipython"]
 postgresql = ["psycopg2"]
+tasks = ["ansible-runner", "ansible-core", "ansible", "Jinja2", "jmespath"]
 legacy = ["httpx"]
 
 [tool.pytest.ini_options]
