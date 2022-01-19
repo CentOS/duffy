@@ -2,7 +2,7 @@ from typing import Tuple
 
 from celery import Celery
 
-from .configuration import config
+from ..configuration import config
 
 app = Celery("duffy.tasks")
 
@@ -14,4 +14,4 @@ def check_pools():
 
 def start_worker(worker_args: Tuple[str]):
     app.config_from_object(config["celery"])
-    app.worker_main(("-A", "duffy.tasks", "worker") + worker_args)
+    app.worker_main(("-A", "duffy.tasks.main", "worker") + worker_args)
