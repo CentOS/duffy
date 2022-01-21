@@ -22,11 +22,8 @@ router = APIRouter(prefix="/nodes")
 async def get_all_nodes(
     db_async_session: AsyncSession = Depends(req_db_async_session),
 ):
-    """
-    Return all nodes
-    """
+    """Return all nodes."""
     query = select(Node).options(selectinload("*")).filter_by(active=True)
-
     results = await db_async_session.execute(query)
 
     return {"action": "get", "nodes": results.scalars().all()}
@@ -38,9 +35,7 @@ async def get_node(
     db_async_session: AsyncSession = Depends(req_db_async_session),
     tenant: Tenant = Depends(req_tenant),
 ):
-    """
-    Return the node with the specified **ID**
-    """
+    """Return the node with the specified **ID**."""
     query = select(Node).filter_by(id=id).options(selectinload("*"))
     result = await db_async_session.execute(query)
     node = result.scalar_one_or_none()
@@ -90,9 +85,7 @@ async def delete_node(
     db_async_session: AsyncSession = Depends(req_db_async_session),
     tenant: Tenant = Depends(req_tenant),
 ):
-    """
-    Deletes the node with the specified **ID**
-    """
+    """Delete the node with the specified **ID**."""
     if not tenant.is_admin:
         raise HTTPException(HTTP_403_FORBIDDEN)
 

@@ -12,7 +12,8 @@ log = logging.getLogger(__name__)
 
 description = """
 Duffy is the middle layer running [`ci.centos.org`](https://ci.centos.org). It provisions, tears
-down and rebuilds physical and virtual machines are used to run tests in the CentOS CI Cluster.
+down and rebuilds physical and virtual machines which are used to run tests in the CentOS CI
+Cluster.
 """
 
 tags_metadata = [

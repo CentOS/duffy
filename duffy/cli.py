@@ -124,8 +124,8 @@ def serve(reload, host, port, loglevel):
     """Run the Duffy web application server.
 
     Duffy is the middle layer running ci.centos.org that manages the
-    provisioning, maintenance and teardown / rebuild of the Nodes
-    (physical hardware for now, VMs coming soon) that are used to run
+    provisioning, maintenance, teardown and rebuild of the Nodes
+    (physical hardware and virtual machines) that are used to run
     the tests in the CI Cluster.
     """
     config_app = config.get("app", {})
