@@ -1,9 +1,9 @@
 import pytest
 from sqlalchemy import select
 
-from duffy.database.model import Chassis, Node, Tenant
+from duffy.database.model import Node, Tenant
 
-obj_classes = (Chassis, Node, Tenant)
+obj_classes = Node, Tenant
 
 
 @pytest.mark.parametrize("obj_class", obj_classes)

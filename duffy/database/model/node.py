@@ -1,20 +1,16 @@
-from sqlalchemy import Column, ForeignKey, Index, Integer, Text, UnicodeText
+from sqlalchemy import JSON, Column, ForeignKey, Index, Integer, Text, UnicodeText
+from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship
 
-from ...api_models import PhysicalSessionNodeModel, SessionNodeModel, VirtualSessionNodeModel
+from ...api_models import SessionNodeModel
 from .. import Base
-from ..types import NodeState, NodeType, VirtualNodeFlavour
+from ..types import NodeState
 from ..util import CreatableMixin, RetirableMixin
 from .session import Session
 
 
 class Node(Base, CreatableMixin, RetirableMixin):
     __tablename__ = "nodes"
-    __mapper_args__ = {
-        "polymorphic_on": "type",
-        "with_polymorphic": "*",
-        "eager_defaults": True,
-    }
     __table_args__ = (
         Index(
             "active_hostname_index",
@@ -33,7 +29,6 @@ class Node(Base, CreatableMixin, RetirableMixin):
     )
 
     id = Column(Integer, primary_key=True, nullable=False)
-    type = Column(NodeType.db_type(), nullable=False)
     hostname = Column(Text, nullable=False)
     ipaddr = Column(Text, nullable=False)
     state = Column(
@@ -44,44 +39,12 @@ class Node(Base, CreatableMixin, RetirableMixin):
     )
     comment = Column(UnicodeText, nullable=True)
 
-    # currently configured distro type & version
-    distro_type = Column(UnicodeText, nullable=True)
-    distro_version = Column(UnicodeText, nullable=True)
+    pool = Column(UnicodeText, nullable=True, index=True)
 
-
-class VirtualNode(Node):
-    __tablename__ = "virtualnodes"
-    __mapper_args__ = {"polymorphic_identity": NodeType.virtual}
-    id = Column(Integer, ForeignKey(Node.id), primary_key=True, nullable=False)
-    flavour = Column(VirtualNodeFlavour.db_type(), nullable=False)
-
-
-class OpenNebulaNode(VirtualNode):
-    __tablename__ = "opennebulanodes"
-    __mapper_args__ = {"polymorphic_identity": NodeType.opennebula}
-    id = Column(Integer, ForeignKey(VirtualNode.id), primary_key=True, nullable=False)
-
-
-class Chassis(Base, CreatableMixin, RetirableMixin):
-    __tablename__ = "chassis"
-    __mapper_args__ = {"eager_defaults": True}
-    id = Column(Integer, primary_key=True)
-    name = Column(UnicodeText, nullable=False, unique=True)
-    description = Column(UnicodeText, nullable=True)
-
-
-class PhysicalNode(Node):
-    __tablename__ = "physicalnodes"
-    __mapper_args__ = {"polymorphic_identity": NodeType.physical}
-    id = Column(Integer, ForeignKey(Node.id), primary_key=True, nullable=False)
-    chassis_id = Column(Integer, ForeignKey(Chassis.id), nullable=True)
-    chassis = relationship(Chassis)
-
-
-class SeaMicroNode(PhysicalNode):
-    __tablename__ = "seamicronodes"
-    __mapper_args__ = {"polymorphic_identity": NodeType.seamicro}
-    id = Column(Integer, ForeignKey(PhysicalNode.id), primary_key=True, nullable=False)
+    # Careful, MutableDict only detects changes to the top level of dict key-values!
+    data = Column(
+        MutableDict.as_mutable(JSON), nullable=False, default=lambda: {}, server_default="{}"
+    )
 
 
 class SessionNode(Base):
@@ -90,23 +53,24 @@ class SessionNode(Base):
     session = relationship(Session, back_populates="session_nodes")
     node_id = Column(Integer, ForeignKey(Node.id), primary_key=True, nullable=False)
     node = relationship(Node)
-    distro_type = Column(UnicodeText, nullable=False)
-    distro_version = Column(Text, nullable=False)
+
+    pool = Column(UnicodeText, nullable=False, index=True)
+
+    # Careful, MutableDict only detects changes to the top level of dict key-values!
+    data = Column(
+        MutableDict.as_mutable(JSON), nullable=False, default=lambda: {}, server_default="{}"
+    )
 
     @property
     def pydantic_view(self) -> SessionNodeModel:
         args = {
-            "type": self.node.type,
             "hostname": self.node.hostname,
             "ipaddr": self.node.ipaddr,
-            "distro_type": self.distro_type,
-            "distro_version": self.distro_version,
+            "pool": self.node.pool,
+            "data": self.node.data,
         }
 
-        if isinstance(self.node, PhysicalNode):
-            model_cls = PhysicalSessionNodeModel
-        else:  # isinstance(self.node, VirtualNode):
-            model_cls = VirtualSessionNodeModel
-            args["flavour"] = self.node.flavour
+        if self.session.active:
+            args["state"] = self.node.state
 
-        return model_cls(**args)
+        return SessionNodeModel(**args)

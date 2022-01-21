@@ -54,25 +54,18 @@ def _gen_test_data_objs():
     tenant = model.Tenant(name="tenant", api_key=_gen_test_api_key("tenant"), ssh_key="Boo!")
     objs.add(tenant)
 
-    chassis = model.Chassis(name="Chassis")
-    objs.add(chassis)
-
     node_specs = [
         {
-            "type": "seamicro",
             "hostname": "node-seamicro-1.example.net",
             "ipaddr": "192.168.0.11",
-            "chassis": chassis,
-            "distro_type": "centos",
-            "distro_version": "8Stream",
+            "pool": "physical-centos8stream-x86_64",
+            "data": {"architecture": "x86_64"},
         },
         {
-            "type": "seamicro",
             "hostname": "node-seamicro-2.example.net",
             "ipaddr": "192.168.0.12",
-            "chassis": chassis,
-            "distro_type": "fedora",
-            "distro_version": "35",
+            "pool": "physical-fedora35-x86_64",
+            "data": {"architecture": "x86_64"},
         },
     ]
 
@@ -86,32 +79,19 @@ def _gen_test_data_objs():
         for index in range(1, quantity + 1):
             lastoctet = lastoctetbase + index
             if index % 2:
-                distro_type = "fedora"
-                distro_version = "35"
+                distro = "fedora35"
             else:
-                distro_type = "centos"
-                distro_version = "8Stream"
+                distro = "centos8stream"
             node_specs.append(
                 {
-                    "type": "opennebula",
                     "hostname": f"node-opennebula-{flavour}-{index}.example.net",
                     "ipaddr": f"{ipprefix}.{lastoctet}",
-                    "flavour": flavour,
-                    "distro_type": distro_type,
-                    "distro_version": distro_version,
+                    "pool": f"virtual-{distro}-x86_64-{flavour}",
                 }
             )
 
     for node_spec in node_specs:
-        nodetype = node_spec.pop("type")
-        if nodetype == "opennebula":
-            cls = model.OpenNebulaNode
-        elif nodetype == "seamicro":
-            cls = model.SeaMicroNode
-        else:  # pragma: no cover
-            raise ValueError(f"Unknown node type: {type}")
-
-        node = cls(state="active", **node_spec)
+        node = model.Node(state="active", **node_spec)
         objs.add(node)
 
     return objs

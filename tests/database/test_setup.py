@@ -64,7 +64,7 @@ def test_setup_db_test_data(sync_session_maker):
     setup.setup_db_test_data()
     sync_session_maker.assert_called_once_with()
     db_sync_session.begin.assert_called_once_with()
-    for model_cls in (model.Chassis, model.PhysicalNode, model.VirtualNode):
+    for model_cls in (model.Node, model.Tenant):
         assert any(
             isinstance(call.args[0], model_cls) for call in db_sync_session.add.call_args_list
         )

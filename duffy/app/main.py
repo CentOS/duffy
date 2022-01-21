@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from .. import database
 from ..exceptions import DuffyConfigurationError
 from ..version import __version__
-from .controllers import chassis, node, session, tenant
+from .controllers import node, session, tenant
 
 log = logging.getLogger(__name__)
 
@@ -19,7 +19,6 @@ tags_metadata = [
     {"name": "nodes", "description": "Operations with physical and virtual nodes"},
     {"name": "sessions", "description": "Operations with sessions"},
     {"name": "tenants", "description": "Operations with tenants"},
-    {"name": "chassis", "description": "Operations with chassis"},
 ]
 
 app = FastAPI(
@@ -35,7 +34,6 @@ app = FastAPI(
 
 PREFIX = "/api/v1"
 
-app.include_router(chassis.router, prefix=PREFIX)
 app.include_router(node.router, prefix=PREFIX)
 app.include_router(tenant.router, prefix=PREFIX)
 app.include_router(session.router, prefix=PREFIX)

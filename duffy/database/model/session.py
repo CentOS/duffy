@@ -1,6 +1,7 @@
 from typing import List
 
-from sqlalchemy import Column, ForeignKey, Integer
+from sqlalchemy import JSON, Column, ForeignKey, Integer
+from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship
 
 from ...api_models import SessionNodeModel
@@ -15,6 +16,11 @@ class Session(Base, CreatableMixin, RetirableMixin):
     id = Column(Integer, primary_key=True, nullable=False)
     tenant_id = Column(Integer, ForeignKey(Tenant.id), nullable=False)
     tenant = relationship(Tenant, backref="sessions")
+
+    data = Column(
+        MutableDict.as_mutable(JSON), nullable=False, default=lambda: {}, server_default="{}"
+    )
+
     session_nodes = relationship("SessionNode", back_populates="session")
 
     @property
