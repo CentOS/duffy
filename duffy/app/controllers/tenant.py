@@ -1,6 +1,4 @@
-"""
-This is the tenant controller.
-"""
+"""This is the tenant controller."""
 
 from uuid import uuid4
 
@@ -36,9 +34,7 @@ async def get_all_tenants(
     db_async_session: AsyncSession = Depends(req_db_async_session),
     tenant: Tenant = Depends(req_tenant),
 ):
-    """
-    Return all tenants
-    """
+    """Return all tenants."""
     query = select(Tenant)
     if not tenant.is_admin:
         query = query.filter_by(id=tenant.id)
@@ -54,9 +50,7 @@ async def get_tenant(
     db_async_session: AsyncSession = Depends(req_db_async_session),
     tenant: Tenant = Depends(req_tenant),
 ):
-    """
-    Return the tenant with the specified **ID**
-    """
+    """Return the tenant with the specified **ID**."""
     retrieved_tenant = (
         await db_async_session.execute(select(Tenant).filter_by(id=id))
     ).scalar_one_or_none()
@@ -77,9 +71,7 @@ async def create_tenant(
     db_async_session: AsyncSession = Depends(req_db_async_session),
     tenant: Tenant = Depends(req_tenant),
 ):
-    """
-    Create a tenant with the specified **name**
-    """
+    """Create a tenant with the specified **name**."""
     if not tenant.is_admin:
         raise HTTPException(HTTP_403_FORBIDDEN)
 
@@ -113,9 +105,7 @@ async def delete_tenant(
     db_async_session: AsyncSession = Depends(req_db_async_session),
     tenant: Tenant = Depends(req_tenant),
 ):
-    """
-    Delete the tenant with the specified **ID**
-    """
+    """Delete the tenant with the specified **ID**."""
     if not tenant.is_admin:
         raise HTTPException(HTTP_403_FORBIDDEN)
 

@@ -27,7 +27,6 @@ def run_migrations_offline():
 
     Calls to context.execute() here emit the given string to the
     script output.
-
     """
     url = alembic_config.get_main_option("sqlalchemy.url")
     context.configure(
@@ -46,7 +45,6 @@ def run_migrations_online():
 
     In this scenario we need to create an Engine
     and associate a connection with the context.
-
     """
     connectable = engine_from_config(
         alembic_config.get_section(alembic_config.config_ini_section),

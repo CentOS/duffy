@@ -1,6 +1,4 @@
-"""
-This is the session controller.
-"""
+"""This is the session controller."""
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -35,9 +33,7 @@ async def get_all_sessions(
     db_async_session: AsyncSession = Depends(req_db_async_session),
     tenant: Optional[Tenant] = Depends(req_tenant_optional),
 ):
-    """
-    Returns all sessions
-    """
+    """Return all sessions."""
     query = (
         select(Session)
         .options(
@@ -59,9 +55,7 @@ async def get_session(
     db_async_session: AsyncSession = Depends(req_db_async_session),
     tenant: Tenant = Depends(req_tenant),
 ):
-    """
-    Returns a session with the specified **ID**
-    """
+    """Return a session with the specified **ID**."""
     session = (
         await db_async_session.execute(
             select(Session)
@@ -87,9 +81,7 @@ async def create_session(
     db_async_session: AsyncSession = Depends(req_db_async_session),
     tenant: Tenant = Depends(req_tenant),
 ):
-    """
-    Creates a session with the specified **tenant ID**
-    """
+    """Create a session with the requested nodes specs."""
     if tenant.is_admin and data.tenant_id is not None:
         tenant = (
             await db_async_session.execute(select(Tenant).filter_by(id=data.tenant_id))
@@ -198,9 +190,7 @@ async def delete_session(
     db_async_session: AsyncSession = Depends(req_db_async_session),
     tenant: Tenant = Depends(req_tenant),
 ):
-    """
-    Deletes the session with the specified **ID**
-    """
+    """Delete the session with the specified **ID**."""
     if not tenant.is_admin:
         raise HTTPException(HTTP_403_FORBIDDEN)
     session = (
