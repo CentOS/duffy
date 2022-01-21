@@ -1,9 +1,9 @@
 from abc import ABC
-from typing import List, Literal, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, conint
 
-from ..database.types import NodeType, VirtualNodeFlavour
+from ..database.types import NodeState
 from .common import APIResult, CreatableMixin, RetirableMixin
 from .node import NodeBase
 from .tenant import TenantModel
@@ -11,43 +11,16 @@ from .tenant import TenantModel
 # nodes spec model
 
 
-class NodesSpecBase(BaseModel, ABC):
-    type: NodeType
+class NodesSpec(BaseModel):
     quantity: conint(ge=1)
-    distro_type: str
-    distro_version: str
-
-
-class VirtualNodesSpec(NodesSpecBase):
-    type: Literal[NodeType.virtual]
-    flavour: VirtualNodeFlavour
-
-
-class PhysicalNodesSpec(NodesSpecBase):
-    type: Literal[NodeType.physical]
+    pool: str
 
 
 # nodes in sessions model
 
 
-class SessionNodeBase(NodeBase, ABC):
-    distro_type: str
-    distro_version: str
-
-    class Config:
-        orm_mode = True
-
-
-class PhysicalSessionNodeModel(SessionNodeBase):
-    type: Literal[NodeType.seamicro]
-
-
-class VirtualSessionNodeModel(SessionNodeBase):
-    type: Literal[NodeType.opennebula]
-    flavour: VirtualNodeFlavour
-
-
-SessionNodeModel = Union[PhysicalSessionNodeModel, VirtualSessionNodeModel]
+class SessionNodeModel(NodeBase):
+    state: Optional[NodeState]
 
 
 # session model
@@ -60,7 +33,7 @@ class SessionBase(BaseModel, ABC):
 
 class SessionCreateModel(SessionBase):
     tenant_id: Optional[int]
-    nodes_specs: List[Union[PhysicalNodesSpec, VirtualNodesSpec]]
+    nodes_specs: List[NodesSpec]
 
 
 class SessionUpdateModel(SessionBase):
@@ -70,6 +43,7 @@ class SessionUpdateModel(SessionBase):
 class SessionModel(SessionBase, CreatableMixin, RetirableMixin):
     id: int
     tenant: TenantModel
+    data: Dict[str, Any]
     nodes: List[SessionNodeModel]
 
 

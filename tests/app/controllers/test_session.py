@@ -11,7 +11,7 @@ from starlette.status import (
     HTTP_422_UNPROCESSABLE_ENTITY,
 )
 
-from duffy.database.model import Node, PhysicalNode, Session, Tenant, VirtualNode
+from duffy.database.model import Node, Session, Tenant
 
 from . import BaseTestController
 
@@ -99,19 +99,8 @@ class TestSessionWorkflow:
     path = "/api/v1/sessions"
 
     nodes_specs = [
-        {
-            "type": "physical",
-            "quantity": 1,
-            "distro_type": "centos",
-            "distro_version": "8Stream",
-        },
-        {
-            "type": "virtual",
-            "quantity": 2,
-            "flavour": "medium",
-            "distro_type": "fedora",
-            "distro_version": "35",
-        },
+        {"pool": "physical-centos8stream-x86_64", "quantity": 1},
+        {"pool": "virtual-fedora35-x86_64-medium", "quantity": 2},
     ]
 
     @pytest.mark.parametrize(
@@ -142,14 +131,9 @@ class TestSessionWorkflow:
             for nodes_spec in self.nodes_specs:
                 nodes_spec = nodes_spec.copy()
                 quantity = nodes_spec.pop("quantity")
-                nodes_type = nodes_spec.pop("type")
-                if nodes_type == "physical":
-                    nodecls = PhysicalNode
-                elif nodes_type == "virtual":
-                    nodecls = VirtualNode
                 count_result = await db_async_session.execute(
                     select(func.count("id"))
-                    .select_from(nodecls)
+                    .select_from(Node)
                     .filter_by(state="contextualizing", **nodes_spec)
                 )
                 assert count_result.scalar_one() == quantity
@@ -163,15 +147,7 @@ class TestSessionWorkflow:
                 matched_nodes_count = 0
                 for node in nodes:
                     for attr, value in nodes_spec.items():
-                        if attr == "type":
-                            if (
-                                value == "physical"
-                                and node["type"] not in ("physical", "seamicro")
-                                or value == "virtual"
-                                and node["type"] not in ("virtual", "opennebula")
-                            ):
-                                break
-                        elif value != node[attr]:
+                        if value != node[attr]:
                             break
                     else:
                         # didn't break out of loop -> matches spec

@@ -8,11 +8,10 @@ from starlette.status import (
     HTTP_403_FORBIDDEN,
     HTTP_404_NOT_FOUND,
     HTTP_409_CONFLICT,
-    HTTP_422_UNPROCESSABLE_ENTITY,
 )
 
-from ...api_models import NodeResult, NodeResultCollection, concrete_node_create_models
-from ...database.model import Chassis, Node, OpenNebulaNode, SeaMicroNode, Tenant
+from ...api_models import NodeCreateModel, NodeResult, NodeResultCollection
+from ...database.model import Node, Tenant
 from ..auth import req_tenant
 from ..database import req_db_async_session
 
@@ -54,14 +53,11 @@ async def get_node(
 
 @router.post("", status_code=HTTP_201_CREATED, response_model=NodeResult, tags=["nodes"])
 async def create_node(
-    data: concrete_node_create_models,
+    data: NodeCreateModel,
     db_async_session: AsyncSession = Depends(req_db_async_session),
     tenant: Tenant = Depends(req_tenant),
 ):
-    """
-    Create a node with the specified **type**, **hostname**, **ip address**, **comment** and
-    **flavour**
-    """
+    """Create a node with the requested properties."""
     if not tenant.is_admin:
         raise HTTPException(HTTP_403_FORBIDDEN)
 
@@ -71,32 +67,19 @@ async def create_node(
         "hostname": data.hostname,
         "ipaddr": str(data.ipaddr),
         "comment": data.comment,
+        "pool": data.pool,
+        "data": data.data,
     }
 
-    if data.type == "opennebula":
-        node_cls = OpenNebulaNode
-        args["flavour"] = data.flavour
-    elif data.type == "seamicro":
-        node_cls = SeaMicroNode
-        chassis = (
-            await db_async_session.execute(select(Chassis).filter_by(id=data.chassis_id))
-        ).scalar_one_or_none()
-        if not chassis:
-            raise HTTPException(
-                HTTP_422_UNPROCESSABLE_ENTITY, f"chassis with id {data.chassis_id} not found"
-            )
-        args["chassis"] = chassis
-    else:  # pragma: no cover
-        raise TypeError(data.type)
-
-    node = node_cls(**args)
-
+    node = Node(**args)
     db_async_session.add(node)
 
     try:
         await db_async_session.commit()
     except IntegrityError as exc:  # pragma: no cover
         raise HTTPException(HTTP_409_CONFLICT, str(exc))
+
+    await db_async_session.refresh(node)
 
     return {"action": "post", "node": node}
 

@@ -95,11 +95,6 @@ class TestSession(ModelTestBase):
         return {"tenant": tenant}
 
 
-class TestChassis(ModelTestBase):
-    klass = model.Chassis
-    attrs = {"name": "hufty"}
-
-
 def _gen_node_attrs(index: int = None, **addl_attrs: Dict[str, Any]) -> dict:
     lastoctet = 10
     if index:
@@ -119,33 +114,15 @@ def _gen_node_attrs(index: int = None, **addl_attrs: Dict[str, Any]) -> dict:
     return attrs
 
 
-class TestVirtualNode(ModelTestBase):
-    klass = model.VirtualNode
-    attrs = _gen_node_attrs(flavour="medium", comment="Hello!")
-
-
-class TestOpenNebulaNode(ModelTestBase):
-    klass = model.OpenNebulaNode
-    attrs = _gen_node_attrs(flavour="large", comment="Good Day!")
-
-
-class TestPhysicalNode(ModelTestBase):
-    klass = model.PhysicalNode
+class TestNode(ModelTestBase):
+    klass = model.Node
     attrs = _gen_node_attrs()
-
-
-class TestSeaMicroNode(ModelTestBase):
-    klass = model.SeaMicroNode
-    attrs = _gen_node_attrs()
-
-    def _db_obj_get_dependencies(self):
-        return {"chassis": model.Chassis(name="Infinity Polydome K")}
 
 
 @pytest.mark.asyncio
 class TestSessionNode(ModelTestBase):
     klass = model.SessionNode
-    attrs = {"distro_type": "CentOS", "distro_version": "8Stream"}
+    attrs = {"pool": "virtual-centos8stream-x86_64-small"}
 
     def _db_obj_get_dependencies(self):
         tenant = model.Tenant(
@@ -155,25 +132,16 @@ class TestSessionNode(ModelTestBase):
             ssh_key="Muahahahaha!",
         )
         session = model.Session(tenant=tenant)
-        chassis = model.Chassis(name="Celestion Greenback")
-        node = model.SeaMicroNode(**_gen_node_attrs(chassis=chassis))
+        node = model.Node(**_gen_node_attrs())
 
         return {"session": session, "node": node}
 
-    @pytest.mark.parametrize("node_type", ("physical", "virtual"))
-    async def test_pydantic_view(self, node_type, db_async_obj):
-        if node_type == "virtual":
-            node = model.OpenNebulaNode(**_gen_node_attrs(index=1, flavour="medium"))
-            db_async_obj.node = node
-        else:
-            node = db_async_obj.node
+    async def test_pydantic_view(self, db_async_obj):
+        node = db_async_obj.node
 
         result = db_async_obj.pydantic_view
 
-        assert result.type == node.type
         assert result.hostname == node.hostname
         assert str(result.ipaddr) == node.ipaddr
-        assert result.distro_type == db_async_obj.distro_type
-        assert result.distro_version == db_async_obj.distro_version
-        if node_type == "virtual":
-            assert result.flavour == node.flavour
+        assert result.pool == node.pool
+        assert result.data == node.data

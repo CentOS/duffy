@@ -15,13 +15,12 @@ from starlette.status import (
 )
 
 from ...api_models import (
-    PhysicalNodesSpec,
     SessionCreateModel,
     SessionResult,
     SessionResultCollection,
     SessionUpdateModel,
 )
-from ...database.model import PhysicalNode, Session, SessionNode, Tenant, VirtualNode
+from ...database.model import Node, Session, SessionNode, Tenant
 from ...database.types import NodeState
 from ..auth import req_tenant
 from ..database import req_db_async_session
@@ -75,7 +74,8 @@ async def get_session(
     return {"action": "get", "session": session}
 
 
-# http --json post http://localhost:8080/api/v1/sessions tenant_id=2
+# http --json post http://localhost:8080/api/v1/sessions tenant_id=2 \
+#     'nodes_specs:=[{"pool": "virtual-fedora34-x86_64-small", "quantity": 1}]
 @router.post("", status_code=HTTP_201_CREATED, response_model=SessionResult, tags=["sessions"])
 async def create_session(
     data: SessionCreateModel,
@@ -101,40 +101,33 @@ async def create_session(
     elif not tenant.is_admin and data.tenant_id is not None and data.tenant_id != tenant.id:
         raise HTTPException(HTTP_403_FORBIDDEN, "can't create session for other tenant")
 
-    session = Session(tenant=tenant)
+    session = Session(
+        tenant=tenant, data={"nodes_specs": [spec.dict() for spec in data.nodes_specs]}
+    )
     db_async_session.add(session)
 
     for nodes_spec in data.nodes_specs:
         nodes_spec_dict = nodes_spec.dict()
         quantity = nodes_spec_dict.pop("quantity")
-        nodes_spec_dict.pop("type")
 
-        if isinstance(nodes_spec, PhysicalNodesSpec):
-            node_cls = PhysicalNode
-        else:  # isinstance(nodes_spec, VirtualNodesSpec)
-            node_cls = VirtualNode
-
-        query = (
-            select(node_cls).filter_by(state=NodeState.active, **nodes_spec_dict).limit(quantity)
-        )
+        query = select(Node).filter_by(state=NodeState.active, **nodes_spec_dict).limit(quantity)
 
         nodes_to_reserve = (await db_async_session.execute(query)).scalars().all()
 
         if len(nodes_to_reserve) < quantity:
             raise HTTPException(HTTP_422_UNPROCESSABLE_ENTITY, f"can't reserve nodes: {nodes_spec}")
 
-        # take the nodes out of circulation
+        # take the nodes out of circulation and update data
         for node in nodes_to_reserve:
+            # record why this node was allocated for this session
+            node.data["nodes_spec"] = nodes_spec.dict()
             node.state = NodeState.contextualizing
             session_node = SessionNode(
-                session=session,
-                node=node,
-                distro_type=nodes_spec.distro_type,
-                distro_version=nodes_spec.distro_version,
+                session=session, node=node, pool=nodes_spec.pool, data=node.data
             )
             db_async_session.add(session_node)
 
-    # Meh. Reload the session instance to be able to explicily load all the related objects.
+    # Meh. Reload the session instance to ensure all related objects are present in the session.
     await db_async_session.flush()
     session = (
         await db_async_session.execute(
