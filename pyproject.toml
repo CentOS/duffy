@@ -39,6 +39,7 @@ postgresql = ["psycopg2"]
 [tool.pytest.ini_options]
 addopts = "--black --cov-config .coveragerc --cov=duffy --cov-report term --cov-report xml --cov-report html --flake8 --isort"
 flake8-max-line-length = 100
+filterwarnings = ["ignore::DeprecationWarning:kombu:82", "ignore::DeprecationWarning:flake8:254"]
 
 [tool.isort]
 line_length = 100
