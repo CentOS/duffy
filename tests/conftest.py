@@ -92,7 +92,7 @@ def duffy_config(duffy_config_files):
     @pytest.mark.duffy_config(...) (see duffy_config_files) and applies
     them in duffy.configuration.config.
     """
-    read_configuration(*duffy_config_files)
+    read_configuration(*duffy_config_files, clear=True)
 
 
 # Database fixtures
