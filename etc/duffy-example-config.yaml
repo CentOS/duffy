@@ -105,9 +105,89 @@ metaclient:
 celery:
   broker_url: "redis://localhost:6379"
   result_backend: "redis://localhost:6379"
+  worker_redirect_stdouts_level: "INFO"
 
 database:
   sqlalchemy:
     sync_url: "sqlite:///:memory:"
     # the DB dialect must be async-compatible
     async_url: "sqlite+aiosqlite:///:memory:"
+
+nodepools:
+  abstract:
+    mech-ansible:
+      mechanism:
+        type: "ansible"
+        ansible:
+          topdir: "/path/to/playbooks"
+          extra-vars:
+            nodepool: "{{ name }}"
+            template_name: "{{ name }}"
+    physical:
+      type: "physical"
+      extends: "mech-ansible"
+      reuse-nodes:
+        # This specifies which unused nodes can be reused for a pool. Keys map
+        # into the JSON data field of a node, values are matched for equality
+        # and are evaluated as Jinja templates filled with any other field of
+        # the pool in question but have to be of simple types like strings or
+        # integers.
+        architecture: "{{ architecture }}"
+      mechanism:
+        ansible:
+          playbooks:
+            provision: "playbooks/baremetal/provision.yml"
+            deprovision: "playbooks/baremetal/deprovision.yml"
+    physical-x86_64:
+      extends: physical
+      fill-level: 5
+      architecture: x86_64
+    virtual:
+      type: "virtual"
+      extends: "mech-ansible"
+      reuse-nodes: false
+      mechanism:
+        ansible:
+          extra-vars:
+            # duffy.nodes gets passed in as a list
+            quantity: "{{ duffy.nodes | length }}"
+            # remove "virtual-", add "duffy-" prefix
+            template_name: >-
+              {% set parts=name.split("-") %}duffy-{{ parts[1:] | join("-") }}
+          playbooks:
+            provision: "playbooks/opennebula/provision.yml"
+            deprovision: "playbooks/opennebula/deprovision.yml"
+    virtual-x86_64-small:
+      extends: virtual
+      fill-level: 20
+    virtual-x86_64-medium:
+      extends: virtual
+      fill-level: 10
+    virtual-x86_64-large:
+      extends: virtual
+      fill-level: 5
+  concrete:
+    physical-centos8stream-x86_64:
+      extends: "physical-x86_64"
+    physical-fedora34-x86_64:
+      extends: "physical-x86_64"
+    physical-fedora35-x86_64:
+      extends: "physical-x86_64"
+    virtual-centos8stream-x86_64-small:
+      extends: "virtual-x86_64-small"
+    virtual-centos8stream-x86_64-medium:
+      extends: "virtual-x86_64-medium"
+    virtual-centos8stream-x86_64-large:
+      extends: "virtual-x86_64-large"
+    virtual-fedora34-x86_64-small:
+      extends: "virtual-x86_64-small"
+    virtual-fedora35-x86_64-small:
+      extends: "virtual-x86_64-small"
+    virtual-fedora34-x86_64-medium:
+      extends: "virtual-x86_64-medium"
+    virtual-fedora35-x86_64-medium:
+      extends: "virtual-x86_64-medium"
+    virtual-fedora34-x86_64-large:
+      extends: "virtual-x86_64-large"
+    virtual-fedora35-x86_64-large:
+      extends: "virtual-x86_64-large"
