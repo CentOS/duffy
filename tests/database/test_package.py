@@ -7,8 +7,8 @@ from duffy import configuration, database, exceptions
 TEST_CONFIG = {
     "database": {
         "sqlalchemy": {
-            "sync_url": "boo",
-            "async_url": "boo",
+            "sync_url": "sqlite:///",
+            "async_url": "sqlite+aiosqlite:///",
         }
     }
 }
@@ -67,7 +67,7 @@ def test_get_sync_engine(create_engine, testcase):
         create_engine.assert_not_called()
     else:
         database.get_sync_engine()
-        create_engine.assert_called_once_with(url="boo")
+        create_engine.assert_called_once_with(url=TEST_CONFIG["database"]["sqlalchemy"]["sync_url"])
 
 
 @pytest.mark.duffy_config(TEST_CONFIG)
@@ -81,4 +81,6 @@ def test_get_async_engine(create_async_engine, testcase):
         create_async_engine.assert_not_called()
     else:
         database.get_async_engine()
-        create_async_engine.assert_called_once_with(url="boo")
+        create_async_engine.assert_called_once_with(
+            url=TEST_CONFIG["database"]["sqlalchemy"]["async_url"]
+        )

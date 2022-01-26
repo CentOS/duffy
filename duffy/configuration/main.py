@@ -3,6 +3,8 @@ from typing import List, Union
 
 import yaml
 
+from .validation import ConfigModel
+
 SYSTEM_CONFIG_FILE = "/etc/duffy.yaml"
 
 config = {}
@@ -22,4 +24,7 @@ def read_configuration(*config_files: List[Union[Path, str]]):
             config_file = Path(config_file)
         with config_file.open("r") as fp:
             for config_doc in yaml.safe_load_all(fp):
+                # validate configuration file
+                ConfigModel(**config_doc)
+
                 config.update(config_doc)
