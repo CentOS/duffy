@@ -35,6 +35,14 @@ def test_cli_suggestion():
     assert "Error: No such option: --helo" in result.output
 
 
+def test_cli_missing_config(tmp_path):
+    missing_config_file = tmp_path / "missing_duffy_config.yaml"
+    runner = CliRunner()
+    result = runner.invoke(cli, [f"--config={missing_config_file.absolute()}"])
+    assert result.exit_code == 1
+    assert isinstance(result.exception, FileNotFoundError)
+
+
 @pytest.mark.parametrize("testcase", ("normal", "test-data", "config-error"))
 @mock.patch("duffy.cli.setup_db_test_data")
 @mock.patch("duffy.cli.setup_db_schema")

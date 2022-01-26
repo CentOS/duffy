@@ -3,22 +3,14 @@ from typing import List, Union
 
 import yaml
 
+from ..util import merge_dicts
 from .validation import ConfigModel
-
-SYSTEM_CONFIG_FILE = "/etc/duffy.yaml"
 
 config = {}
 
-DEFAULT_CONFIG = {
-    "loglevel": "warning",
-    "host": "127.0.0.1",
-    "port": 8080,
-}
 
-
-def read_configuration(*config_files: List[Union[Path, str]]):
-    config.clear()
-    config.update(DEFAULT_CONFIG)
+def read_configuration(*config_files: List[Union[Path, str]], clear: bool = True):
+    new_config = {}
     for config_file in config_files:
         if not isinstance(config_file, Path):
             config_file = Path(config_file)
@@ -27,4 +19,9 @@ def read_configuration(*config_files: List[Union[Path, str]]):
                 # validate configuration file
                 ConfigModel(**config_doc)
 
-                config.update(config_doc)
+                new_config = merge_dicts(new_config, config_doc)
+
+    if clear:
+        config.clear()
+
+    config.update(new_config)

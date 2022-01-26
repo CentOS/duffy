@@ -24,7 +24,8 @@ def init_config(ctx, param, filename):
     try:
         read_configuration(filename)
     except FileNotFoundError:
-        read_configuration()
+        if filename is not DEFAULT_CONFIG_FILE:
+            raise
     ctx.default_map = config
 
 
