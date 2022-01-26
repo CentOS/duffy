@@ -1,7 +1,8 @@
 from enum import Enum
-from typing import Dict, Literal, Optional
+from pathlib import Path
+from typing import Any, Dict, Literal, Optional, Union
 
-from pydantic import AnyUrl, BaseModel, conint, stricturl
+from pydantic import AnyUrl, BaseModel, Field, conint, stricturl
 
 # enums
 
@@ -41,6 +42,34 @@ class DatabaseConfigModel(BaseModel):
     sqlalchemy: SQLAlchemyModel
 
 
+class AnsibleMechanismModel(BaseModel):
+    topdir: Optional[Path]
+    extra_vars: Optional[Dict[str, Any]] = Field(alias="extra-vars")
+    playbooks: Optional[Dict[PlaybookType, Path]]
+
+
+class MechanismModel(BaseModel):
+    type_: Optional[MechanismType] = Field(alias="type")
+    ansible: Optional[AnsibleMechanismModel]
+
+
+class NodePoolsModel(BaseModel):
+    extends: Optional[str]
+    mechanism: Optional[MechanismModel]
+    fill_level: Optional[conint(gt=0)] = Field(alias="fill-level")
+    reuse_nodes: Optional[Union[Dict[str, Union[int, str]], Literal[False]]] = Field(
+        alias="reuse-nodes"
+    )
+
+    class Config:
+        extra = "allow"
+
+
+class NodePoolsRootModel(BaseModel):
+    abstract: Optional[Dict[str, NodePoolsModel]]
+    concrete: Dict[str, NodePoolsModel]
+
+
 class LoggingModel(BaseModel):
     version: Literal[1]
 
@@ -69,3 +98,4 @@ class ConfigModel(BaseModel):
     celery: Optional[CeleryConfigModel]
     database: Optional[DatabaseConfigModel]
     metaclient: Optional[LegacyModel]
+    nodepools: Optional[NodePoolsRootModel]
