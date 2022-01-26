@@ -9,7 +9,8 @@ from ..util import noop_context
 TEST_CONFIG = {
     "database": {
         "sqlalchemy": {
-            "sync_url": "boo",
+            "sync_url": "sqlite:///",
+            "async_url": "sqlite+aiosqlite:///",
         }
     }
 }
@@ -47,7 +48,9 @@ def test_setup_db_schema(get_sync_engine, inspect, metadata, Config, stamp, db_e
         engine.begin.assert_called_once_with()
         metadata.create_all.assert_called_once_with(bind=engine)
         cfg.set_main_option.assert_any_call("script_location", str(setup.HERE / "migrations"))
-        cfg.set_main_option.assert_any_call("sqlalchemy.url", "boo")
+        cfg.set_main_option.assert_any_call(
+            "sqlalchemy.url", TEST_CONFIG["database"]["sqlalchemy"]["sync_url"]
+        )
         stamp.assert_called_once_with(cfg, "head")
     else:
         engine.begin.assert_not_called()
