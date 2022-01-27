@@ -5,6 +5,7 @@ from typing import Tuple
 
 import click
 import uvicorn
+import yaml
 
 from . import database, shell
 from .configuration import config, read_configuration
@@ -44,6 +45,34 @@ def init_config(ctx, param, filename):
 @click.version_option(version=__version__, prog_name="Duffy")
 def cli():
     pass
+
+
+# Check & dump configuration
+
+
+@cli.group(name="config")
+def config_subcmd():
+    """Check and dump configuration."""
+
+
+@config_subcmd.command(name="check")
+def config_check():
+    """Validate configuration structure.
+
+    This checks if configuration subkeys conform to the expected format.
+    However, it doesn't check if the sub-keys necessary to run a certain
+    subcommand exist.
+    """
+    if not config:
+        click.echo("Configuration is empty.")
+    else:
+        click.echo(f"OK.\nValidated configuration subkeys: {', '.join(config)}")
+
+
+@config_subcmd.command("dump")
+def config_dump():
+    """Dump merged configuration."""
+    yaml.safe_dump(config, sys.stdout)
 
 
 # Set up the database tables
