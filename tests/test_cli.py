@@ -1,16 +1,23 @@
+import copy
 from pathlib import Path
 from unittest import mock
 
 import click
 import pytest
+import yaml
 from click.testing import CliRunner
 
 from duffy.cli import cli
 from duffy.exceptions import DuffyConfigurationError
+from duffy.util import merge_dicts
 from duffy.version import __version__
 
 HERE = Path(__file__).parent
-EXAMPLE_CONFIG = HERE.parent / "etc" / "duffy-example-config.yaml"
+EXAMPLE_CONFIG_FILE = HERE.parent / "etc" / "duffy-example-config.yaml"
+with EXAMPLE_CONFIG_FILE.open("r") as fp:
+    EXAMPLE_CONFIG = {}
+    for config_doc in yaml.safe_load_all(fp):
+        EXAMPLE_CONFIG = merge_dicts(EXAMPLE_CONFIG, config_doc)
 
 
 def test_cli_version():
@@ -50,7 +57,7 @@ def test_setup_db(setup_db_schema, setup_db_test_data, testcase, caplog):
     if testcase == "config-error":
         setup_db_schema.side_effect = DuffyConfigurationError("database")
     runner = CliRunner()
-    args = [f"--config={EXAMPLE_CONFIG.absolute()}", "setup-db"]
+    args = [f"--config={EXAMPLE_CONFIG_FILE.absolute()}", "setup-db"]
     if testcase == "test-data":
         args.append("--test-data")
     result = runner.invoke(cli, args)
@@ -68,13 +75,23 @@ def test_setup_db(setup_db_schema, setup_db_test_data, testcase, caplog):
     "config_error, shell_type",
     [(False, st) for st in (None, "python", "ipython", "bad shell type")] + [(True, None)],
 )
+@pytest.mark.duffy_config(EXAMPLE_CONFIG, clear=True)
 @mock.patch("duffy.shell.embed_shell")
 @mock.patch("duffy.database.init_model")
-def test_shell(init_model, embed_shell, config_error, shell_type):
+def test_shell(init_model, embed_shell, duffy_config_files, config_error, shell_type):
+    # Ensure it's only one config file.
+    (config_file,) = duffy_config_files
+
     _shell_type = shell_type or ""
-    args = ["shell"]
-    if not config_error:
-        args.insert(0, f"--config={EXAMPLE_CONFIG.absolute()}")
+
+    if config_error:
+        config = copy.deepcopy(EXAMPLE_CONFIG)
+        del config["database"]
+        with config_file.open("w") as fp:
+            yaml.dump(config, fp)
+
+    args = [f"--config={config_file.absolute()}", "shell"]
+
     if shell_type:
         args.append(f"--shell-type={shell_type}")
 
@@ -109,22 +126,37 @@ def test_shell(init_model, embed_shell, config_error, shell_type):
 def test_worker(start_worker):
     runner = CliRunner()
 
-    result = runner.invoke(cli, ["worker", "a", "-b", "c", "--dee"])
+    result = runner.invoke(
+        cli, [f"--config={EXAMPLE_CONFIG_FILE.absolute()}", "worker", "a", "-b", "c", "--dee"]
+    )
 
     assert result.exit_code == 0
     start_worker.assert_called_once_with(worker_args=("a", "-b", "c", "--dee"))
 
 
-@pytest.mark.parametrize(
-    "parameters",
-    [
-        ("serve",),
-        ("serve", "--host=127.0.0.1"),
-        (f"--config={EXAMPLE_CONFIG.absolute()}", "serve"),
-    ],
-)
+@pytest.mark.duffy_config(EXAMPLE_CONFIG, clear=True)
+@pytest.mark.parametrize("testcase", ("default", "with-options", "missing-logging-config"))
 @mock.patch("duffy.cli.uvicorn.run")
-def test_serve(uvicorn_run, parameters):
+def test_serve(uvicorn_run, testcase, duffy_config_files):
+    (config_file,) = duffy_config_files
+
+    if testcase in ("default", "missing-logging-config"):
+        parameters = (f"--config={config_file.absolute()}", "serve")
+    elif testcase == "with-options":
+        parameters = (
+            f"--config={config_file.absolute()}",
+            "serve",
+            "--host=127.0.0.1",
+            "--port=8080",
+            "--loglevel=info",
+        )
+
+    if testcase == "missing-logging-config":
+        config = copy.deepcopy(EXAMPLE_CONFIG)
+        del config["app"]["logging"]
+        with config_file.open("w") as fp:
+            yaml.dump(config, fp)
+
     runner = CliRunner()
     result = runner.invoke(cli, parameters)
     assert result.exit_code == 0

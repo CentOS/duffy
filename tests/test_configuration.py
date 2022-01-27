@@ -5,7 +5,7 @@ import pytest
 from duffy.configuration import main
 from duffy.util import merge_dicts
 
-EXAMPLE_CONFIG = {"host": "127.0.0.1", "port": 8080}
+EXAMPLE_CONFIG = {"app": {"host": "127.0.0.1", "port": 8080}}
 
 
 @pytest.mark.duffy_config(EXAMPLE_CONFIG, clear=True)
@@ -22,14 +22,14 @@ class TestConfiguration:
     def test_read_configuration_str(self, duffy_config_files):
         assert main.config == EXAMPLE_CONFIG
 
-    @pytest.mark.duffy_config({"loglevel": "debug"})
+    @pytest.mark.duffy_config({"app": {"loglevel": "debug"}})
     def test_read_configuration_multiple(self, duffy_config_files):
         assert len(duffy_config_files) > 1
         expected_config = copy.deepcopy(EXAMPLE_CONFIG)
-        expected_config["loglevel"] = "debug"
+        expected_config["app"]["loglevel"] = "debug"
         assert main.config == expected_config
 
-    @pytest.mark.duffy_config({"host": "host.example.net"})
+    @pytest.mark.duffy_config({"app": {"host": "host.example.net"}})
     def test_read_configuration_multiple_override(self, duffy_config_files):
         assert len(duffy_config_files) > 1
-        assert main.config == merge_dicts(EXAMPLE_CONFIG, {"host": "host.example.net"})
+        assert main.config == merge_dicts(EXAMPLE_CONFIG, {"app": {"host": "host.example.net"}})
