@@ -1,3 +1,4 @@
+import copy
 import logging
 import sys
 from typing import Tuple
@@ -26,7 +27,6 @@ def init_config(ctx, param, filename):
     except FileNotFoundError:
         if filename is not DEFAULT_CONFIG_FILE:
             raise
-    ctx.default_map = config
 
 
 @click.group(name="duffy")
@@ -41,24 +41,9 @@ def init_config(ctx, param, filename):
     help="Read option defaults from the specified YAML file.",
     show_default=True,
 )
-@click.option(
-    "-l",
-    "--loglevel",
-    "loglevel",
-    type=click.Choice(list(uvicorn.config.LOG_LEVELS.keys()), case_sensitive=False),
-    help="Set the log level.",
-    default="info",
-)
 @click.version_option(version=__version__, prog_name="Duffy")
-@click.pass_context
-def cli(ctx, loglevel):
-    # ensure that ctx.obj exists and is a dict (in case `cli()` is called
-    # by means other than serve() below)
-    ctx.ensure_object(dict)
-
-    ctx.obj["loglevel"] = loglevel
-    ctx.obj["numeric_loglevel"] = numeric_loglevel = uvicorn.config.LOG_LEVELS[loglevel.lower()]
-    logging.basicConfig(level=numeric_loglevel)
+def cli():
+    pass
 
 
 # Set up the database tables
@@ -119,16 +104,23 @@ def worker(worker_args: Tuple[str]):
 @click.option(
     "--reload/--no-reload", default=False, help="Automatically reload if the code is changed."
 )
-@click.option("-H", "--host", default="127.0.0.1", help="Set the host address to listen on.")
+@click.option("-H", "--host", default=None, help="Set the host address to listen on.")
 @click.option(
     "-p",
     "--port",
     type=click.IntRange(1, 65535, clamp=True),
-    default=8080,
+    default=None,
     help="Set the port value.",
 )
-@click.pass_context
-def serve(ctx, reload, host, port):
+@click.option(
+    "-l",
+    "--loglevel",
+    "loglevel",
+    type=click.Choice(list(uvicorn.config.LOG_LEVELS.keys()), case_sensitive=False),
+    help="Set the log level.",
+    default=None,
+)
+def serve(reload, host, port, loglevel):
     """Run the Duffy web application server.
 
     Duffy is the middle layer running ci.centos.org that manages the
@@ -136,8 +128,16 @@ def serve(ctx, reload, host, port):
     (physical hardware for now, VMs coming soon) that are used to run
     the tests in the CI Cluster.
     """
-    loglevel = ctx.obj["loglevel"]
-    numeric_loglevel = ctx.obj["numeric_loglevel"]
+    config_app = config.get("app", {})
+    if host is None:
+        host = config_app.get("host", "127.0.0.1")
+    if port is None:
+        port = config_app.get("port", 8080)
+    if loglevel is None:
+        loglevel = config_app.get("loglevel", "info")
+
+    numeric_loglevel = uvicorn.config.LOG_LEVELS[loglevel.lower()]
+    logging.basicConfig(level=numeric_loglevel)
 
     # Report for duty
     print(" * Starting Duffy...")
@@ -146,7 +146,7 @@ def serve(ctx, reload, host, port):
     print(f" * Log level    : {loglevel}")
     print(f" * Serving API docs on http://{host}:{port}/docs")
 
-    uvicorn_log_config = config.get("logging", uvicorn.config.LOGGING_CONFIG).copy()
+    uvicorn_log_config = copy.deepcopy(config_app.get("logging", uvicorn.config.LOGGING_CONFIG))
     if uvicorn_log_config.get("loggers", {}).get("duffy"):
         uvicorn_log_config["loggers"]["duffy"]["level"] = numeric_loglevel
 

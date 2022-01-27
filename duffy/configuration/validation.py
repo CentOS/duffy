@@ -48,13 +48,16 @@ class LoggingModel(BaseModel):
         extra = "allow"
 
 
-class ConfigModel(BaseModel):
+class AppModel(BaseModel):
     loglevel: Optional[LogLevel]
     host: Optional[str]
     port: Optional[conint(gt=0, lt=65536)]
+    logging: Optional[LoggingModel]
+
+
+class ConfigModel(BaseModel):
+    app: Optional[AppModel]
 
     celery: Optional[CeleryConfigModel]
 
     database: Optional[DatabaseConfigModel]
-
-    logging: Optional[LoggingModel]
