@@ -8,6 +8,7 @@ import yaml
 from click.testing import CliRunner
 
 from duffy.cli import cli
+from duffy.configuration import config
 from duffy.exceptions import DuffyConfigurationError
 from duffy.util import merge_dicts
 from duffy.version import __version__
@@ -50,6 +51,46 @@ def test_cli_missing_config(tmp_path):
     assert isinstance(result.exception, FileNotFoundError)
 
 
+@pytest.mark.duffy_config(EXAMPLE_CONFIG, clear=True)
+@pytest.mark.parametrize("config_empty", (False, True))
+def test_config_check(config_empty, duffy_config_files):
+    (config_file,) = duffy_config_files
+
+    if config_empty:
+        with config_file.open("w") as fp:
+            yaml.dump({}, fp)
+
+    # Modify the default value for `--config`. For that, find the right parameter object on the
+    # (click-wrapped) cli() function, then mock its default below.
+    for param in cli.params:
+        if param.name == "config":
+            break
+    else:  # Oops, didn't find right param object. This shouldn't happen!
+        raise RuntimeError("Can't find right parameter object for `--config`.")
+
+    runner = CliRunner()
+    with mock.patch("duffy.cli.DEFAULT_CONFIG_FILE", new=config_file), mock.patch.object(
+        param, "default", new=config_file
+    ):
+        result = runner.invoke(cli, ["config", "check"])
+
+    if config_empty:
+        assert result.exit_code == 0
+        assert "Configuration is empty" in result.output
+    else:
+        assert result.exit_code == 0
+        assert "OK" in result.output
+        assert "Validated configuration subkeys:" in result.output
+
+
+@pytest.mark.duffy_config(EXAMPLE_CONFIG, clear=True)
+def test_config_dump():
+    runner = CliRunner()
+    result = runner.invoke(cli, ["config", "dump"])
+    dumped_config = yaml.safe_load(result.output)
+    assert dumped_config == config
+
+
 @pytest.mark.parametrize("testcase", ("normal", "test-data", "config-error"))
 @mock.patch("duffy.cli.setup_db_test_data")
 @mock.patch("duffy.cli.setup_db_schema")
@@ -85,10 +126,10 @@ def test_shell(init_model, embed_shell, duffy_config_files, config_error, shell_
     _shell_type = shell_type or ""
 
     if config_error:
-        config = copy.deepcopy(EXAMPLE_CONFIG)
-        del config["database"]
+        modified_config = copy.deepcopy(EXAMPLE_CONFIG)
+        del modified_config["database"]
         with config_file.open("w") as fp:
-            yaml.dump(config, fp)
+            yaml.dump(modified_config, fp)
 
     args = [f"--config={config_file.absolute()}", "shell"]
 
@@ -152,10 +193,10 @@ def test_serve(uvicorn_run, testcase, duffy_config_files):
         )
 
     if testcase == "missing-logging-config":
-        config = copy.deepcopy(EXAMPLE_CONFIG)
-        del config["app"]["logging"]
+        modified_config = copy.deepcopy(EXAMPLE_CONFIG)
+        del modified_config["app"]["logging"]
         with config_file.open("w") as fp:
-            yaml.dump(config, fp)
+            yaml.dump(modified_config, fp)
 
     runner = CliRunner()
     result = runner.invoke(cli, parameters)
