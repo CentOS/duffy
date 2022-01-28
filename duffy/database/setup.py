@@ -67,6 +67,16 @@ def _gen_test_data_objs():
             "pool": "physical-fedora35-x86_64",
             "data": {"architecture": "x86_64"},
         },
+        {
+            "hostname": "node-seamicro-3.example.net",
+            "ipaddr": "192.168.0.13",
+            "data": {"architecture": "x86_64"},
+        },
+        {
+            "hostname": "node-seamicro-4.example.net",
+            "ipaddr": "192.168.0.14",
+            "data": {"architecture": "x86_64"},
+        },
     ]
 
     for quantity, flavour, ipaddrbase in (
@@ -91,7 +101,11 @@ def _gen_test_data_objs():
             )
 
     for node_spec in node_specs:
-        node = model.Node(state="active", **node_spec)
+        if node_spec.get("pool"):
+            state = "ready"
+        else:
+            state = "unused"
+        node = model.Node(state=state, **node_spec)
         objs.add(node)
 
     return objs

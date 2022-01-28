@@ -107,7 +107,11 @@ async def create_session(
         nodes_spec_dict = nodes_spec.dict()
         quantity = nodes_spec_dict.pop("quantity")
 
-        query = select(Node).filter_by(state=NodeState.active, **nodes_spec_dict).limit(quantity)
+        query = (
+            select(Node)
+            .filter_by(active=True, state=NodeState.ready, **nodes_spec_dict)
+            .limit(quantity)
+        )
 
         nodes_to_reserve = (await db_async_session.execute(query)).scalars().all()
 

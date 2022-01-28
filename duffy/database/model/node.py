@@ -1,4 +1,4 @@
-from sqlalchemy import JSON, Boolean, Column, ForeignKey, Index, Integer, Text, UnicodeText
+from sqlalchemy import JSON, Boolean, Column, ForeignKey, Index, Integer, Text, UnicodeText, and_
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship
 
@@ -10,31 +10,36 @@ from .session import Session
 
 
 class Node(Base, CreatableMixin, RetirableMixin):
+    index_uniqueness_clause = and_(
+        Column("retired_at") == None,  # noqa: E711
+        Column("state") != "provisioning",
+    )
+
     __tablename__ = "nodes"
     __table_args__ = (
         Index(
             "active_hostname_index",
             "hostname",
             unique=True,
-            sqlite_where=Column("retired_at") == None,  # noqa: E711
-            postgresql_where=Column("retired_at") == None,  # noqa: E711
+            sqlite_where=index_uniqueness_clause,
+            postgresql_where=index_uniqueness_clause,
         ),
         Index(
             "active_ipaddr_index",
             "ipaddr",
             unique=True,
-            sqlite_where=Column("retired_at") == None,  # noqa: E711
-            postgresql_where=Column("retired_at") == None,  # noqa: E711
+            sqlite_where=index_uniqueness_clause,
+            postgresql_where=index_uniqueness_clause,
         ),
     )
 
     id = Column(Integer, primary_key=True, nullable=False)
-    hostname = Column(Text, nullable=False)
-    ipaddr = Column(Text, nullable=False)
+    hostname = Column(Text, nullable=True)
+    ipaddr = Column(Text, nullable=True)
     state = Column(
         NodeState.db_type(),
         nullable=False,
-        default=NodeState.ready,
+        default=NodeState.unused,
         server_default=NodeState.ready.value,
     )
     comment = Column(UnicodeText, nullable=True)
