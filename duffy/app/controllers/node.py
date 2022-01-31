@@ -26,7 +26,8 @@ async def get_all_nodes(
     """
     Return all nodes
     """
-    query = select(Node).options(selectinload("*"))
+    query = select(Node).options(selectinload("*")).filter_by(active=True)
+
     results = await db_async_session.execute(query)
 
     return {"action": "get", "nodes": results.scalars().all()}
