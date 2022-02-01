@@ -21,6 +21,7 @@ from ...api_models import (
 )
 from ...database.model import Node, Session, SessionNode, Tenant
 from ...database.types import NodeState
+from ...tasks.provision import fill_pools
 from ..auth import req_tenant, req_tenant_optional
 from ..database import req_db_async_session
 
@@ -103,7 +104,9 @@ async def create_session(
     )
     db_async_session.add(session)
 
+    pools_to_fill_up = set()
     for nodes_spec in data.nodes_specs:
+        pools_to_fill_up.add(nodes_spec.pool)
         nodes_spec_dict = nodes_spec.dict()
         quantity = nodes_spec_dict.pop("quantity")
 
@@ -145,6 +148,10 @@ async def create_session(
         await db_async_session.commit()
     except IntegrityError as exc:  # pragma: no cover
         raise HTTPException(HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
+
+    # Tell backend worker to fill up pools from which nodes were taken.
+    fill_pools.delay(pool_names=list(pools_to_fill_up)).forget()
+
     return {"action": "post", "session": session}
 
 

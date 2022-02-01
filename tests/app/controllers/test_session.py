@@ -1,5 +1,6 @@
 import re
 import uuid
+from unittest import mock
 
 import pytest
 from sqlalchemy import func, select
@@ -16,6 +17,7 @@ from duffy.database.model import Node, Session, Tenant
 from . import BaseTestController
 
 
+@mock.patch("duffy.app.controllers.session.fill_pools", new=mock.MagicMock())
 class TestSession(BaseTestController):
 
     name = "session"
@@ -103,6 +105,8 @@ class TestSessionWorkflow:
         {"pool": "virtual-fedora35-x86_64-medium", "quantity": 2},
     ]
 
+    pool_names = [spec["pool"] for spec in nodes_specs]
+
     @pytest.mark.parametrize(
         "testcase",
         (
@@ -112,7 +116,10 @@ class TestSessionWorkflow:
             "wrong tenant",
         ),
     )
-    async def test_request_session(self, testcase, client, db_async_session, auth_tenant):
+    @mock.patch("duffy.app.controllers.session.fill_pools")
+    async def test_request_session(
+        self, fill_pools, testcase, client, db_async_session, auth_tenant
+    ):
         if testcase == "insufficient nodes":
             for node in (await db_async_session.execute(select(Node))).scalars():
                 node.state = "deployed"
@@ -153,15 +160,23 @@ class TestSessionWorkflow:
                         # didn't break out of loop -> matches spec
                         matched_nodes_count += 1
                 assert matched_nodes_count == quantity
-        elif testcase == "inactive tenant":
-            assert response.status_code == HTTP_403_FORBIDDEN
-        elif testcase == "insufficient nodes":
-            assert response.status_code == HTTP_422_UNPROCESSABLE_ENTITY
-            assert result["detail"].startswith("can't reserve nodes:")
-        else:  # testcase == "wrong tenant"
-            assert response.status_code == HTTP_403_FORBIDDEN
-            assert result["detail"] == "can't create session for other tenant"
+            assert len(fill_pools.delay.call_args_list) == 1
+            args, kwargs = fill_pools.delay.call_args
+            assert args == ()
+            assert kwargs.keys() == {"pool_names"}
+            assert set(kwargs["pool_names"]) == set(self.pool_names)
+        else:
+            if testcase == "inactive tenant":
+                assert response.status_code == HTTP_403_FORBIDDEN
+            elif testcase == "insufficient nodes":
+                assert response.status_code == HTTP_422_UNPROCESSABLE_ENTITY
+                assert result["detail"].startswith("can't reserve nodes:")
+            else:  # testcase == "wrong tenant"
+                assert response.status_code == HTTP_403_FORBIDDEN
+                assert result["detail"] == "can't create session for other tenant"
+            fill_pools.delay.assert_not_called()
 
+    @mock.patch("duffy.app.controllers.session.fill_pools", new=mock.MagicMock())
     @pytest.mark.parametrize(
         "testcase", ("normal", "unknown-session", "retired-session", "unauthorized")
     )
