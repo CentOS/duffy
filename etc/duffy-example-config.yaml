@@ -107,6 +107,9 @@ tasks:
     broker_url: "redis://localhost:6379"
     result_backend: "redis://localhost:6379"
     worker_redirect_stdouts_level: "INFO"
+  periodic:
+    fill-pools:
+      interval: 300
 
 database:
   sqlalchemy:
