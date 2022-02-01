@@ -1,0 +1,64 @@
+- hosts: localhost
+  become: no
+  gather_facts: no
+
+  tasks:
+    # The playbook consumes structures of this form passed in by the mechanism
+    # in the Ansible variable `duffy_in`:
+    #
+    # duffy_in ->
+    #   {
+    #     "nodes": [
+    #       {"id": 1, "hostname": "...", "ipaddr": "..."},
+    #       {"id": 2, "hostname": "...", "ipaddr": "..."},
+    #       ...
+    #     ]
+    #   }
+    #
+    # The `hostname` and `ipaddr` fields can be set or unset, depending on if
+    # the pool is configured to reuse nodes or allocate new ones for every
+    # provision.
+
+    # This task emulates provisioning the nodes, its result format can be arbitrary ...
+    - name: "Provision the things!"
+      vars:
+        _hostname: "host{{ index + 1 }}.example.net"
+        _ipaddr: "172.16.13.{{ index + 1 }}"
+        _a_number: "{{ (index + 42) | int }}"
+      set_fact:
+        mech_specific_result: >-
+          {{
+            mech_specific_result | default([])
+            + [
+                {
+                  'mech-hostname': _hostname,
+                  'mech-ipaddr': _ipaddr,
+                  'mech-specific': {"a-number": _a_number},
+                }
+              ]
+          }}
+      loop: "{{ duffy_in.nodes | list }}"
+      loop_control:
+        index_var: index
+
+    # ... as long as this (mandatory) task transforms it into the expected output format, i.e. sets
+    # a fact `duffy_out` which looks like this:
+    #
+    # duffy_out ->
+    #   {
+    #     "nodes": [
+    #       {"hostname": "hostname1.domain.tld", "ipaddr": "...", "anything": "else"},
+    #       {"hostname": "hostname2.domain.tld", "ipaddr": "...", "anything": "else"},
+    #     ]
+    #   }
+    #
+    # The results for individual nodes will be stored in `provision` in the respective Node.data
+    # field in the database, it should contain all information necessary for deprovisioning the node
+    # from the respective playbook and needs to be unique.
+    - name: "Summarize the things!"
+      set_fact:
+        duffy_out:
+          nodes: "{{ mech_specific_result | json_query(mech_specific_query) }}"
+      vars:
+        mech_specific_query: >-
+          [*].{hostname: "mech-hostname", ipaddr: "mech-ipaddr", "mech-specific": "mech-specific"}
