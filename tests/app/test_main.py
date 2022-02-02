@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 
-from duffy.app.main import app, init_model
+from duffy.app.main import app, init_model, init_tasks
 from duffy.exceptions import DuffyConfigurationError
 
 from ..util import noop_context
@@ -59,3 +59,8 @@ class TestMain:
             assert excinfo.value.code != 0
         else:
             init_async_model.assert_awaited_once_with()
+
+    @mock.patch("duffy.app.main.tasks")
+    def test_init_tasks(self, tasks):
+        init_tasks()
+        tasks.init_tasks.assert_called_once_with()
