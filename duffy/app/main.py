@@ -3,7 +3,7 @@ import sys
 
 from fastapi import FastAPI
 
-from .. import database
+from .. import database, tasks
 from ..exceptions import DuffyConfigurationError
 from ..version import __version__
 from .controllers import node, session, tenant
@@ -51,3 +51,11 @@ async def init_model():
     except DuffyConfigurationError as exc:
         log.error("Configuration key missing or wrong: %s", exc.args[0])
         sys.exit(1)
+
+
+# Celery tasks initialization
+
+
+@app.on_event("startup")
+def init_tasks():
+    tasks.init_tasks()
