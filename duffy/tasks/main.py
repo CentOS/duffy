@@ -1,12 +1,11 @@
 from typing import Tuple
 
 from .. import database
-from ..configuration import config
-from .base import celery
+from .base import celery, init_tasks
 
 
 def start_worker(worker_args: Tuple[str]):
     database.init_sync_model()
+    init_tasks()
 
-    celery.config_from_object(config["celery"])
     celery.worker_main(("worker",) + worker_args)
