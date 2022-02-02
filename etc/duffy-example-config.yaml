@@ -102,10 +102,11 @@ metaclient:
         level: INFO
         propagate: false
 
-celery:
-  broker_url: "redis://localhost:6379"
-  result_backend: "redis://localhost:6379"
-  worker_redirect_stdouts_level: "INFO"
+tasks:
+  celery:
+    broker_url: "redis://localhost:6379"
+    result_backend: "redis://localhost:6379"
+    worker_redirect_stdouts_level: "INFO"
 
 database:
   sqlalchemy:

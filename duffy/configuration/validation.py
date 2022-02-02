@@ -33,6 +33,15 @@ class CeleryModel(BaseModel):
     result_backend: AnyUrl
 
 
+class PeriodicTaskModel(BaseModel):
+    interval: conint(gt=0)
+
+
+class TasksModel(BaseModel):
+    celery: CeleryModel
+    periodic: Optional[Dict[str, PeriodicTaskModel]]
+
+
 class SQLAlchemyModel(BaseModel):
     sync_url: stricturl(tld_required=False, host_required=False)
     async_url: stricturl(tld_required=False, host_required=False)
@@ -95,7 +104,7 @@ class LegacyModel(BaseModel):
 
 class ConfigModel(BaseModel):
     app: Optional[AppModel]
-    celery: Optional[CeleryModel]
+    tasks: Optional[TasksModel]
     database: Optional[DatabaseModel]
     metaclient: Optional[LegacyModel]
     nodepools: Optional[NodePoolsRootModel]
