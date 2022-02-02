@@ -28,7 +28,7 @@ class PlaybookType(str, Enum):
 # Pydantic models
 
 
-class CeleryConfigModel(BaseModel):
+class CeleryModel(BaseModel):
     broker_url: AnyUrl
     result_backend: AnyUrl
 
@@ -38,7 +38,7 @@ class SQLAlchemyModel(BaseModel):
     async_url: stricturl(tld_required=False, host_required=False)
 
 
-class DatabaseConfigModel(BaseModel):
+class DatabaseModel(BaseModel):
     sqlalchemy: SQLAlchemyModel
 
 
@@ -95,7 +95,7 @@ class LegacyModel(BaseModel):
 
 class ConfigModel(BaseModel):
     app: Optional[AppModel]
-    celery: Optional[CeleryConfigModel]
-    database: Optional[DatabaseConfigModel]
+    celery: Optional[CeleryModel]
+    database: Optional[DatabaseModel]
     metaclient: Optional[LegacyModel]
     nodepools: Optional[NodePoolsRootModel]
