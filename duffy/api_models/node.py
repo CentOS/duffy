@@ -15,6 +15,7 @@ class NodeBase(BaseModel, ABC):
     comment: Optional[str]
 
     pool: Optional[str]
+    reusable: bool
     data: Dict[str, Any]
 
     class Config:
@@ -22,6 +23,7 @@ class NodeBase(BaseModel, ABC):
 
 
 class NodeCreateModel(NodeBase):
+    reusable: bool = False
     data: Dict[str, Any] = {}
 
 
