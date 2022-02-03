@@ -105,6 +105,6 @@ def setup_db_test_data():
             db_sync_session.add(obj)
 
     print("Caution! Created tenants with deterministic API keys:")
-    print("\tadmin:", _gen_test_api_key("admin"))
-    print("\ttenant:", _gen_test_api_key("tenant"))
+    print(f"\tadmin:{_gen_test_api_key('admin')}")
+    print(f"\ttenant:{_gen_test_api_key('tenant')}")
     print("Don't use in production!")
