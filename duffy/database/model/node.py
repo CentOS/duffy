@@ -1,4 +1,4 @@
-from sqlalchemy import JSON, Column, ForeignKey, Index, Integer, Text, UnicodeText
+from sqlalchemy import JSON, Boolean, Column, ForeignKey, Index, Integer, Text, UnicodeText
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship
 
@@ -41,6 +41,8 @@ class Node(Base, CreatableMixin, RetirableMixin):
 
     pool = Column(UnicodeText, nullable=True, index=True)
 
+    reusable = Column(Boolean, nullable=False, default=False, server_default="FALSE")
+
     # Careful, MutableDict only detects changes to the top level of dict key-values!
     data = Column(
         MutableDict.as_mutable(JSON), nullable=False, default=lambda: {}, server_default="{}"
@@ -67,6 +69,7 @@ class SessionNode(Base):
             "hostname": self.node.hostname,
             "ipaddr": self.node.ipaddr,
             "pool": self.node.pool,
+            "reusable": self.node.reusable,
             "data": self.node.data,
         }
 

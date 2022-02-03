@@ -56,13 +56,12 @@ async def create_node(
     if not tenant.is_admin:
         raise HTTPException(HTTP_403_FORBIDDEN)
 
-    data.ipaddr = str(data.ipaddr)
-
     args = {
         "hostname": data.hostname,
         "ipaddr": str(data.ipaddr),
         "comment": data.comment,
         "pool": data.pool,
+        "reusable": data.reusable,
         "data": data.data,
     }
 
