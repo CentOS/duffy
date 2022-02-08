@@ -71,6 +71,7 @@ class SessionNode(Base):
     @property
     def pydantic_view(self) -> SessionNodeModel:
         args = {
+            "id": self.node.id,
             "hostname": self.node.hostname,
             "ipaddr": self.node.ipaddr,
             "pool": self.node.pool,

@@ -20,6 +20,7 @@ class NodesSpec(BaseModel):
 
 
 class SessionNodeModel(NodeBase):
+    id: int
     state: Optional[NodeState]
 
 
