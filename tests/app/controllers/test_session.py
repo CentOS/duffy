@@ -178,7 +178,7 @@ class TestSessionWorkflow:
 
     @mock.patch("duffy.app.controllers.session.fill_pools", new=mock.MagicMock())
     @pytest.mark.parametrize(
-        "testcase", ("normal", "unknown-session", "retired-session", "unauthorized")
+        "testcase", ("normal", "unknown-session", "retired-session", "unauthorized", "set-active")
     )
     async def test_update_session(self, testcase, client, db_async_session, auth_tenant):
         if testcase != "unknown-session":
@@ -210,14 +210,22 @@ class TestSessionWorkflow:
         else:
             session_id = 1
 
-        update_response = await client.put(f"{self.path}/{session_id}", json={"active": False})
+        session_active = "set-active" in testcase
+
+        update_response = await client.put(
+            f"{self.path}/{session_id}", json={"active": session_active}
+        )
         update_result = update_response.json()
-        if testcase == "normal":
+        if testcase in ("normal", "set-active"):
             assert update_response.status_code == HTTP_200_OK
             updated_session = update_result["session"]
             assert updated_session["id"] == session_id
-            assert updated_session["active"] is False
-            assert updated_session["retired_at"] is not None
+            if not session_active:
+                assert updated_session["active"] is False
+                assert updated_session["retired_at"] is not None
+            else:
+                assert updated_session["active"] is True
+                assert updated_session["retired_at"] is None
         elif testcase == "unknown-session":
             assert update_response.status_code == HTTP_404_NOT_FOUND
         elif testcase == "unauthorized":
