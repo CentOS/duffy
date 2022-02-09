@@ -21,7 +21,7 @@ from ...api_models import (
 )
 from ...database.model import Node, Session, SessionNode, Tenant
 from ...database.types import NodeState
-from ...tasks.provision import fill_pools
+from ...tasks import deprovision_nodes, fill_pools
 from ..auth import req_tenant, req_tenant_optional
 from ..database import req_db_async_session
 
@@ -185,9 +185,9 @@ async def update_session(
 
     if not data.active:
         session.active = data.active
-        # mark nodes to be deprovisioned
-        for session_node in session.session_nodes:
-            session_node.node.state = NodeState.deprovisioning
+        deprovision_nodes.delay(
+            node_ids=[session_node.node_id for session_node in session.session_nodes]
+        ).forget()
 
     await db_async_session.commit()
 

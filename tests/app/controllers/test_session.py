@@ -183,7 +183,10 @@ class TestSessionWorkflow:
     @pytest.mark.parametrize(
         "testcase", ("normal", "unknown-session", "retired-session", "unauthorized", "set-active")
     )
-    async def test_update_session(self, testcase, client, db_async_session, auth_tenant):
+    @mock.patch("duffy.app.controllers.session.deprovision_nodes")
+    async def test_update_session(
+        self, deprovision_nodes, testcase, client, db_async_session, auth_tenant
+    ):
         if testcase != "unknown-session":
             request_payload = {"nodes_specs": self.nodes_specs}
             create_response = await client.post(self.path, json=request_payload)
@@ -219,7 +222,20 @@ class TestSessionWorkflow:
             f"{self.path}/{session_id}", json={"active": session_active}
         )
         update_result = update_response.json()
+
+        # The task function should never be called directly.
+        deprovision_nodes.assert_not_called()
+
         if testcase in ("normal", "set-active"):
+            if session_active:
+                deprovision_nodes.delay.assert_not_called()
+            else:
+                deprovision_nodes.delay.assert_called_once()
+                args, kwargs = deprovision_nodes.delay.call_args
+                assert args == ()
+                assert kwargs.keys() == {"node_ids"}
+                assert set(kwargs["node_ids"]) == {node["id"] for node in created_session["nodes"]}
+
             assert update_response.status_code == HTTP_200_OK
             updated_session = update_result["session"]
             assert updated_session["id"] == session_id
@@ -229,10 +245,12 @@ class TestSessionWorkflow:
             else:
                 assert updated_session["active"] is True
                 assert updated_session["retired_at"] is None
-        elif testcase == "unknown-session":
-            assert update_response.status_code == HTTP_404_NOT_FOUND
-        elif testcase == "unauthorized":
-            assert update_response.status_code == HTTP_403_FORBIDDEN
-        else:  # testcase == "retired-session"
-            assert update_response.status_code == HTTP_422_UNPROCESSABLE_ENTITY
-            assert re.match(r"^session .* is retired$", update_result["detail"])
+        else:
+            deprovision_nodes.delay.assert_not_called()
+            if testcase == "unknown-session":
+                assert update_response.status_code == HTTP_404_NOT_FOUND
+            elif testcase == "unauthorized":
+                assert update_response.status_code == HTTP_403_FORBIDDEN
+            else:  # testcase == "retired-session"
+                assert update_response.status_code == HTTP_422_UNPROCESSABLE_ENTITY
+                assert re.match(r"^session .* is retired$", update_result["detail"])
