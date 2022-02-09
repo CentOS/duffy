@@ -183,11 +183,11 @@ async def update_session(
     if not session.active:
         raise HTTPException(HTTP_422_UNPROCESSABLE_ENTITY, f"session {id} is retired")
 
-    session.active = data.active
-
-    # mark nodes to be deprovisioned
-    for session_node in session.session_nodes:
-        session_node.node.state = NodeState.deprovisioning
+    if not data.active:
+        session.active = data.active
+        # mark nodes to be deprovisioned
+        for session_node in session.session_nodes:
+            session_node.node.state = NodeState.deprovisioning
 
     await db_async_session.commit()
 
