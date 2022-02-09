@@ -131,6 +131,9 @@ class TestSessionWorkflow:
         response = await client.post(self.path, json=request_payload)
         result = response.json()
 
+        # fill_pools should never be called directly, just through .delay()
+        fill_pools.assert_not_called()
+
         if testcase == "normal":
             assert response.status_code == HTTP_201_CREATED
 
@@ -160,7 +163,7 @@ class TestSessionWorkflow:
                         # didn't break out of loop -> matches spec
                         matched_nodes_count += 1
                 assert matched_nodes_count == quantity
-            assert len(fill_pools.delay.call_args_list) == 1
+            fill_pools.delay.assert_called_once()
             args, kwargs = fill_pools.delay.call_args
             assert args == ()
             assert kwargs.keys() == {"pool_names"}
