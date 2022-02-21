@@ -2,7 +2,7 @@ from unittest import mock
 
 import pytest
 
-from duffy.tasks.mechanisms.ansible import AnsibleMechanism
+from duffy.tasks.mechanisms.ansible import AnsibleMechanism, PlaybookType
 from duffy.tasks.mechanisms.main import Mechanism, MechanismFailure
 from duffy.tasks.node_pools import ConcreteNodePool, NodePool
 
@@ -51,40 +51,37 @@ class TestMechanism:
 
 @mock.patch.dict(NodePool.known_pools, clear=True)
 class TestAnsibleMechanism:
-    def create_mech(self, with_extra_vars: bool = True):
+    def create_mech(self, with_extra_vars: bool = True, extra_vars_loc: str = "default"):
         mech_config = {
             "type": "ansible",
             "ansible": {
                 "topdir": "/foo",
-                "extra-vars": {
-                    "nodepool": "{{ name }}",
-                    "template_name": (
-                        "{% set parts=name.split('-') %}" + "duffy-{{ parts[1:] | join('-') }}"
-                    ),
-                },
-                "playbooks": {"provision": "provision.yml", "deprovision": "deprovision.yml"},
+                "provision": {"playbook": "provision.yaml"},
+                "deprovision": {"playbook": "deprovision.yaml"},
             },
         }
-        if not with_extra_vars:
-            del mech_config["ansible"]["extra-vars"]
+        if with_extra_vars:
+            extra_vars = {
+                "nodepool": "{{ name }}",
+                "template_name": (
+                    "{% set parts=name.split('-') %}" + "duffy-{{ parts[1:] | join('-') }}"
+                ),
+            }
+            if extra_vars_loc == "default":
+                mech_config["ansible"]["extra-vars"] = extra_vars
+            else:
+                mech_config["ansible"][extra_vars_loc]["extra-vars"] = extra_vars
 
         pool = ConcreteNodePool(name="virtual-boop", mechanism=mech_config)
 
         return pool.mechanism
 
-    @pytest.mark.parametrize("with_extra_vars", (True, False))
-    def test_extra_vars(self, with_extra_vars):
-        mech = self.create_mech(with_extra_vars=with_extra_vars)
-        if with_extra_vars:
-            assert mech.extra_vars == {"nodepool": "virtual-boop", "template_name": "duffy-boop"}
-        else:
-            assert mech.extra_vars == {}
-
+    @pytest.mark.parametrize("extra_vars_loc", ("default", "provision"))
     @pytest.mark.parametrize("error", (False, "no-matching-event", "run-failed"))
     @pytest.mark.parametrize("add_run_extra_vars", (False, True))
     @mock.patch("duffy.tasks.mechanisms.ansible.ansible_runner")
-    def test_run_playbook(self, ansible_runner, add_run_extra_vars, error):
-        mech = self.create_mech()
+    def test_run_playbook(self, ansible_runner, add_run_extra_vars, error, extra_vars_loc):
+        mech = self.create_mech(extra_vars_loc=extra_vars_loc)
 
         ansible_runner.run.return_value = run = mock.Mock()
         if error == "run-failed":
@@ -143,16 +140,16 @@ class TestAnsibleMechanism:
                 expectation = noop_context()
 
         with expectation:
+            args = (PlaybookType.provision, "bloop")
             if add_run_extra_vars:
-                result = mech.run_playbook("bar.yml", "bloop", {"more-extra-vars": "!!!"})
-            else:
-                result = mech.run_playbook("bar.yml", "bloop")
+                args += ({"more-extra-vars": "!!!"},)
+            result = mech.run_playbook(*args)
 
         ansible_runner.run.assert_called_once()
         args, kwargs = ansible_runner.run.call_args
         assert not args
         assert kwargs["project_dir"] == "/foo"
-        assert kwargs["playbook"] == "bar.yml"
+        assert kwargs["playbook"] == "provision.yaml"
         assert kwargs["json_mode"] is True
         expected_extravars = {"nodepool": "virtual-boop", "template_name": "duffy-boop"}
         if add_run_extra_vars:
@@ -162,24 +159,28 @@ class TestAnsibleMechanism:
         if not error:
             assert result == duffy_result
 
-    @pytest.mark.parametrize("method", ("provision", "deprovision"))
+    @pytest.mark.parametrize("playbook_type", (PlaybookType.provision, PlaybookType.deprovision))
     @mock.patch.object(AnsibleMechanism, "run_playbook")
-    def test_provision_deprovision(self, run_playbook, method):
+    def test_provision_deprovision(self, run_playbook, playbook_type):
+        method = playbook_type.name
         failuremsg = f"{method.title()}ing failed"
         playbook = f"{method}.yml"
 
         node = mock.Mock(id=5, hostname="hostname", ipaddr="ipaddr")
-        expected_result = {
-            "duffy_in": {
-                "nodes": [{"id": node.id, "hostname": node.hostname, "ipaddr": node.ipaddr}]
-            }
-        }
-        if method == "deprovision":
+        nodes = [{"id": node.id, "hostname": node.hostname, "ipaddr": node.ipaddr}]
+        if playbook_type == PlaybookType.deprovision:
             node.data = {"provision": {"mechanism-specific": 5}}
-            expected_result["duffy_in"]["nodes"][0]["data"] = node.data
+            nodes[0]["data"] = node.data
 
+        expected_playbook_vars = {"duffy_in": {"nodes": nodes}}
+        expected_result = {"duffy_out": {"nodes": nodes}}
         run_playbook.return_value = expected_result
-        mech = self.create_mech({"playbooks": {method: playbook}})
+        mech = self.create_mech({method: {"playbook": playbook}})
         result = getattr(mech, method)(nodes=[node])
         assert result == expected_result
-        run_playbook.assert_called_once_with(playbook, failuremsg, expected_result)
+        run_playbook.assert_called_once_with(
+            playbook_type,
+            failuremsg,
+            extra_vars=expected_playbook_vars,
+            overrides=expected_playbook_vars,
+        )

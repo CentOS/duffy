@@ -54,7 +54,7 @@ def test_deprovision_pool_nodes(testcase, test_mechanism, db_sync_session, caplo
                 "type": "ansible",
                 "ansible": {
                     "topdir": str(PLAYBOOK_PATH.absolute()),
-                    "playbooks": {"deprovision": "deprovision.yml"},
+                    "deprovision": {"playbook": "deprovision.yml"},
                 },
             }
         else:

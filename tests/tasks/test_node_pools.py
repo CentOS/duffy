@@ -120,9 +120,15 @@ class TestNodePool:
 
         assert set(pool.name for pool in NodePool.iter_pools()) == expected
 
-    def test_render_template(self):
-        pool = NodePool(name="foo", bar="hello")
-        assert pool.render_template("{{ bar }} - {{ name }}") == "hello - foo"
+    @pytest.mark.parametrize("with_overrides", (False, True))
+    def test_render_template(self, with_overrides):
+        if with_overrides:
+            pool = NodePool(name="foo")
+            overrides = {"bar": "hello"}
+        else:
+            pool = NodePool(name="foo", bar="hello")
+            overrides = None
+        assert pool.render_template("{{ bar }} - {{ name }}", overrides) == "hello - foo"
 
     def test_render_template_in_obj(self):
         pool = NodePool(name="foo", bar="hello", baz="goodbye")
