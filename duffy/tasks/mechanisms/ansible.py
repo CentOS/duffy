@@ -1,3 +1,4 @@
+from enum import Enum, auto
 from typing import Any, Dict, List, Optional
 
 import ansible_runner
@@ -6,24 +7,34 @@ from ...database.model import Node
 from .main import Mechanism, MechanismFailure
 
 
-class AnsibleMechanism(Mechanism, mech_type="ansible"):
-    @property
-    def extra_vars(self):
-        if "extra-vars" in self:
-            return self.nodepool.render_templates_in_obj(self["extra-vars"])
-        else:
-            return {}
+class PlaybookType(Enum):
+    provision = auto()
+    deprovision = auto()
 
+
+class AnsibleMechanism(Mechanism, mech_type="ansible"):
     def run_playbook(
-        self, playbook: str, failure_msg: str, extra_vars: Optional[Dict[str, Any]] = None
+        self,
+        playbook_type: PlaybookType,
+        failure_msg: str,
+        extra_vars: Optional[Dict[str, Any]] = None,
+        overrides: Optional[Dict[str, Any]] = None,
     ):
-        if not extra_vars:
-            extra_vars = self.extra_vars
-        else:
-            extra_vars = {**self.extra_vars, **extra_vars}
+        subconf = self[playbook_type.name]
+
+        run_extra_vars = self.get("extra-vars", {})
+        if "extra-vars" in subconf:
+            run_extra_vars = {**run_extra_vars, **subconf["extra-vars"]}
+        if extra_vars:
+            run_extra_vars = {**run_extra_vars, **extra_vars}
+
+        run_extra_vars = self.nodepool.render_templates_in_obj(run_extra_vars, overrides=overrides)
 
         run = ansible_runner.run(
-            project_dir=self["topdir"], playbook=playbook, json_mode=True, extravars=extra_vars
+            project_dir=self["topdir"],
+            playbook=self[playbook_type.name]["playbook"],
+            json_mode=True,
+            extravars=run_extra_vars,
         )
 
         if run.status != "successful":
@@ -44,7 +55,7 @@ class AnsibleMechanism(Mechanism, mech_type="ansible"):
             raise MechanismFailure(failure_msg)
 
     def provision(self, nodes: List[Node]) -> Dict[str, Any]:
-        extra_vars = {
+        playbook_input = {
             "duffy_in": {
                 "nodes": [
                     {"id": node.id, "hostname": node.hostname, "ipaddr": node.ipaddr}
@@ -52,10 +63,15 @@ class AnsibleMechanism(Mechanism, mech_type="ansible"):
                 ],
             },
         }
-        return self.run_playbook(self["playbooks"]["provision"], "Provisioning failed", extra_vars)
+        return self.run_playbook(
+            PlaybookType.provision,
+            "Provisioning failed",
+            extra_vars=playbook_input,
+            overrides=playbook_input,
+        )
 
     def deprovision(self, nodes: List[Node]) -> Dict[str, Any]:
-        extra_vars = {
+        playbook_input = {
             "duffy_in": {
                 "nodes": [
                     {
@@ -69,5 +85,8 @@ class AnsibleMechanism(Mechanism, mech_type="ansible"):
             },
         }
         return self.run_playbook(
-            self["playbooks"]["deprovision"], "Deprovisioning failed", extra_vars
+            PlaybookType.deprovision,
+            "Deprovisioning failed",
+            extra_vars=playbook_input,
+            overrides=playbook_input,
         )

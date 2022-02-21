@@ -139,9 +139,10 @@ nodepools:
         architecture: "{{ architecture }}"
       mechanism:
         ansible:
-          playbooks:
-            provision: "playbooks/baremetal/provision.yml"
-            deprovision: "playbooks/baremetal/deprovision.yml"
+          provision:
+            playbook: "playbooks/baremetal/provision.yml"
+          deprovision:
+            playbook: "playbooks/baremetal/deprovision.yml"
     physical-x86_64:
       extends: physical
       fill-level: 5
@@ -152,15 +153,16 @@ nodepools:
       reuse-nodes: false
       mechanism:
         ansible:
-          extra-vars:
-            # duffy.nodes gets passed in as a list
-            quantity: "{{ duffy.nodes | length }}"
-            # remove "virtual-", add "duffy-" prefix
-            template_name: >-
-              {% set parts=name.split("-") %}duffy-{{ parts[1:] | join("-") }}
-          playbooks:
-            provision: "playbooks/opennebula/provision.yml"
-            deprovision: "playbooks/opennebula/deprovision.yml"
+          provision:
+            extra-vars:
+              # duffy_in.nodes gets passed in as a list
+              quantity: "{{ duffy_in.nodes | length }}"
+              # remove "virtual-", add "duffy-" prefix
+              template_name: >-
+                {% set parts=name.split("-") %}duffy-{{ parts[1:] | join("-") }}
+            playbook: "playbooks/opennebula/provision.yml"
+          deprovision:
+            playbook: "playbooks/opennebula/deprovision.yml"
     virtual-x86_64-small:
       extends: virtual
       fill-level: 20

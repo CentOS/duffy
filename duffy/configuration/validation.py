@@ -20,11 +20,6 @@ class MechanismType(str, Enum):
     ansible = "ansible"
 
 
-class PlaybookType(str, Enum):
-    provision = "provision"
-    deprovision = "deprovision"
-
-
 # Pydantic models
 
 
@@ -51,10 +46,16 @@ class DatabaseModel(BaseModel):
     sqlalchemy: SQLAlchemyModel
 
 
+class AnsibleMechanismPlaybookModel(BaseModel):
+    extra_vars: Optional[Dict[str, Any]] = Field(alias="extra-vars")
+    playbook: Path
+
+
 class AnsibleMechanismModel(BaseModel):
     topdir: Optional[Path]
     extra_vars: Optional[Dict[str, Any]] = Field(alias="extra-vars")
-    playbooks: Optional[Dict[PlaybookType, Path]]
+    provision: Optional[AnsibleMechanismPlaybookModel]
+    deprovision: Optional[AnsibleMechanismPlaybookModel]
 
 
 class MechanismModel(BaseModel):

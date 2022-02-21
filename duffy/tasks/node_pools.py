@@ -71,14 +71,19 @@ class NodePool(dict):
         for pool in cls.known_pools.values():
             yield pool
 
-    def render_template(self, template: str) -> str:
-        return jinja2.Template(template).render(**self)
+    def render_template(self, template: str, overrides: Optional[Dict[str, Any]] = None) -> str:
+        template_vars = dict(self)
+        if overrides:
+            template_vars = {**self, **overrides}
+        return jinja2.Template(template).render(**template_vars)
 
-    def render_templates_in_obj(self, obj: Any) -> Any:
+    def render_templates_in_obj(self, obj: Any, overrides: Optional[Dict[str, Any]] = None) -> Any:
         if isinstance(obj, str):
-            return self.render_template(obj)
+            return self.render_template(obj, overrides)
         elif isinstance(obj, dict):
-            return {key: self.render_templates_in_obj(value) for key, value in obj.items()}
+            return {
+                key: self.render_templates_in_obj(value, overrides) for key, value in obj.items()
+            }
         else:
             return obj
 

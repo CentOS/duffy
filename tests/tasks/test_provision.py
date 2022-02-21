@@ -78,7 +78,7 @@ def test_fill_single_pool(testcase, db_sync_session, test_mechanism, caplog):
             "type": "ansible",
             "ansible": {
                 "topdir": str(PLAYBOOK_PATH.absolute()),
-                "playbooks": {"provision": "provision.yml"},
+                "provision": {"playbook": "provision.yml"},
             },
         }
     else:
