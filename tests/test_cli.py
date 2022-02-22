@@ -110,6 +110,42 @@ def test_setup_db(setup_db_schema, setup_db_test_data, testcase, runner, caplog)
         assert "Configuration key missing or wrong: database" in caplog.messages
 
 
+@pytest.mark.parametrize("testcase", ("normal", "autogenerate", "missing-comment"))
+@mock.patch("duffy.cli.alembic_migration")
+def test_migration_create(alembic_migration, testcase, runner):
+    comment = "A comment"
+    args = ["migration", "create"]
+    if testcase == "autogenerate":
+        args.append("--autogenerate")
+    if testcase != "missing-comment":
+        args.extend(comment.split())
+
+    result = runner.invoke(cli, args)
+
+    if testcase == "missing-comment":
+        assert result.exit_code != 0
+    else:
+        assert result.exit_code == 0
+        alembic_migration.create.assert_called_once_with(
+            comment=comment, autogenerate=(testcase == "autogenerate")
+        )
+
+
+@mock.patch("duffy.cli.alembic_migration")
+def test_migration_db_version(alembic_migration, runner):
+    result = runner.invoke(cli, ["migration", "db-version"])
+    assert result.exit_code == 0
+    alembic_migration.db_version.assert_called_once_with()
+
+
+@pytest.mark.parametrize("subcommand", ("upgrade", "downgrade"))
+@mock.patch("duffy.cli.alembic_migration")
+def test_migration_upgrade_downgrade(alembic_migration, subcommand, runner):
+    result = runner.invoke(cli, ["migration", subcommand, "BOO"])
+    assert result.exit_code == 0
+    getattr(alembic_migration, subcommand).assert_called_once_with("BOO")
+
+
 @pytest.mark.parametrize(
     "config_error, shell_type",
     [(False, st) for st in (None, "python", "ipython", "bad shell type")] + [(True, None)],
