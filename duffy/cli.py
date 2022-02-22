@@ -9,6 +9,7 @@ import yaml
 
 from . import database, shell
 from .configuration import config, read_configuration
+from .database.migrations.main import alembic_migration
 from .database.setup import setup_db_schema, setup_db_test_data
 from .exceptions import DuffyConfigurationError
 from .tasks import start_worker
@@ -92,6 +93,44 @@ def setup_db(test_data):
     except DuffyConfigurationError as exc:
         log.error("Configuration key missing or wrong: %s", exc.args[0])
         sys.exit(1)
+
+
+# Handle database migrations
+
+
+@cli.group()
+def migration():
+    """Handle database migrations."""
+    pass
+
+
+@migration.command("create")
+@click.option(
+    "--autogenerate/--no-autogenerate",
+    default=False,
+    help="Autogenerate migration script skeleton (needs to be reviewed/edited).",
+)
+@click.argument("comment", nargs=-1, required=True)
+def migration_create(autogenerate, comment):
+    """Create a new migration."""
+    alembic_migration.create(comment=" ".join(comment), autogenerate=autogenerate)
+
+
+@migration.command("db-version")
+def migration_db_version():
+    alembic_migration.db_version()
+
+
+@migration.command("upgrade")
+@click.argument("version", default="head")
+def migration_upgrade(version):
+    alembic_migration.upgrade(version)
+
+
+@migration.command("downgrade")
+@click.argument("version", default="-1")
+def migration_downgrade(version):
+    alembic_migration.downgrade(version)
 
 
 # Interactive shell
