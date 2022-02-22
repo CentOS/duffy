@@ -21,31 +21,32 @@ with EXAMPLE_CONFIG_FILE.open("r") as fp:
         EXAMPLE_CONFIG = merge_dicts(EXAMPLE_CONFIG, config_doc)
 
 
-def test_cli_version():
-    runner = CliRunner()
+@pytest.fixture
+def runner():
+    return CliRunner()
+
+
+def test_cli_version(runner):
     result = runner.invoke(cli, ["--version"])
     assert result.exit_code == 0
     assert result.output == "Duffy, version %s\n" % __version__
 
 
-def test_cli_help():
+def test_cli_help(runner):
     """Ensure `duffy --help` works."""
-    runner = CliRunner()
     result = runner.invoke(cli, ["--help"], terminal_width=80)
     assert result.exit_code == 0
     assert "Usage: duffy" in result.output
 
 
-def test_cli_suggestion():
-    runner = CliRunner()
+def test_cli_suggestion(runner):
     result = runner.invoke(cli, ["--helo"])
     assert result.exit_code == 2
     assert "Error: No such option: --helo" in result.output
 
 
-def test_cli_missing_config(tmp_path):
+def test_cli_missing_config(tmp_path, runner):
     missing_config_file = tmp_path / "missing_duffy_config.yaml"
-    runner = CliRunner()
     result = runner.invoke(cli, [f"--config={missing_config_file.absolute()}"])
     assert result.exit_code == 1
     assert isinstance(result.exception, FileNotFoundError)
@@ -53,7 +54,7 @@ def test_cli_missing_config(tmp_path):
 
 @pytest.mark.duffy_config(EXAMPLE_CONFIG, clear=True)
 @pytest.mark.parametrize("config_empty", (False, True))
-def test_config_check(config_empty, duffy_config_files):
+def test_config_check(config_empty, duffy_config_files, runner):
     (config_file,) = duffy_config_files
 
     if config_empty:
@@ -68,7 +69,6 @@ def test_config_check(config_empty, duffy_config_files):
     else:  # Oops, didn't find right param object. This shouldn't happen!
         raise RuntimeError("Can't find right parameter object for `--config`.")
 
-    runner = CliRunner()
     with mock.patch("duffy.cli.DEFAULT_CONFIG_FILE", new=config_file), mock.patch.object(
         param, "default", new=config_file
     ):
@@ -84,8 +84,7 @@ def test_config_check(config_empty, duffy_config_files):
 
 
 @pytest.mark.duffy_config(EXAMPLE_CONFIG, clear=True)
-def test_config_dump():
-    runner = CliRunner()
+def test_config_dump(runner):
     result = runner.invoke(cli, ["config", "dump"])
     dumped_config = yaml.safe_load(result.output)
     assert dumped_config == config
@@ -94,10 +93,9 @@ def test_config_dump():
 @pytest.mark.parametrize("testcase", ("normal", "test-data", "config-error"))
 @mock.patch("duffy.cli.setup_db_test_data")
 @mock.patch("duffy.cli.setup_db_schema")
-def test_setup_db(setup_db_schema, setup_db_test_data, testcase, caplog):
+def test_setup_db(setup_db_schema, setup_db_test_data, testcase, runner, caplog):
     if testcase == "config-error":
         setup_db_schema.side_effect = DuffyConfigurationError("database")
-    runner = CliRunner()
     args = [f"--config={EXAMPLE_CONFIG_FILE.absolute()}", "setup-db"]
     if testcase == "test-data":
         args.append("--test-data")
@@ -119,7 +117,7 @@ def test_setup_db(setup_db_schema, setup_db_test_data, testcase, caplog):
 @pytest.mark.duffy_config(EXAMPLE_CONFIG, clear=True)
 @mock.patch("duffy.shell.embed_shell")
 @mock.patch("duffy.database.init_model")
-def test_shell(init_model, embed_shell, duffy_config_files, config_error, shell_type):
+def test_shell(init_model, embed_shell, runner, duffy_config_files, config_error, shell_type):
     # Ensure it's only one config file.
     (config_file,) = duffy_config_files
 
@@ -138,8 +136,6 @@ def test_shell(init_model, embed_shell, duffy_config_files, config_error, shell_
 
     if config_error:
         init_model.side_effect = DuffyConfigurationError("database")
-
-    runner = CliRunner()
 
     # Act as if IPython is always available, i.e. don't auto-detect the allowed values for
     # the --shell-type option.
@@ -164,9 +160,7 @@ def test_shell(init_model, embed_shell, duffy_config_files, config_error, shell_
 
 
 @mock.patch("duffy.cli.start_worker")
-def test_worker(start_worker):
-    runner = CliRunner()
-
+def test_worker(start_worker, runner):
     result = runner.invoke(
         cli, [f"--config={EXAMPLE_CONFIG_FILE.absolute()}", "worker", "a", "-b", "c", "--dee"]
     )
@@ -178,7 +172,7 @@ def test_worker(start_worker):
 @pytest.mark.duffy_config(EXAMPLE_CONFIG, clear=True)
 @pytest.mark.parametrize("testcase", ("default", "with-options", "missing-logging-config"))
 @mock.patch("duffy.cli.uvicorn.run")
-def test_serve(uvicorn_run, testcase, duffy_config_files):
+def test_serve(uvicorn_run, testcase, runner, duffy_config_files):
     (config_file,) = duffy_config_files
 
     if testcase in ("default", "missing-logging-config"):
@@ -198,7 +192,6 @@ def test_serve(uvicorn_run, testcase, duffy_config_files):
         with config_file.open("w") as fp:
             yaml.dump(modified_config, fp)
 
-    runner = CliRunner()
     result = runner.invoke(cli, parameters)
     assert result.exit_code == 0
     uvicorn_run.assert_called_once()
@@ -207,7 +200,7 @@ def test_serve(uvicorn_run, testcase, duffy_config_files):
 @pytest.mark.duffy_config(EXAMPLE_CONFIG, clear=True)
 @pytest.mark.parametrize("testcase", ("default", "with-options", "missing-logging-config"))
 @mock.patch("duffy.cli.uvicorn.run")
-def test_serve_legacy(uvicorn_run, testcase, duffy_config_files):
+def test_serve_legacy(uvicorn_run, testcase, runner, duffy_config_files):
     (config_file,) = duffy_config_files
 
     if testcase in ("default", "missing-logging-config"):
@@ -228,7 +221,6 @@ def test_serve_legacy(uvicorn_run, testcase, duffy_config_files):
         with config_file.open("w") as fp:
             yaml.dump(config, fp)
 
-    runner = CliRunner()
     result = runner.invoke(cli, parameters)
     assert result.exit_code == 0
     uvicorn_run.assert_called_once()
