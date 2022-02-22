@@ -10,6 +10,7 @@ from starlette.status import (
     HTTP_403_FORBIDDEN,
     HTTP_404_NOT_FOUND,
     HTTP_422_UNPROCESSABLE_ENTITY,
+    HTTP_503_SERVICE_UNAVAILABLE,
 )
 
 from duffy.database.model import Node, Session, Tenant
@@ -114,20 +115,43 @@ class TestSessionWorkflow:
             pytest.param("inactive tenant", marks=pytest.mark.auth_tenant(active=False)),
             "insufficient nodes",
             "wrong tenant",
+            "contextualizing failure",
+            "decontextualizing failure",
         ),
     )
+    @mock.patch("duffy.app.controllers.session.decontextualize")
+    @mock.patch("duffy.app.controllers.session.contextualize")
     @mock.patch("duffy.app.controllers.session.fill_pools")
     async def test_request_session(
-        self, fill_pools, testcase, client, db_async_session, auth_tenant
+        self,
+        fill_pools,
+        contextualize,
+        decontextualize,
+        testcase,
+        client,
+        db_async_session,
+        auth_tenant,
     ):
         if testcase == "insufficient nodes":
             for node in (await db_async_session.execute(select(Node))).scalars():
                 node.state = "deployed"
             await db_async_session.commit()
 
+        contextualize_retval = ["BOOP"] * 20
+        decontextualize_retval = ["BOOP"] * 20
+
+        if testcase in ("contextualizing failure", "decontextualizing failure"):
+            contextualize_retval.insert(0, None)
+            if testcase == "decontextualizing failure":
+                decontextualize_retval.insert(1, None)
+
+        contextualize.return_value = contextualize_retval
+        decontextualize.return_value = decontextualize_retval
+
         request_payload = {"nodes_specs": self.nodes_specs}
         if testcase == "wrong tenant":
             request_payload["tenant_id"] = auth_tenant.id + 1
+
         response = await client.post(self.path, json=request_payload)
         result = response.json()
 
@@ -144,7 +168,7 @@ class TestSessionWorkflow:
                 count_result = await db_async_session.execute(
                     select(func.count("id"))
                     .select_from(Node)
-                    .filter_by(state="contextualizing", **nodes_spec)
+                    .filter_by(state="deployed", **nodes_spec)
                 )
                 assert count_result.scalar_one() == quantity
 
@@ -174,11 +198,32 @@ class TestSessionWorkflow:
             elif testcase == "insufficient nodes":
                 assert response.status_code == HTTP_422_UNPROCESSABLE_ENTITY
                 assert result["detail"].startswith("can't reserve nodes:")
-            else:  # testcase == "wrong tenant"
+            elif testcase == "wrong tenant":
                 assert response.status_code == HTTP_403_FORBIDDEN
                 assert result["detail"] == "can't create session for other tenant"
+            else:  # testcase in ("contextualizing failure", "decontextualizing failure")
+                assert response.status_code == HTTP_503_SERVICE_UNAVAILABLE
+                assert result["detail"] == "contextualization of nodes failed"
+                failed_nodes = (
+                    (await db_async_session.execute(select(Node).filter_by(state="failed")))
+                    .scalars()
+                    .all()
+                )
+                if testcase == "decontextualizing failure":
+                    assert len(failed_nodes) == 2
+                    assert any(
+                        node.data["error"] == "contextualizing node failed" for node in failed_nodes
+                    )
+                    assert any(
+                        node.data["error"] == "decontextualizing node failed"
+                        for node in failed_nodes
+                    )
+                else:
+                    assert len(failed_nodes) == 1
+                    assert failed_nodes[0].data["error"] == "contextualizing node failed"
             fill_pools.delay.assert_not_called()
 
+    @mock.patch("duffy.nodes_context.run_remote_cmd", new=mock.AsyncMock())
     @mock.patch("duffy.app.controllers.session.fill_pools", new=mock.MagicMock())
     @pytest.mark.parametrize(
         "testcase", ("normal", "unknown-session", "retired-session", "unauthorized", "set-active")

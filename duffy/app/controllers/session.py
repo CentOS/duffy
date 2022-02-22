@@ -1,7 +1,9 @@
 """This is the session controller."""
+import asyncio
+import logging
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +13,7 @@ from starlette.status import (
     HTTP_403_FORBIDDEN,
     HTTP_404_NOT_FOUND,
     HTTP_422_UNPROCESSABLE_ENTITY,
+    HTTP_503_SERVICE_UNAVAILABLE,
 )
 
 from ...api_models import (
@@ -21,9 +24,12 @@ from ...api_models import (
 )
 from ...database.model import Node, Session, SessionNode, Tenant
 from ...database.types import NodeState
+from ...nodes_context import contextualize, decontextualize
 from ...tasks import deprovision_nodes, fill_pools
 from ..auth import req_tenant, req_tenant_optional
 from ..database import req_db_async_session
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/sessions")
 
@@ -79,6 +85,7 @@ async def get_session(
 @router.post("", status_code=HTTP_201_CREATED, response_model=SessionResult, tags=["sessions"])
 async def create_session(
     data: SessionCreateModel,
+    response: Response,
     db_async_session: AsyncSession = Depends(req_db_async_session),
     tenant: Tenant = Depends(req_tenant),
 ):
@@ -104,6 +111,7 @@ async def create_session(
     )
     db_async_session.add(session)
 
+    nodes_in_transaction = []
     pools_to_fill_up = set()
     for nodes_spec in data.nodes_specs:
         pools_to_fill_up.add(nodes_spec.pool)
@@ -117,6 +125,7 @@ async def create_session(
         )
 
         nodes_to_reserve = (await db_async_session.execute(query)).scalars().all()
+        nodes_in_transaction.extend(nodes_to_reserve)
 
         if len(nodes_to_reserve) < quantity:
             raise HTTPException(HTTP_422_UNPROCESSABLE_ENTITY, f"can't reserve nodes: {nodes_spec}")
@@ -131,8 +140,11 @@ async def create_session(
             )
             db_async_session.add(session_node)
 
-    # Meh. Reload the session instance to ensure all related objects are present in the session.
     await db_async_session.flush()
+    nodes_in_transaction = await asyncio.gather(
+        *(db_async_session.merge(node, load=False) for node in nodes_in_transaction)
+    )
+    # Meh. Reload the session instance to ensure all related objects are present in the session.
     session = (
         await db_async_session.execute(
             select(Session)
@@ -143,6 +155,40 @@ async def create_session(
             )
         )
     ).scalar_one()
+
+    contextualized_ipaddrs = await contextualize(
+        nodes=[node.ipaddr for node in nodes_in_transaction], ssh_pubkey=tenant.ssh_key
+    )
+
+    if None in contextualized_ipaddrs:
+        log.error("One or more nodes couldn't be contextualized:")
+        nodes_to_decontextualize = []
+        for node, ipaddr in zip(nodes_in_transaction, contextualized_ipaddrs):
+            if not ipaddr:
+                log.error("    id: %s hostname: %s ipaddr: %s", node.id, node.hostname, node.ipaddr)
+                node.state = NodeState.failed
+                node.data["error"] = "contextualizing node failed"
+            else:
+                nodes_to_decontextualize.append(node.ipaddr)
+
+        decontextualized_ipaddrs = await decontextualize(nodes=nodes_to_decontextualize)
+
+        if None in decontextualized_ipaddrs:
+            log.error("One or more nodes couldn't be decontextualized:")
+            for node, ipaddr in zip(nodes_in_transaction, decontextualized_ipaddrs):
+                if not ipaddr:
+                    log.error(
+                        "    id: %s hostname: %s ipaddr: %s", node.id, node.hostname, node.ipaddr
+                    )
+                    node.state = NodeState.failed
+                    node.data["error"] = "decontextualizing node failed"
+
+        await db_async_session.commit()
+        response.headers["Retry-After"] = "0"
+        raise HTTPException(HTTP_503_SERVICE_UNAVAILABLE, "contextualization of nodes failed")
+    else:  # None not in contextualized_ipaddrs
+        for node in nodes_in_transaction:
+            node.state = NodeState.deployed
 
     try:
         await db_async_session.commit()

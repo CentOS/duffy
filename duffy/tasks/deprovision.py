@@ -1,3 +1,4 @@
+import asyncio
 from collections import defaultdict
 from typing import List
 
@@ -7,6 +8,7 @@ from sqlalchemy import select
 from ..database import sync_session_maker
 from ..database.model import Node
 from ..database.types import NodeState
+from ..nodes_context import decontextualize
 from .base import celery
 from .mechanisms import MechanismFailure
 from .node_pools import ConcreteNodePool, NodePool
@@ -46,6 +48,10 @@ def deprovision_pool_nodes(self, pool_name: str, node_ids: List[int]):
             for node in nodes:
                 node.state = NodeState.deprovisioning
                 node.pool = None
+
+        log.debug("Decontextualizing nodes.")
+        # ignore results, after use anything could be broken on the nodes
+        asyncio.run(decontextualize([node.ipaddr for node in nodes]))
 
         found_node_ids = {node.id for node in nodes}
         not_found_node_ids = set(node_ids) - found_node_ids
