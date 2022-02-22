@@ -95,7 +95,9 @@ def test_deprovision_pool_nodes(testcase, test_mechanism, db_sync_session, caplo
         pool.mechanism, "deprovision", wraps=wraps_mech_deprovision
     ) as pool_mech_deprovision, mock.patch(
         "duffy.tasks.deprovision.fill_pools"
-    ) as fill_pools, caplog.at_level(
+    ) as fill_pools, mock.patch(
+        "duffy.tasks.deprovision.decontextualize"
+    ) as decontextualize, caplog.at_level(
         "DEBUG"
     ):
         if "mechanism-failure" not in testcase:
@@ -138,6 +140,11 @@ def test_deprovision_pool_nodes(testcase, test_mechanism, db_sync_session, caplo
         node_ids = {node.id for node in nodes}
 
         if "normal" in testcase or "mechanism-failure" in testcase:
+            decontextualize.assert_awaited_once()
+            (ipaddrs,), kwargs = decontextualize.await_args
+            assert not kwargs
+            assert set(ipaddrs) == {node.ipaddr for node in nodes}
+
             pool_deprovision.assert_called_once()
             args, kwargs = pool_deprovision.call_args
             (nodes_in_call,) = args
