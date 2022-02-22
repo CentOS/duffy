@@ -67,7 +67,7 @@ def deprovision_pool_nodes(self, pool_name: str, node_ids: List[int]):
                 with sync_session_maker() as db_sync_session_in_exc, db_sync_session_in_exc.begin():
                     for node in nodes:
                         exc_node = db_sync_session_in_exc.merge(node, load=False)
-                        exc_node.data["error"] = "deprovisioning failed"
+                        exc_node.data["error"] = "deprovisioning mechanism failed"
                         exc_node.state = NodeState.failed
                 raise
 
@@ -103,6 +103,7 @@ def deprovision_pool_nodes(self, pool_name: str, node_ids: List[int]):
                 unmatched_ids = []
                 for node in unmatched_nodes:
                     unmatched_ids.append(node.id)
+                    node.data["error"] = "deprovisioning node failed"
                     node.state = NodeState.failed
 
                 log.warning("[%s] Nodes unmatched in result: %r", pool.name, sorted(unmatched_ids))
