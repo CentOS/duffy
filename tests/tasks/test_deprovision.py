@@ -169,6 +169,7 @@ def test_deprovision_pool_nodes(testcase, test_mechanism, db_sync_session, caplo
                     assert all(rec.levelno < logging.ERROR for rec in caplog.records)
                     counts = defaultdict(int)
                     for node in nodes:
+                        assert node.pool is None
                         if node.active:
                             counts["active"] += 1
                         else:

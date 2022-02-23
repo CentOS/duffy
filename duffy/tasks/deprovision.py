@@ -44,6 +44,7 @@ def deprovision_pool_nodes(self, pool_name: str, node_ids: List[int]):
 
             for node in nodes:
                 node.state = NodeState.deprovisioning
+                node.pool = None
 
         found_node_ids = {node.id for node in nodes}
         not_found_node_ids = set(node_ids) - found_node_ids
