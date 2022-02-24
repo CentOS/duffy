@@ -30,13 +30,15 @@ PLAYBOOK_PATH = HERE / "playbooks"
         "reuse-nodes-mechanism-failure",
         "reuse-nodes-real-playbook",
         "unknown-pool",
+        "pool-is-filled-to-spec",
+        "pool-is-filled-above-spec",
     ),
 )
 @mock.patch.dict("duffy.tasks.node_pools.ConcreteNodePool.known_pools", clear=True)
 def test_fill_single_pool(testcase, db_sync_session, test_mechanism, caplog):
     real_playbook = "real-playbook" in testcase
 
-    if "reuse-nodes" in testcase:
+    if "reuse-nodes" in testcase or "pool-is-filled" in testcase:
         # Create 30 nodes
         with db_sync_session.begin():
             matching_nodes_count = 0
@@ -65,6 +67,9 @@ def test_fill_single_pool(testcase, db_sync_session, test_mechanism, caplog):
                     reusable=reusable,
                     data={"foo": foo_value, "someint": 5},
                 )
+                if "pool-is-filled" in testcase and ("above-spec" in testcase or idx < 5):
+                    node.state = "ready"
+                    node.pool = "foo"
                 db_sync_session.add(node)
 
         reuse_nodes = {"foo": "{{ bar }}", "someint": 5}
@@ -171,6 +176,10 @@ def test_fill_single_pool(testcase, db_sync_session, test_mechanism, caplog):
                     )
                 ).scalar_one()
                 assert nodes_count == matching_nodes_count + not_matching_nodes_count
+    elif "pool-is-filled" in testcase:
+        pool_provision.assert_not_called()
+        pool_mech_provision.assert_not_called()
+        assert "[foo] Pool is filled to or above spec." in caplog.messages
     else:
         assert "COMMIT" in caplog.messages
 
