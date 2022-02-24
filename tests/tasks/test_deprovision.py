@@ -93,7 +93,9 @@ def test_deprovision_pool_nodes(testcase, test_mechanism, db_sync_session, caplo
         pool, "deprovision", wraps=wraps_pool_deprovision
     ) as pool_deprovision, mock.patch.object(
         pool.mechanism, "deprovision", wraps=wraps_mech_deprovision
-    ) as pool_mech_deprovision, caplog.at_level(
+    ) as pool_mech_deprovision, mock.patch(
+        "duffy.tasks.deprovision.fill_pools"
+    ) as fill_pools, caplog.at_level(
         "DEBUG"
     ):
         if "mechanism-failure" not in testcase:
@@ -129,6 +131,8 @@ def test_deprovision_pool_nodes(testcase, test_mechanism, db_sync_session, caplo
     # expire all objects to avoid getting back cached ones
     db_sync_session.expire_all()
 
+    fill_pools.assert_not_called()
+
     with db_sync_session.begin():
         nodes = db_sync_session.execute(select(Node)).scalars().all()
         node_ids = {node.id for node in nodes}
@@ -162,9 +166,11 @@ def test_deprovision_pool_nodes(testcase, test_mechanism, db_sync_session, caplo
                 if "reuse-nodes" in testcase:
                     final_state = "unused"
                     active = True
+                    fill_pools.delay.assert_called_once_with()
                 else:
                     final_state = "done"
                     active = False
+                    fill_pools.delay.assert_not_called()
                 if "node-unhandled" in testcase:
                     assert all(rec.levelno < logging.ERROR for rec in caplog.records)
                     counts = defaultdict(int)
