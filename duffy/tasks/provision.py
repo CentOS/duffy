@@ -46,6 +46,10 @@ def fill_single_pool(pool_name: str):
             quantity,
         )
 
+        if quantity <= 0:
+            log.debug("[%s] Pool is filled to or above spec.", pool.name)
+            return
+
         reuse_nodes = pool.get("reuse-nodes")
         if reuse_nodes:
             log.debug("[%s] Searching for %d reusable nodes in database", pool.name, quantity)
