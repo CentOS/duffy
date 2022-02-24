@@ -2,9 +2,12 @@ from enum import Enum, auto
 from typing import Any, Dict, List, Optional
 
 import ansible_runner
+from celery.utils.log import get_task_logger
 
 from ...database.model import Node
 from .main import Mechanism, MechanismFailure
+
+log = get_task_logger(__name__)
 
 
 class PlaybookType(Enum):
@@ -20,6 +23,13 @@ class AnsibleMechanism(Mechanism, mech_type="ansible"):
         extra_vars: Optional[Dict[str, Any]] = None,
         overrides: Optional[Dict[str, Any]] = None,
     ):
+        log.debug(
+            "AnsibleMechanism.run_playbook(%r, %r)\n\t%r\n\t%r",
+            self,
+            playbook_type,
+            extra_vars,
+            overrides,
+        )
         subconf = self[playbook_type.name]
 
         run_extra_vars = self.get("extra-vars", {})
@@ -30,6 +40,12 @@ class AnsibleMechanism(Mechanism, mech_type="ansible"):
 
         run_extra_vars = self.nodepool.render_templates_in_obj(run_extra_vars, overrides=overrides)
 
+        log.debug(
+            "ansible_runner.run(project_dir=%r, playbook=%r, json_mode=True, extravars=%r",
+            self["topdir"],
+            self[playbook_type.name]["playbook"],
+            run_extra_vars,
+        )
         run = ansible_runner.run(
             project_dir=self["topdir"],
             playbook=self[playbook_type.name]["playbook"],

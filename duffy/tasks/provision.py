@@ -73,7 +73,9 @@ def fill_single_pool(pool_name: str):
                 raise RuntimeError(f"[{pool.name}] Skipping filling up")
 
             # This queries up to `quantity` usable nodes, or fewer.
-            nodes = db_sync_session.execute(usable_nodes_query.limit(quantity)).scalars().all()
+            usable_nodes_query = usable_nodes_query.limit(quantity)
+            log.debug("Usable nodes query: %s", usable_nodes_query)
+            nodes = db_sync_session.execute(usable_nodes_query).scalars().all()
             log.info("Found %d suitable unused nodes.", len(nodes))
         else:
             log.debug("[%s] Allocating %d new node objects in database", pool.name, quantity)
