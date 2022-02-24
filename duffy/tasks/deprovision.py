@@ -10,6 +10,7 @@ from ..database.types import NodeState
 from .base import celery
 from .mechanisms import MechanismFailure
 from .node_pools import ConcreteNodePool, NodePool
+from .provision import fill_pools
 
 log = get_task_logger(__name__)
 
@@ -115,6 +116,10 @@ def deprovision_pool_nodes(self, pool_name: str, node_ids: List[int]):
                 else:
                     node.state = NodeState.done
                     node.active = False
+
+            if any(node.reusable for node in matched_nodes):
+                fill_pools.delay().forget()
+
     except Exception:
         log.error("[%s] Deprovisioning failed: %r", pool_name, node_ids)
         raise
