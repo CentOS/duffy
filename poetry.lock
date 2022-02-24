@@ -65,7 +65,7 @@ resolvelib = ">=0.5.3,<0.6.0"
 
 [[package]]
 name = "ansible-runner"
-version = "2.1.1"
+version = "2.1.2"
 description = "\"Consistent Ansible Python API and CLI with container and process isolation runtime capabilities\""
 category = "main"
 optional = false
@@ -1522,8 +1522,8 @@ ansible-core = [
     {file = "ansible-core-2.12.2.tar.gz", hash = "sha256:bc79e1723a5a92cbc105d581b25b66840d15bb5f4c98925c936ef5a71f92e7c3"},
 ]
 ansible-runner = [
-    {file = "ansible-runner-2.1.1.tar.gz", hash = "sha256:7684612f7543c5f07f3e8135667eeb22a9dbd98f625cc69901ba9924329ef24f"},
-    {file = "ansible_runner-2.1.1-py3-none-any.whl", hash = "sha256:75f41f3a6126c326b2099f69be52f5adce92f2ef62d130f30151b8d9e2bdbbdc"},
+    {file = "ansible-runner-2.1.2.tar.gz", hash = "sha256:18afc2aa6326ebb566bf3961315ea8c3ee349b40d85295c21643fef4d811fdee"},
+    {file = "ansible_runner-2.1.2-py3-none-any.whl", hash = "sha256:3e346052d87b1c51de82ea5be64d18c7435642100a53549aab7267b576c3878d"},
 ]
 anyio = [
     {file = "anyio-3.5.0-py3-none-any.whl", hash = "sha256:b5fa16c5ff93fa1046f2eeb5bbff2dad4d3514d6cda61d02816dba34fa8c3c2e"},
