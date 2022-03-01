@@ -85,18 +85,12 @@ class DeclEnumType(SchemaType, TypeDecorator):
         return self.enum.from_string(value.strip())
 
 
-# The TZDateTime class is adapted from
-# https://docs.sqlalchemy.org/en/14/core/custom_types.html#store-timezone-aware-timestamps-as-timezone-naive-utc
-#
-# Changes: Is aware of time zones on the database side by default ("explicit better than implicit")
-
-
 class TZDateTime(TypeDecorator):
+    # The TZDateTime class is taken from
+    # https://docs.sqlalchemy.org/en/14/core/custom_types.html#store-timezone-aware-timestamps-as-timezone-naive-utc
+
     impl = DateTime
     cache_ok = True
-
-    def __init__(self, timezone=True, *args, **kwargs):
-        super().__init__(timezone=timezone, *args, **kwargs)
 
     def process_bind_param(self, value, dialect):
         if value is not None:
