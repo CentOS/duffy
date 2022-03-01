@@ -1,8 +1,7 @@
 import datetime as dt
-from unittest import mock
 
 import pytest
-from sqlalchemy import Column, DateTime, Integer, select
+from sqlalchemy import Column, Integer, select
 from sqlalchemy.exc import StatementError
 
 from duffy.database import Base
@@ -68,14 +67,6 @@ class TestDeclEnumType:
 
 
 class TestTZDateTime:
-    @mock.patch("duffy.database.util.TypeDecorator.__init__")
-    def test_init(self, type_decorator_init):
-        """Test that `timezone` is set by default."""
-        obj = TZDateTime()
-
-        assert obj.impl is DateTime
-        type_decorator_init.assert_called_with(timezone=True)
-
     @pytest.mark.parametrize("testcase", ("with tz", "without tz", "none"))
     def test_process_bind_param(self, testcase):
         """Test the process_bind_param() method."""
