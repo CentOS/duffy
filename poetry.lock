@@ -50,7 +50,7 @@ ansible-core = ">=2.12.2,<2.13.0"
 
 [[package]]
 name = "ansible-core"
-version = "2.12.2"
+version = "2.12.3"
 description = "Radically simple IT automation"
 category = "main"
 optional = false
@@ -1519,7 +1519,7 @@ ansible = [
     {file = "ansible-5.4.0.tar.gz", hash = "sha256:2f0ecbd8a3232e520bf3e3bc23f40dda60b9ce7924ca194bd35f4de4027100fc"},
 ]
 ansible-core = [
-    {file = "ansible-core-2.12.2.tar.gz", hash = "sha256:bc79e1723a5a92cbc105d581b25b66840d15bb5f4c98925c936ef5a71f92e7c3"},
+    {file = "ansible-core-2.12.3.tar.gz", hash = "sha256:8a135a9f74c97cab67759293744ad34350f719523e8bd9bb9008df4cf953af20"},
 ]
 ansible-runner = [
     {file = "ansible-runner-2.1.2.tar.gz", hash = "sha256:18afc2aa6326ebb566bf3961315ea8c3ee349b40d85295c21643fef4d811fdee"},
