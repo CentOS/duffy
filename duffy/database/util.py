@@ -109,6 +109,7 @@ class utcnow(FunctionElement):
     """Current timestamp in UTC for SQL expressions."""
 
     type = DateTime
+    inherit_cache = True
 
 
 @compiles(utcnow, "postgresql")
