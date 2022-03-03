@@ -10,8 +10,8 @@ from .common import APIResult, CreatableMixin, RetirableMixin
 
 
 class NodeBase(BaseModel, ABC):
-    hostname: str
-    ipaddr: IPvAnyAddress
+    hostname: Optional[str]
+    ipaddr: Optional[IPvAnyAddress]
     comment: Optional[str]
 
     pool: Optional[str]
