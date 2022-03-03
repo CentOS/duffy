@@ -157,6 +157,14 @@ class TestSessionWorkflow:
 
         # fill_pools should never be called directly, just through .delay()
         fill_pools.assert_not_called()
+        if testcase in ("normal", "contextualizing failure", "decontextualizing failure"):
+            fill_pools.delay.assert_called_once()
+            args, kwargs = fill_pools.delay.call_args
+            assert args == ()
+            assert kwargs.keys() == {"pool_names"}
+            assert set(kwargs["pool_names"]) == set(self.pool_names)
+        else:
+            fill_pools.delay.assert_not_called()
 
         if testcase == "normal":
             assert response.status_code == HTTP_201_CREATED
@@ -187,11 +195,6 @@ class TestSessionWorkflow:
                         # didn't break out of loop -> matches spec
                         matched_nodes_count += 1
                 assert matched_nodes_count == quantity
-            fill_pools.delay.assert_called_once()
-            args, kwargs = fill_pools.delay.call_args
-            assert args == ()
-            assert kwargs.keys() == {"pool_names"}
-            assert set(kwargs["pool_names"]) == set(self.pool_names)
         else:
             if testcase == "inactive tenant":
                 assert response.status_code == HTTP_403_FORBIDDEN
@@ -221,7 +224,6 @@ class TestSessionWorkflow:
                 else:
                     assert len(failed_nodes) == 1
                     assert failed_nodes[0].data["error"] == "contextualizing node failed"
-            fill_pools.delay.assert_not_called()
 
     @mock.patch("duffy.nodes_context.run_remote_cmd", new=mock.AsyncMock())
     @mock.patch("duffy.app.controllers.session.fill_pools", new=mock.MagicMock())
