@@ -57,8 +57,11 @@ class AnsibleMechanism(Mechanism, mech_type="ansible"):
             raise MechanismFailure(failure_msg)
 
         for event in reversed(list(run.events)):
-            event_type = event["event"]
-            event_data = event["event_data"]
+            try:
+                event_type = event["event"]
+                event_data = event["event_data"]
+            except KeyError as exc:
+                raise MechanismFailure(f"Key error in Ansible event: {event!r}") from exc
             event_res = event_data.get("res")
 
             if (
