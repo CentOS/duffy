@@ -159,21 +159,29 @@ async def create_session(
                 node.state = NodeState.failed
                 node.data["error"] = "contextualizing node failed"
             else:
-                nodes_to_decontextualize.append(node.ipaddr)
+                nodes_to_decontextualize.append(node)
 
-        decontextualized_ipaddrs = await decontextualize(nodes=nodes_to_decontextualize)
+        decontextualized_ipaddrs = await decontextualize(
+            nodes=[node.ipaddr for node in nodes_to_decontextualize]
+        )
 
         if None in decontextualized_ipaddrs:
             log.error("One or more nodes couldn't be decontextualized:")
-            for node, ipaddr in zip(nodes_in_transaction, decontextualized_ipaddrs):
+            for node, ipaddr in zip(nodes_to_decontextualize, decontextualized_ipaddrs):
                 if not ipaddr:
                     log.error(
                         "    id: %s hostname: %s ipaddr: %s", node.id, node.hostname, node.ipaddr
                     )
                     node.state = NodeState.failed
                     node.data["error"] = "decontextualizing node failed"
+                else:
+                    node.state = NodeState.ready
 
         await db_async_session.commit()
+
+        # Some nodes are out of circulation, fill up pools.
+        fill_pools.delay(pool_names=list(pools_to_fill_up)).forget()
+
         response.headers["Retry-After"] = "0"
         raise HTTPException(HTTP_503_SERVICE_UNAVAILABLE, "contextualization of nodes failed")
     else:  # None not in contextualized_ipaddrs
