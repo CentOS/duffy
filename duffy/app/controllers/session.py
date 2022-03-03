@@ -1,5 +1,4 @@
 """This is the session controller."""
-import asyncio
 import logging
 from typing import Optional
 
@@ -112,6 +111,7 @@ async def create_session(
     db_async_session.add(session)
 
     nodes_in_transaction = []
+    session_nodes = []
     pools_to_fill_up = set()
     for nodes_spec in data.nodes_specs:
         pools_to_fill_up.add(nodes_spec.pool)
@@ -138,29 +138,19 @@ async def create_session(
             session_node = SessionNode(
                 session=session, node=node, pool=nodes_spec.pool, data=node.data
             )
+            session_nodes.append(session_node)
             db_async_session.add(session_node)
-
-    await db_async_session.flush()
-    nodes_in_transaction = await asyncio.gather(
-        *(db_async_session.merge(node, load=False) for node in nodes_in_transaction)
-    )
-    # Meh. Reload the session instance to ensure all related objects are present in the session.
-    session = (
-        await db_async_session.execute(
-            select(Session)
-            .filter_by(id=session.id)
-            .options(
-                selectinload(Session.tenant),
-                selectinload(Session.session_nodes).selectinload(SessionNode.node),
-            )
-        )
-    ).scalar_one()
 
     contextualized_ipaddrs = await contextualize(
         nodes=[node.ipaddr for node in nodes_in_transaction], ssh_pubkey=tenant.ssh_key
     )
 
     if None in contextualized_ipaddrs:
+        # Undo the session object being added to the database above.
+        for session_node in session_nodes:
+            db_async_session.expunge(session_node)
+        db_async_session.expunge(session)
+
         log.error("One or more nodes couldn't be contextualized:")
         nodes_to_decontextualize = []
         for node, ipaddr in zip(nodes_in_transaction, contextualized_ipaddrs):
@@ -189,6 +179,19 @@ async def create_session(
     else:  # None not in contextualized_ipaddrs
         for node in nodes_in_transaction:
             node.state = NodeState.deployed
+
+    # Meh. Reload the session instance to ensure all related objects are present in the session.
+    await db_async_session.flush()
+    session = (
+        await db_async_session.execute(
+            select(Session)
+            .filter_by(id=session.id)
+            .options(
+                selectinload(Session.tenant),
+                selectinload(Session.session_nodes).selectinload(SessionNode.node),
+            )
+        )
+    ).scalar_one()
 
     try:
         await db_async_session.commit()
