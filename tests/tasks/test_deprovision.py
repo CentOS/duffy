@@ -71,7 +71,7 @@ def test_deprovision_pool_nodes(testcase, test_mechanism, db_sync_session, caplo
                 state="deployed",
                 pool="foo",
                 reusable=reusable,
-                data={"provision": {"mech_id": id + 20}},
+                data={"provision": {"mech_id": id + 20, "some_more_data": "fortytwo"}},
             )
             for id in range(1, 5)
         ]
@@ -102,26 +102,16 @@ def test_deprovision_pool_nodes(testcase, test_mechanism, db_sync_session, caplo
     ):
         if "mechanism-failure" not in testcase:
             if not real_playbook:
-                mech_result = {
-                    "nodes": [
-                        {
-                            "id": node.id,
-                            "hostname": node.hostname,
-                            "ipaddr": node.ipaddr,
-                            "data": node.data,
-                            # the following should be ignored when matching results with nodes
-                            "something": "unrelated",
-                        }
-                        for node in nodes
-                    ]
-                }
+                mech_result = {"nodes": [node.data["provision"] for node in nodes]}
                 if "node-unhandled" in testcase:
                     del mech_result["nodes"][-1]
                 if "spurious-mechanism-result" in testcase:
                     mech_result["nodes"].append({"foo": "boop"})
                 if "incomplete-result-fields" in testcase:
+                    # Verify nodes are matched up even with non-essential fields missing from the
+                    # mechanism result.
                     for node in mech_result["nodes"]:
-                        del node["ipaddr"]
+                        del node["some_more_data"]
                 pool_deprovision.return_value = mech_result
         else:
             pool_deprovision.side_effect = MechanismFailure("you should have bought a squirrel")

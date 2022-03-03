@@ -13,13 +13,13 @@
     #         "id": 1,
     #         "hostname": "...",
     #         "ipaddr": "...",
-    #         "data": {"provision": {...}}
+    #         "data": {"provision": {"id": 1, ...}}
     #       },
     #       {
     #         "id": 2,
     #         "hostname": "...",
     #         "ipaddr": "...",
-    #         "data": {"provision": {...}}
+    #         "data": {"provision": {"id": 2, ...}}
     #       },
     #       ...
     #     ]
@@ -40,10 +40,10 @@
 
     # ... this (mandatory) task has to be able to transform it into the
     # expected output format, i.e. set a fact `duffy_out` which repeats enough
-    # of the data passed into the playbook for each successfully deprovisioned
-    # node to clearly correlate results with node objects (the `id` field
-    # should suffice) so Duffy can chalk up nodes for reuse, or mark them as
-    # retired or failed appropriately.
+    # of data.provision passed into the playbook for each successfully
+    # deprovisioned node to clearly correlate results with node objects so
+    # Duffy can chalk up nodes for reuse, or mark them as retired or failed
+    # appropriately.
     #
     # duffy_out ->
     #   {
@@ -54,4 +54,4 @@
         duffy_out:
           nodes: "{{ mech_specific_result | json_query(mech_specific_query) }}"
       vars:
-        mech_specific_query: "[*]"
+        mech_specific_query: "[*].data.provision"

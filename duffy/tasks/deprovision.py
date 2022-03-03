@@ -16,7 +16,7 @@ from .provision import fill_pools
 
 log = get_task_logger(__name__)
 
-NODE_FIELDS_TO_CONSIDER = {"id", "hostname", "ipaddr", "data"}
+UNSET = object()
 
 
 @celery.task(bind=True)
@@ -86,11 +86,8 @@ def deprovision_pool_nodes(self, pool_name: str, node_ids: List[int]):
                 for node in unmatched_nodes:
                     matched = False
 
-                    for fname in NODE_FIELDS_TO_CONSIDER:
-                        if fname not in node_res:
-                            continue
-
-                        if getattr(node, fname) != node_res[fname]:
+                    for nr_key, nr_value in node_res.items():
+                        if node.data.get("provision", {}).get(nr_key, UNSET) != nr_value:
                             matched = False
                             break
 
