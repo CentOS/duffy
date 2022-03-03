@@ -77,7 +77,9 @@ class TestAnsibleMechanism:
         return pool.mechanism
 
     @pytest.mark.parametrize("extra_vars_loc", ("default", "provision"))
-    @pytest.mark.parametrize("error", (False, "no-matching-event", "run-failed"))
+    @pytest.mark.parametrize(
+        "error", (False, "no-matching-event", "run-failed", "event_data-missing")
+    )
     @pytest.mark.parametrize("add_run_extra_vars", (False, True))
     @mock.patch("duffy.tasks.mechanisms.ansible.ansible_runner")
     def test_run_playbook(self, ansible_runner, add_run_extra_vars, error, extra_vars_loc):
@@ -135,6 +137,9 @@ class TestAnsibleMechanism:
                     if "duffy_out"
                     not in event["event_data"].get("res", {}).get("ansible_facts", {})
                 ]
+                expectation = pytest.raises(MechanismFailure)
+            elif error == "event_data-missing":
+                del run.events[-2]["event_data"]
                 expectation = pytest.raises(MechanismFailure)
             else:
                 expectation = noop_context()
