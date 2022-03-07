@@ -110,12 +110,17 @@ tasks:
   periodic:
     fill-pools:
       interval: 300
+    expire-sessions:
+      interval: 300
 
 database:
   sqlalchemy:
     sync_url: "sqlite:///:memory:"
     # the DB dialect must be async-compatible
     async_url: "sqlite+aiosqlite:///:memory:"
+
+misc:
+  session-lifetime: "6h"
 
 nodepools:
   abstract:

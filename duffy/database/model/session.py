@@ -6,7 +6,7 @@ from sqlalchemy.orm import relationship
 
 from ...api_models import SessionNodeModel
 from .. import Base
-from ..util import CreatableMixin, RetirableMixin
+from ..util import CreatableMixin, RetirableMixin, TZDateTime
 from .tenant import Tenant
 
 
@@ -16,6 +16,8 @@ class Session(Base, CreatableMixin, RetirableMixin):
     id = Column(Integer, primary_key=True, nullable=False)
     tenant_id = Column(Integer, ForeignKey(Tenant.id), nullable=False)
     tenant = relationship(Tenant, backref="sessions")
+
+    expires_at = Column(TZDateTime, nullable=True)
 
     data = Column(
         MutableDict.as_mutable(JSON), nullable=False, default=lambda: {}, server_default="{}"

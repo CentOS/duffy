@@ -1,3 +1,4 @@
+import datetime as dt
 import re
 import uuid
 from unittest import mock
@@ -13,11 +14,40 @@ from starlette.status import (
     HTTP_503_SERVICE_UNAVAILABLE,
 )
 
+from duffy.app.controllers import session as session_controller
 from duffy.database.model import Node, Session, Tenant
 
 from . import BaseTestController
 
 
+@pytest.mark.duffy_config(example_config=True)
+@mock.patch.object(session_controller, "SESSION_LIFETIME", None)
+class TestSessionModule:
+    def test__parse_timetime_values(self):
+        session_controller._parse_lifetime_values()
+        assert session_controller.SESSION_LIFETIME == dt.timedelta(hours=6)
+
+    @pytest.mark.parametrize("cached", (False, True))
+    @mock.patch(
+        "duffy.app.controllers.session._parse_lifetime_values",
+        wraps=session_controller._parse_lifetime_values,
+    )
+    def test_session_lifetime(self, _parse_lifetime_values, cached):
+        expected = dt.timedelta(hours=6)
+
+        if cached:
+            _parse_lifetime_values()
+            _parse_lifetime_values.reset_mock()
+
+        assert session_controller.session_lifetime() == expected
+
+        if cached:
+            _parse_lifetime_values.assert_not_called()
+        else:
+            _parse_lifetime_values.assert_called_once_with()
+
+
+@pytest.mark.duffy_config(example_config=True)
 @mock.patch("duffy.app.controllers.session.fill_pools", new=mock.MagicMock())
 class TestSession(BaseTestController):
 
@@ -95,6 +125,7 @@ class TestSession(BaseTestController):
         assert all(session["tenant"]["id"] == auth_tenant.id for session in result["sessions"])
 
 
+@pytest.mark.duffy_config(example_config=True)
 @pytest.mark.usefixtures("db_async_test_data", "db_async_model_initialized")
 @pytest.mark.asyncio
 class TestSessionWorkflow:

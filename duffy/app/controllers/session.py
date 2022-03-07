@@ -1,4 +1,5 @@
 """This is the session controller."""
+import datetime as dt
 import logging
 from typing import Optional
 
@@ -21,6 +22,8 @@ from ...api_models import (
     SessionResultCollection,
     SessionUpdateModel,
 )
+from ...configuration import config
+from ...configuration.validation import MiscModel
 from ...database.model import Node, Session, SessionNode, Tenant
 from ...database.types import NodeState
 from ...nodes_context import contextualize, decontextualize
@@ -31,6 +34,20 @@ from ..database import req_db_async_session
 log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/sessions")
+
+SESSION_LIFETIME = None
+
+
+def _parse_lifetime_values():
+    global SESSION_LIFETIME
+    misc = MiscModel(**config["misc"])
+    SESSION_LIFETIME = misc.session_lifetime
+
+
+def session_lifetime():
+    if not SESSION_LIFETIME:
+        _parse_lifetime_values()
+    return SESSION_LIFETIME
 
 
 # http get http://localhost:8080/api/v1/sessions
@@ -106,7 +123,9 @@ async def create_session(
         raise HTTPException(HTTP_403_FORBIDDEN, "can't create session for other tenant")
 
     session = Session(
-        tenant=tenant, data={"nodes_specs": [spec.dict() for spec in data.nodes_specs]}
+        tenant=tenant,
+        data={"nodes_specs": [spec.dict() for spec in data.nodes_specs]},
+        expires_at=dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc) + session_lifetime(),
     )
     db_async_session.add(session)
 
