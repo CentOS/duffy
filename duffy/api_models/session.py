@@ -1,4 +1,5 @@
 from abc import ABC
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, conint
@@ -43,6 +44,7 @@ class SessionUpdateModel(SessionBase):
 
 class SessionModel(SessionBase, CreatableMixin, RetirableMixin):
     id: int
+    expires_at: Optional[datetime]
     tenant: TenantModel
     data: Dict[str, Any]
     nodes: List[SessionNodeModel]

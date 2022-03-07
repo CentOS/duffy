@@ -4,6 +4,8 @@ from typing import Any, Dict, Literal, Optional, Union
 
 from pydantic import AnyUrl, BaseModel, Field, conint, stricturl
 
+from ..misc import ConfigTimeDelta
+
 # enums
 
 
@@ -44,6 +46,10 @@ class SQLAlchemyModel(BaseModel):
 
 class DatabaseModel(BaseModel):
     sqlalchemy: SQLAlchemyModel
+
+
+class MiscModel(BaseModel):
+    session_lifetime: ConfigTimeDelta = Field(alias="session-lifetime")
 
 
 class AnsibleMechanismPlaybookModel(BaseModel):
@@ -107,5 +113,6 @@ class ConfigModel(BaseModel):
     app: Optional[AppModel]
     tasks: Optional[TasksModel]
     database: Optional[DatabaseModel]
+    misc: Optional[MiscModel]
     metaclient: Optional[LegacyModel]
     nodepools: Optional[NodePoolsRootModel]
