@@ -4,6 +4,35 @@ version = "3.0.0"
 description = "CentOS CI provisioner"
 authors = ["Nils Philippsen <nils@redhat.com>", "Vipul Siddharth <siddharthvipul1@gmail.com>", "Akashdeep Dhar <akashdeep@redhat.com>", "Ben Capper <bcapper@redhat.com>"]
 license = "MIT"
+maintainers = ["Nils Philippsen <nils@redhat.com>", "Vipul Siddharth <siddharthvipul1@gmail.com>", "Akashdeep Dhar <akashdeep@redhat.com>", "Ben Capper <bcapper@redhat.com>"]
+readme = "README.md"
+homepage = "https://github.com/CentOS/duffy"
+repository = "https://github.com/CentOS/duffy"
+documentation = "https://github.com/CentOS/duffy/wiki"
+keywords = ["baremetal", "ci", "vm", "opennebula", "centos"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Framework :: Ansible",
+    "Framework :: AsyncIO",
+    "Framework :: Celery",
+    "Framework :: FastAPI",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Testing",
+    "Topic :: System :: Monitoring",
+    "Topic :: System :: Operating System",
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"
