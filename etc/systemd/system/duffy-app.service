@@ -1,0 +1,15 @@
+[Unit]
+After=network.target
+# Comment out the following line if the `duffy-tasks.service` and `duffy-app.service` are NOT running on the same machine
+Requires=duffy-tasks.service
+
+[Service]
+User=duffy
+Group=duffy
+# Adjust the path of the `duffy` executable in your virtual environment
+ExecStart=/path/to/duffy-virtualenv/bin/duffy -c /etc/duffy-config.yaml serve
+
+[Install]
+WantedBy=default.target
+# Comment out the following line if the `duffy-metaclient.service` and `duffy-app.service` are NOT running on the same machine
+RequiredBy=duffy-metaclient.service
