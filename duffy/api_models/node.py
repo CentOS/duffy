@@ -23,7 +23,9 @@ class NodeBase(BaseModel, ABC):
 
 
 class NodeCreateModel(NodeBase):
-    reusable: bool = False
+    hostname: str
+    ipaddr: IPvAnyAddress
+    reusable: bool = True
     data: Dict[str, Any] = {}
 
 
