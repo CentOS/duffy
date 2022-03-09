@@ -2,7 +2,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional, Union
 
-from pydantic import AnyUrl, BaseModel, Field, conint, stricturl
+from pydantic import AnyUrl, BaseModel, Field, RedisDsn, conint, stricturl
 
 from ..misc import ConfigTimeDelta
 
@@ -30,12 +30,17 @@ class CeleryModel(BaseModel):
     result_backend: AnyUrl
 
 
+class LockingModel(BaseModel):
+    url: RedisDsn
+
+
 class PeriodicTaskModel(BaseModel):
     interval: conint(gt=0)
 
 
 class TasksModel(BaseModel):
     celery: CeleryModel
+    locking: LockingModel
     periodic: Optional[Dict[str, PeriodicTaskModel]]
 
 
