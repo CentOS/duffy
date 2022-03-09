@@ -15,6 +15,7 @@ HERE = Path(__file__).parent
 PLAYBOOK_PATH = HERE / "playbooks"
 
 
+@pytest.mark.duffy_config(example_config=True)
 @pytest.mark.usefixtures("db_sync_model_initialized")
 @pytest.mark.parametrize(
     "testcase",
@@ -35,8 +36,11 @@ PLAYBOOK_PATH = HERE / "playbooks"
     ),
 )
 @mock.patch.dict("duffy.tasks.node_pools.ConcreteNodePool.known_pools", clear=True)
-def test_fill_single_pool(testcase, db_sync_session, test_mechanism, caplog):
+@mock.patch("duffy.tasks.provision.Lock")
+def test_fill_single_pool(Lock, testcase, db_sync_session, test_mechanism, caplog):
     real_playbook = "real-playbook" in testcase
+
+    Lock.return_value = noop_context()
 
     if "reuse-nodes" in testcase or "pool-is-filled" in testcase:
         # Create 30 nodes
@@ -149,84 +153,89 @@ def test_fill_single_pool(testcase, db_sync_session, test_mechanism, caplog):
 
         provision.fill_single_pool(pool_name)
 
-    if testcase == "reuse-nodes-broken-spec":
-        assert any(
-            rec.levelname == "ERROR" and "Can't build query for" in rec.message
-            for rec in caplog.records
-        )
-        assert "ROLLBACK" in caplog.messages
-        assert "COMMIT" not in caplog.messages
-    elif testcase == "unknown-pool":
+    if testcase == "unknown-pool":
         assert not caplog.messages
-    elif "mechanism-failure" in testcase:
-        assert "[foo] Provisioning failed." in caplog.messages
-        if "fresh-nodes" in testcase:
-            with db_sync_session.begin():
-                # all dynamically created nodes should have been deleted again
-                nodes_count = db_sync_session.execute(
-                    select(func.count()).select_from(select(Node).subquery())
-                ).scalar_one()
-                assert nodes_count == 0
-        else:  # "reuse-nodes"
-            with db_sync_session.begin():
-                # all previously existing nodes should be back to where they were
-                nodes_count = db_sync_session.execute(
-                    select(func.count()).select_from(
-                        select(Node).filter_by(active=True, state="unused", pool=None).subquery()
-                    )
-                ).scalar_one()
-                assert nodes_count == matching_nodes_count + not_matching_nodes_count
-    elif "pool-is-filled" in testcase:
-        pool_provision.assert_not_called()
-        pool_mech_provision.assert_not_called()
-        assert "[foo] Pool is filled to or above spec." in caplog.messages
+        Lock.assert_not_called()
     else:
-        assert "COMMIT" in caplog.messages
-
-        with db_sync_session.begin():
-            nodes = (
-                db_sync_session.execute(
-                    select(Node).filter_by(active=True, state="ready", pool="foo")
-                )
-                .scalars()
-                .all()
+        Lock.assert_called_once()
+        if testcase == "reuse-nodes-broken-spec":
+            assert any(
+                rec.levelname == "ERROR" and "Can't build query for" in rec.message
+                for rec in caplog.records
             )
-            assert len(nodes) == prov_count
-        node_ids = {node.id for node in nodes}
-
-        pool_provision.assert_called_once()
-        args, kwargs = pool_provision.call_args
-        (nodes_in_call,) = args
-        assert len(kwargs) == 0
-        if "fewer-provisions" in testcase:
-            assert {node.id for node in nodes_in_call} > node_ids
-        else:
-            assert {node.id for node in nodes_in_call} == node_ids
-
-        if real_playbook:
-            assert any("[foo] Result: {" in msg for msg in caplog.messages)
-            pool_mech_provision.assert_called_once()
-            mechargs, mechkwargs = pool_mech_provision.call_args
-            assert not mechargs
-            assert {node.id for node in mechkwargs["nodes"]} == node_ids
-        else:
-            assert f"[foo] Result: {provision_result!r}" in caplog.messages
-            # verify patching above worked
+            assert "ROLLBACK" in caplog.messages
+            assert "COMMIT" not in caplog.messages
+        elif "mechanism-failure" in testcase:
+            assert "[foo] Provisioning failed." in caplog.messages
+            if "fresh-nodes" in testcase:
+                with db_sync_session.begin():
+                    # all dynamically created nodes should have been deleted again
+                    nodes_count = db_sync_session.execute(
+                        select(func.count()).select_from(select(Node).subquery())
+                    ).scalar_one()
+                    assert nodes_count == 0
+            else:  # "reuse-nodes"
+                with db_sync_session.begin():
+                    # all previously existing nodes should be back to where they were
+                    nodes_count = db_sync_session.execute(
+                        select(func.count()).select_from(
+                            select(Node)
+                            .filter_by(active=True, state="unused", pool=None)
+                            .subquery()
+                        )
+                    ).scalar_one()
+                    assert nodes_count == matching_nodes_count + not_matching_nodes_count
+        elif "pool-is-filled" in testcase:
+            pool_provision.assert_not_called()
             pool_mech_provision.assert_not_called()
-
-        assert any(
-            f"we want {pool['fill-level']}, i.e. need {pool['fill-level']}" in msg
-            for msg in caplog.messages
-        )
-
-        if "reuse-nodes" in testcase:
-            assert "[foo] Searching for 5 reusable nodes in database" in caplog.messages
+            assert "[foo] Pool is filled to or above spec." in caplog.messages
         else:
-            assert "[foo] Allocating 5 new node objects in database" in caplog.messages
-            assert f"[foo] invalid results: [{invalid_node_result}]" in caplog.messages
-            assert "[foo] Setting hostname and ipaddr fields of nodes." in caplog.messages
+            assert "COMMIT" in caplog.messages
+
+            with db_sync_session.begin():
+                nodes = (
+                    db_sync_session.execute(
+                        select(Node).filter_by(active=True, state="ready", pool="foo")
+                    )
+                    .scalars()
+                    .all()
+                )
+                assert len(nodes) == prov_count
+            node_ids = {node.id for node in nodes}
+
+            pool_provision.assert_called_once()
+            args, kwargs = pool_provision.call_args
+            (nodes_in_call,) = args
+            assert len(kwargs) == 0
             if "fewer-provisions" in testcase:
-                assert "[foo] Cleaning up 3 left-over preallocated nodes" in caplog.messages
+                assert {node.id for node in nodes_in_call} > node_ids
+            else:
+                assert {node.id for node in nodes_in_call} == node_ids
+
+            if real_playbook:
+                assert any("[foo] Result: {" in msg for msg in caplog.messages)
+                pool_mech_provision.assert_called_once()
+                mechargs, mechkwargs = pool_mech_provision.call_args
+                assert not mechargs
+                assert {node.id for node in mechkwargs["nodes"]} == node_ids
+            else:
+                assert f"[foo] Result: {provision_result!r}" in caplog.messages
+                # verify patching above worked
+                pool_mech_provision.assert_not_called()
+
+            assert any(
+                f"we want {pool['fill-level']}, i.e. need {pool['fill-level']}" in msg
+                for msg in caplog.messages
+            )
+
+            if "reuse-nodes" in testcase:
+                assert "[foo] Searching for 5 reusable nodes in database" in caplog.messages
+            else:
+                assert "[foo] Allocating 5 new node objects in database" in caplog.messages
+                assert f"[foo] invalid results: [{invalid_node_result}]" in caplog.messages
+                assert "[foo] Setting hostname and ipaddr fields of nodes." in caplog.messages
+                if "fewer-provisions" in testcase:
+                    assert "[foo] Cleaning up 3 left-over preallocated nodes" in caplog.messages
 
 
 @pytest.mark.usefixtures("test_mechanism")

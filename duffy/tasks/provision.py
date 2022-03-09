@@ -7,6 +7,7 @@ from ..database import sync_session_maker
 from ..database.model import Node
 from ..database.types import NodeState
 from .base import celery
+from .locking import Lock
 from .mechanisms import MechanismFailure
 from .node_pools import ConcreteNodePool, NodePool
 
@@ -27,12 +28,22 @@ def fill_single_pool(pool_name: str):
 
     wanted_fill_level = pool["fill-level"]
 
-    with sync_session_maker() as db_sync_session, db_sync_session.begin():
+    # This block uses a lock to prevent concurrently allocating node objects in the database for the
+    # same pool. It checks how many 'ready' nodes are allocated to a pool, and how many more are
+    # needed to fill it up to spec. If this was done concurrently for the same pool, both tasks
+    # would allocate the same number of new nodes, overfilling the pool.
+    with Lock(
+        key=f"duffy:fill-single-pool:{pool_name}",
+    ), sync_session_maker() as db_sync_session, db_sync_session.begin():
         log.debug("[%s] Determining number of available nodes ...", pool.name)
         current_fill_level = db_sync_session.execute(
             select(func.count()).select_from(
                 select(Node)
-                .filter_by(active=True, pool=pool.name, state=NodeState.ready)
+                .filter(
+                    Node.active == True,  # noqa: E712
+                    Node.pool == pool.name,
+                    Node.state.in_((NodeState.ready, NodeState.provisioning)),
+                )
                 .subquery()
             )
         ).scalar_one()
