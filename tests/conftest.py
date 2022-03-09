@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Iterator, List, Union
@@ -18,6 +17,9 @@ from duffy.database import (
 )
 from duffy.database.setup import _gen_test_data_objs
 
+HERE = Path(__file__).parent
+EXAMPLE_CONFIG = HERE.parent / "etc" / "duffy-example-config.yaml"
+
 # Configuration fixtures
 
 
@@ -26,7 +28,9 @@ def pytest_configure(config):
 
 
 @pytest.fixture
-def duffy_config_files(request: pytest.FixtureRequest) -> Iterator[List[Union[Path, str]]]:
+def duffy_config_files(
+    request: pytest.FixtureRequest, tmp_path: Path
+) -> Iterator[List[Union[Path, str]]]:
     """Fixture to create testing configuration files.
 
     This is useful mainly to the duffy_config fixture which is applied
@@ -46,6 +50,8 @@ def duffy_config_files(request: pytest.FixtureRequest) -> Iterator[List[Union[Pa
     """
     configs = []
 
+    EXAMPLE_CONFIG_SENTINEL = object()
+
     # Consult markers about desired configuration files and their contents.
 
     # request.node.iter_markers() lists markers of parent objects later, we need them early to make
@@ -57,14 +63,19 @@ def duffy_config_files(request: pytest.FixtureRequest) -> Iterator[List[Union[Pa
                     configs = []
                 objtype = marker.kwargs.get("objtype", Path)
                 assert objtype in (Path, str)
+                if marker.kwargs.get("example_config"):
+                    configs.append((objtype, EXAMPLE_CONFIG_SENTINEL))
                 for content in marker.args:
                     assert any(isinstance(content, t) for t in (dict, str))
                     configs.append((objtype, content))
 
     # Create configuration files.
-    config_file_objs = []  # the NamedTemporaryFile objects
     config_file_paths = []  # their Path or str counterparts
     for objtype, content in configs:
+        if content is EXAMPLE_CONFIG_SENTINEL:
+            config_file_paths.append(EXAMPLE_CONFIG.absolute())
+            continue
+
         config_file_obj = NamedTemporaryFile(
             mode="w", encoding="utf-8", suffix=".yaml", prefix="tmp_duffy_test_config", delete=False
         )
@@ -73,15 +84,10 @@ def duffy_config_files(request: pytest.FixtureRequest) -> Iterator[List[Union[Pa
         else:
             print(content, file=config_file_obj)
         config_file_obj.close()
-        config_file_objs.append(config_file_obj)
         config_file_paths.append(objtype(config_file_obj.name))
 
     # Let tests work with the configuration files.
     yield config_file_paths
-
-    # Remove the files.
-    for config_file_obj in config_file_objs:
-        os.unlink(config_file_obj.name)
 
 
 @pytest.fixture(autouse=True)

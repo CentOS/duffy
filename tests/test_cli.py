@@ -1,5 +1,4 @@
 import copy
-from pathlib import Path
 from unittest import mock
 
 import click
@@ -10,15 +9,7 @@ from click.testing import CliRunner
 from duffy.cli import cli
 from duffy.configuration import config
 from duffy.exceptions import DuffyConfigurationError
-from duffy.util import merge_dicts
 from duffy.version import __version__
-
-HERE = Path(__file__).parent
-EXAMPLE_CONFIG_FILE = HERE.parent / "etc" / "duffy-example-config.yaml"
-with EXAMPLE_CONFIG_FILE.open("r") as fp:
-    EXAMPLE_CONFIG = {}
-    for config_doc in yaml.safe_load_all(fp):
-        EXAMPLE_CONFIG = merge_dicts(EXAMPLE_CONFIG, config_doc)
 
 
 @pytest.fixture
@@ -52,12 +43,14 @@ def test_cli_missing_config(tmp_path, runner):
     assert isinstance(result.exception, FileNotFoundError)
 
 
-@pytest.mark.duffy_config(EXAMPLE_CONFIG, clear=True)
+@pytest.mark.duffy_config(example_config=True)
 @pytest.mark.parametrize("config_empty", (False, True))
-def test_config_check(config_empty, duffy_config_files, runner):
+def test_config_check(config_empty, duffy_config_files, runner, tmp_path):
     (config_file,) = duffy_config_files
 
     if config_empty:
+        # Don't overwrite example configuration
+        config_file = tmp_path / "duffy-empty-config.yaml"
         with config_file.open("w") as fp:
             yaml.dump({}, fp)
 
@@ -83,20 +76,24 @@ def test_config_check(config_empty, duffy_config_files, runner):
         assert "Validated configuration subkeys:" in result.output
 
 
-@pytest.mark.duffy_config(EXAMPLE_CONFIG, clear=True)
+@pytest.mark.duffy_config(example_config=True)
 def test_config_dump(runner):
     result = runner.invoke(cli, ["config", "dump"])
     dumped_config = yaml.safe_load(result.output)
     assert dumped_config == config
 
 
+@pytest.mark.duffy_config(example_config=True)
 @pytest.mark.parametrize("testcase", ("normal", "test-data", "config-error"))
 @mock.patch("duffy.cli.setup_db_test_data")
 @mock.patch("duffy.cli.setup_db_schema")
-def test_setup_db(setup_db_schema, setup_db_test_data, testcase, runner, caplog):
+def test_setup_db(
+    setup_db_schema, setup_db_test_data, testcase, duffy_config_files, runner, caplog
+):
+    (config_file,) = duffy_config_files
     if testcase == "config-error":
         setup_db_schema.side_effect = DuffyConfigurationError("database")
-    args = [f"--config={EXAMPLE_CONFIG_FILE.absolute()}", "setup-db"]
+    args = [f"--config={config_file.absolute()}", "setup-db"]
     if testcase == "test-data":
         args.append("--test-data")
     result = runner.invoke(cli, args)
@@ -150,18 +147,21 @@ def test_migration_upgrade_downgrade(alembic_migration, subcommand, runner):
     "config_error, shell_type",
     [(False, st) for st in (None, "python", "ipython", "bad shell type")] + [(True, None)],
 )
-@pytest.mark.duffy_config(EXAMPLE_CONFIG, clear=True)
+@pytest.mark.duffy_config(example_config=True)
 @mock.patch("duffy.shell.embed_shell")
 @mock.patch("duffy.database.init_model")
-def test_shell(init_model, embed_shell, runner, duffy_config_files, config_error, shell_type):
+def test_shell(
+    init_model, embed_shell, runner, duffy_config_files, config_error, shell_type, tmp_path
+):
     # Ensure it's only one config file.
     (config_file,) = duffy_config_files
 
     _shell_type = shell_type or ""
 
     if config_error:
-        modified_config = copy.deepcopy(EXAMPLE_CONFIG)
+        modified_config = copy.deepcopy(config)
         del modified_config["database"]
+        config_file = tmp_path / "duffy-broken-config.yaml"
         with config_file.open("w") as fp:
             yaml.dump(modified_config, fp)
 
@@ -195,21 +195,30 @@ def test_shell(init_model, embed_shell, runner, duffy_config_files, config_error
         init_model.assert_not_called()
 
 
+@pytest.mark.duffy_config(example_config=True)
 @mock.patch("duffy.cli.start_worker")
-def test_worker(start_worker, runner):
+def test_worker(start_worker, duffy_config_files, runner):
+    (config_file,) = duffy_config_files
     result = runner.invoke(
-        cli, [f"--config={EXAMPLE_CONFIG_FILE.absolute()}", "worker", "a", "-b", "c", "--dee"]
+        cli, [f"--config={config_file.absolute()}", "worker", "a", "-b", "c", "--dee"]
     )
 
     assert result.exit_code == 0
     start_worker.assert_called_once_with(worker_args=("a", "-b", "c", "--dee"))
 
 
-@pytest.mark.duffy_config(EXAMPLE_CONFIG, clear=True)
+@pytest.mark.duffy_config(example_config=True)
 @pytest.mark.parametrize("testcase", ("default", "with-options", "missing-logging-config"))
 @mock.patch("duffy.cli.uvicorn.run")
-def test_serve(uvicorn_run, testcase, runner, duffy_config_files):
+def test_serve(uvicorn_run, testcase, runner, duffy_config_files, tmp_path):
     (config_file,) = duffy_config_files
+
+    if testcase == "missing-logging-config":
+        modified_config = copy.deepcopy(config)
+        del modified_config["app"]["logging"]
+        config_file = tmp_path / "duffy-broken-config.yaml"
+        with config_file.open("w") as fp:
+            yaml.dump(modified_config, fp)
 
     if testcase in ("default", "missing-logging-config"):
         parameters = (f"--config={config_file.absolute()}", "serve")
@@ -222,22 +231,23 @@ def test_serve(uvicorn_run, testcase, runner, duffy_config_files):
             "--loglevel=info",
         )
 
-    if testcase == "missing-logging-config":
-        modified_config = copy.deepcopy(EXAMPLE_CONFIG)
-        del modified_config["app"]["logging"]
-        with config_file.open("w") as fp:
-            yaml.dump(modified_config, fp)
-
     result = runner.invoke(cli, parameters)
     assert result.exit_code == 0
     uvicorn_run.assert_called_once()
 
 
-@pytest.mark.duffy_config(EXAMPLE_CONFIG, clear=True)
+@pytest.mark.duffy_config(example_config=True)
 @pytest.mark.parametrize("testcase", ("default", "with-options", "missing-logging-config"))
 @mock.patch("duffy.cli.uvicorn.run")
-def test_serve_legacy(uvicorn_run, testcase, runner, duffy_config_files):
+def test_serve_legacy(uvicorn_run, testcase, runner, duffy_config_files, tmp_path):
     (config_file,) = duffy_config_files
+
+    if testcase == "missing-logging-config":
+        modified_config = copy.deepcopy(config)
+        del modified_config["metaclient"]["logging"]
+        config_file = tmp_path / "duffy-broken-config.yaml"
+        with config_file.open("w") as fp:
+            yaml.dump(modified_config, fp)
 
     if testcase in ("default", "missing-logging-config"):
         parameters = (f"--config={config_file.absolute()}", "serve-legacy")
@@ -250,12 +260,6 @@ def test_serve_legacy(uvicorn_run, testcase, runner, duffy_config_files):
             "--dest=http://127.0.0.1:8080",
             "--loglevel=info",
         )
-
-    if testcase == "missing-logging-config":
-        config = copy.deepcopy(EXAMPLE_CONFIG)
-        del config["metaclient"]["logging"]
-        with config_file.open("w") as fp:
-            yaml.dump(config, fp)
 
     result = runner.invoke(cli, parameters)
     assert result.exit_code == 0
