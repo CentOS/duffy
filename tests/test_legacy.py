@@ -1,9 +1,7 @@
-from pathlib import Path
 from typing import Iterator
 from unittest import mock
 
 import pytest
-import yaml
 from fastapi.exceptions import HTTPException
 from httpx import AsyncClient
 from starlette.status import (
@@ -19,16 +17,8 @@ from duffy.configuration import config
 from duffy.legacy import main
 from duffy.legacy.api_models import Credentials
 from duffy.legacy.auth import _req_credentials_factory
-from duffy.util import merge_dicts
 
 from .util import noop_context
-
-HERE = Path(__file__).parent
-EXAMPLE_CONFIG_FILE = HERE.parent / "etc" / "duffy-example-config.yaml"
-with EXAMPLE_CONFIG_FILE.open("r") as fp:
-    EXAMPLE_CONFIG = {}
-    for config_doc in yaml.safe_load_all(fp):
-        EXAMPLE_CONFIG = merge_dicts(EXAMPLE_CONFIG, config_doc)
 
 TEST_CRED = Credentials(
     username="hahahahahatheystoppedlegacysupporthahahahaha",
@@ -43,7 +33,7 @@ async def client() -> Iterator[AsyncClient]:
 
 
 class TestAuth:
-    @pytest.mark.duffy_config(EXAMPLE_CONFIG)
+    @pytest.mark.duffy_config(example_config=True)
     @pytest.mark.parametrize(
         "testcase",
         (
@@ -95,7 +85,7 @@ class TestAuth:
 
 
 @pytest.mark.asyncio
-@pytest.mark.duffy_config(EXAMPLE_CONFIG)
+@pytest.mark.duffy_config(example_config=True)
 class TestMain:
     apiv1_result = {
         "action": "post",

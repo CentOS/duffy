@@ -1,13 +1,9 @@
-from pathlib import Path
 from unittest import mock
 
 import pytest
 
-from duffy.configuration import config, read_configuration
+from duffy.configuration import config
 from duffy.tasks.node_pools import AbstractNodePool, ConcreteNodePool, NodePool
-
-HERE = Path(__file__).parent
-EXAMPLE_CONFIG = HERE.parent.parent / "etc" / "duffy-example-config.yaml"
 
 
 @mock.patch.dict(NodePool.subcls_per_cls_type, clear=False)
@@ -87,9 +83,8 @@ class TestNodePool:
         pool = NodePool(name="test", foo="bar")
         assert repr(pool) == "NodePool(name='test', extends=[], **{'foo': 'bar'})"
 
+    @pytest.mark.duffy_config(example_config=True)
     def test_process_configuration(self):
-        read_configuration(EXAMPLE_CONFIG)
-
         NodePool.process_configuration()
 
         for cls_type in ("abstract", "concrete"):
@@ -111,9 +106,8 @@ class TestNodePool:
                     else:
                         assert pool[key] == value
 
+    @pytest.mark.duffy_config(example_config=True)
     def test_iter_pools(self):
-        read_configuration(EXAMPLE_CONFIG)
-
         NodePool.process_configuration()
 
         expected = set(config["nodepools"]["abstract"]) | set(config["nodepools"]["concrete"])
@@ -143,9 +137,8 @@ class TestConcreteNodePool:
         pool = ConcreteNodePool(name="test", mechanism={"type": "test", "test": {}})
         assert isinstance(pool.mechanism, test_mechanism)
 
+    @pytest.mark.duffy_config(example_config=True)
     def test_iter_pools(self):
-        read_configuration(EXAMPLE_CONFIG)
-
         NodePool.process_configuration()
 
         expected = set(config["nodepools"]["concrete"])
