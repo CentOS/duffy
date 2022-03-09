@@ -10,6 +10,7 @@ TEST_CONFIG = {
             "broker_url": "redis://localhost:6379",
             "result_backend": "redis://localhost:6379",
         },
+        "locking": {"url": "redis:///"},
         "periodic": {"fill-pools": {"interval": 5}, "expire-sessions": {"interval": 7}},
     }
 }
