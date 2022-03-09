@@ -5,9 +5,13 @@ from unittest import mock
 from duffy.database.model import Node, Session, SessionNode, Tenant
 from duffy.tasks import expire_sessions
 
+from ..util import noop_context
+
 
 @mock.patch("duffy.tasks.expire.deprovision_nodes")
-def test_expire_sessions(deprovision_nodes, db_sync_session, caplog):
+@mock.patch("duffy.tasks.expire.Lock")
+def test_expire_sessions(Lock, deprovision_nodes, db_sync_session, caplog):
+    Lock.return_value = noop_context()
     deprovision_nodes.delay.return_value = async_result = mock.Mock()
 
     with db_sync_session.begin():
@@ -44,6 +48,8 @@ def test_expire_sessions(deprovision_nodes, db_sync_session, caplog):
         db_sync_session.flush()
 
     expire_sessions()
+
+    Lock.assert_called_once()
 
     with db_sync_session.begin():
         for session in sessions_to_leave_alone + sessions_to_expire:

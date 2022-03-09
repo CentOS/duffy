@@ -8,13 +8,16 @@ from ..database import sync_session_maker
 from ..database.model import Session, SessionNode
 from .base import celery
 from .deprovision import deprovision_nodes
+from .locking import Lock
 
 log = get_task_logger(__name__)
 
 
 @celery.task
 def expire_sessions():
-    with sync_session_maker() as db_sync_session, db_sync_session.begin():
+    with Lock(
+        key="duffy:expire_sessions"
+    ), sync_session_maker() as db_sync_session, db_sync_session.begin():
         now = dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc)
 
         expired_sessions = (
