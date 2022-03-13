@@ -319,14 +319,14 @@ class TestMain:
 
     @pytest.mark.parametrize(
         "testcase",
-        ("successfully-extended", "incorrect-auth", "ssid-absent", "unauthenticated"),
+        ("successfully-extended", "incorrect-auth", "ssid-absent", "unauthenticated", "failure"),
     )
     @mock.patch("duffy.legacy.main.httpx.AsyncClient")
     async def test_return_node_on_failure(self, AsyncClient, testcase, client):
         AsyncClient.return_value = ctxmgr = mock.MagicMock()
         ctxmgr.__aenter__.return_value = apiv1_client = mock.AsyncMock()
 
-        apiv1_client.get.return_value = apiv1_response = mock.Mock()
+        apiv1_client.put.return_value = apiv1_response = mock.Mock()
 
         key = TEST_CRED.password
 
@@ -335,14 +335,15 @@ class TestMain:
             response = await client.get("/Node/fail", params={"key": key, "ssid": 1})
             result = response.json()
             assert response.status_code == HTTP_200_OK
-            assert result == "Not implemented yet"
+            assert result == "Done"
         elif testcase == "incorrect-auth":
-            apiv1_response.status_code = HTTP_200_OK
+            apiv1_response.status_code = HTTP_401_UNAUTHORIZED
+            config["metaclient"]["usermap"]["somedefinitelywrongkey"] = "somedefinitelywronguser"
             response = await client.get(
                 "/Node/fail", params={"key": "somedefinitelywrongkey", "ssid": 1}
             )
             result = response.json()
-            assert result == {"detail": "Forbidden"}
+            assert result == {"msg": "Invalid duffy key"}
             assert response.status_code == HTTP_403_FORBIDDEN
         elif testcase == "ssid-absent":
             apiv1_response.status_code = HTTP_200_OK
@@ -356,6 +357,12 @@ class TestMain:
             result = response.json()
             assert result == {"detail": "Not authenticated"}
             assert response.status_code == HTTP_403_FORBIDDEN
+        elif testcase == "failure":
+            apiv1_response.status_code = HTTP_500_INTERNAL_SERVER_ERROR
+            response = await client.get("/Node/fail", params={"key": key, "ssid": 1})
+            result = response.json()
+            assert result == "Failed to change expiration time"
+            assert response.status_code == HTTP_200_OK
 
     @pytest.mark.parametrize(
         "testcase",

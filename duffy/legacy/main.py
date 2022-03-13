@@ -97,7 +97,24 @@ async def return_node_on_completion(ssid: str = None, cred: Credentials = Depend
 @app.get("/Node/fail")
 async def return_node_on_failure(ssid: str = None, cred: Credentials = Depends(req_credentials)):
     if ssid:
-        return JSONResponse(status_code=HTTP_200_OK, content="Not implemented yet")
+        async with httpx.AsyncClient() as client:
+            dest = config["metaclient"]["dest"].rstrip("/")
+            response = await client.put(
+                f"{dest}/api/v1/sessions/{ssid}",
+                json={"expires_at": "+6h"},
+                auth=(cred.username, cred.password),
+            )
+        if response.status_code == HTTP_200_OK:
+            return JSONResponse(status_code=HTTP_200_OK, content="Done")
+        elif (
+            response.status_code == HTTP_401_UNAUTHORIZED
+            or response.status_code == HTTP_403_FORBIDDEN
+        ):
+            return JSONResponse(
+                status_code=HTTP_403_FORBIDDEN, content={"msg": "Invalid duffy key"}
+            )
+        else:
+            return JSONResponse(status_code=HTTP_200_OK, content="Failed to change expiration time")
     else:
         return JSONResponse(status_code=HTTP_200_OK, content="Some parameters are absent")
 
