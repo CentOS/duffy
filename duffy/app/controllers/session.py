@@ -36,18 +36,26 @@ log = logging.getLogger(__name__)
 router = APIRouter(prefix="/sessions")
 
 SESSION_LIFETIME = None
+SESSION_LIFETIME_MAX = None
 
 
 def _parse_lifetime_values():
-    global SESSION_LIFETIME
+    global SESSION_LIFETIME, SESSION_LIFETIME_MAX
     misc = MiscModel(**config["misc"])
     SESSION_LIFETIME = misc.session_lifetime
+    SESSION_LIFETIME_MAX = misc.session_lifetime_max
 
 
 def session_lifetime():
     if not SESSION_LIFETIME:
         _parse_lifetime_values()
     return SESSION_LIFETIME
+
+
+def session_lifetime_max():
+    if not SESSION_LIFETIME_MAX:
+        _parse_lifetime_values()
+    return SESSION_LIFETIME_MAX
 
 
 # http get http://localhost:8080/api/v1/sessions
@@ -250,6 +258,20 @@ async def update_session(
         )
     ).scalar_one_or_none()
 
+    if data.expires_at is not None:
+        if isinstance(data.expires_at, dt.timedelta):
+            new_expires_at = session.expires_at + data.expires_at
+        else:  # isinstance(data.expires_at, dt.datetime)
+            new_expires_at = data.expires_at.replace(tzinfo=dt.timezone.utc)
+
+        # Clamp to allowable values
+        new_expires_at = max(new_expires_at, session.created_at)
+
+        if not tenant.is_admin:
+            new_expires_at = min(new_expires_at, session.created_at + session_lifetime_max())
+
+        session.expires_at = new_expires_at
+
     if not session:
         raise HTTPException(HTTP_404_NOT_FOUND)
 
@@ -259,7 +281,7 @@ async def update_session(
     if not session.active:
         raise HTTPException(HTTP_422_UNPROCESSABLE_ENTITY, f"session {id} is retired")
 
-    if not data.active:
+    if data.active is False:
         session.active = data.active
         deprovision_nodes.delay(
             node_ids=[session_node.node_id for session_node in session.session_nodes]

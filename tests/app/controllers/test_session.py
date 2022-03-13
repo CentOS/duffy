@@ -16,30 +16,37 @@ from starlette.status import (
 
 from duffy.app.controllers import session as session_controller
 from duffy.database.model import Node, Session, Tenant
+from duffy.database.setup import _gen_test_api_key
 
 from . import BaseTestController
 
 
 @pytest.mark.duffy_config(example_config=True)
 @mock.patch.object(session_controller, "SESSION_LIFETIME", None)
+@mock.patch.object(session_controller, "SESSION_LIFETIME_MAX", None)
 class TestSessionModule:
     def test__parse_timetime_values(self):
         session_controller._parse_lifetime_values()
         assert session_controller.SESSION_LIFETIME == dt.timedelta(hours=6)
+        assert session_controller.SESSION_LIFETIME_MAX == dt.timedelta(hours=12)
 
+    @pytest.mark.parametrize("function", ("session_lifetime", "session_lifetime_max"))
     @pytest.mark.parametrize("cached", (False, True))
     @mock.patch(
         "duffy.app.controllers.session._parse_lifetime_values",
         wraps=session_controller._parse_lifetime_values,
     )
-    def test_session_lifetime(self, _parse_lifetime_values, cached):
-        expected = dt.timedelta(hours=6)
+    def test_session_lifetime_functions(self, _parse_lifetime_values, function, cached):
+        if "max" in function:
+            expected = dt.timedelta(hours=12)
+        else:
+            expected = dt.timedelta(hours=6)
 
         if cached:
             _parse_lifetime_values()
             _parse_lifetime_values.reset_mock()
 
-        assert session_controller.session_lifetime() == expected
+        assert getattr(session_controller, function)() == expected
 
         if cached:
             _parse_lifetime_values.assert_not_called()
@@ -259,21 +266,37 @@ class TestSessionWorkflow:
     @mock.patch("duffy.nodes_context.run_remote_cmd", new=mock.AsyncMock())
     @mock.patch("duffy.app.controllers.session.fill_pools", new=mock.MagicMock())
     @pytest.mark.parametrize(
-        "testcase", ("normal", "unknown-session", "retired-session", "unauthorized", "set-active")
+        "testcase",
+        (
+            "normal-set-inactive",
+            "normal-set-active",
+            "normal-set-expires-at",
+            "normal-extend-expires-at",
+            "normal-set-expires-at-auth-admin",
+            "normal-extend-expires-at-auth-admin",
+            "unknown-session",
+            "retired-session",
+            "unauthorized",
+        ),
     )
     @mock.patch("duffy.app.controllers.session.deprovision_nodes")
     async def test_update_session(
-        self, deprovision_nodes, testcase, client, db_async_session, auth_tenant
+        self, deprovision_nodes, testcase, client, db_async_session, auth_tenant, auth_admin
     ):
+        if "auth-admin" in testcase:
+            client.auth = (auth_admin.name, str(_gen_test_api_key(auth_admin.name)))
+
         if testcase != "unknown-session":
-            request_payload = {"nodes_specs": self.nodes_specs}
-            create_response = await client.post(self.path, json=request_payload)
+            create_request_payload = {"nodes_specs": self.nodes_specs}
+            create_response = await client.post(self.path, json=create_request_payload)
             create_result = create_response.json()
             created_session = create_result["session"]
             session_id = created_session["id"]
             # smoke test
             assert created_session["active"] is True
             assert created_session["retired_at"] is None
+
+            created_at = dt.datetime.fromisoformat(created_session["created_at"])
 
             if testcase == "retired-session":
                 async with db_async_session.begin():
@@ -294,35 +317,56 @@ class TestSessionWorkflow:
         else:
             session_id = 1
 
-        session_active = "set-active" in testcase
+        request_payload = {}
+        if testcase in ("normal-set-inactive", "normal-set-active"):
+            session_active = "set-active" in testcase
+            request_payload["active"] = session_active
 
-        update_response = await client.put(
-            f"{self.path}/{session_id}", json={"active": session_active}
-        )
+        # attempt to extend by one day to test clamping
+        if "expires-at" in testcase:
+            if "set-expires-at" in testcase:
+                new_expires_at = then = dt.datetime.fromisoformat(
+                    created_session["created_at"]
+                ) + dt.timedelta(days=1)
+                request_payload["expires_at"] = "+1d"
+            elif "extend-expires-at" in testcase:
+                new_expires_at = then = created_at + dt.timedelta(days=1)
+                request_payload["expires_at"] = then.isoformat()
+
+            if "auth-admin" not in testcase:
+                new_expires_at = max(
+                    new_expires_at, created_at + session_controller.session_lifetime_max()
+                )
+
+        update_response = await client.put(f"{self.path}/{session_id}", json=request_payload)
         update_result = update_response.json()
 
         # The task function should never be called directly.
         deprovision_nodes.assert_not_called()
 
-        if testcase in ("normal", "set-active"):
-            if session_active:
-                deprovision_nodes.delay.assert_not_called()
-            else:
-                deprovision_nodes.delay.assert_called_once()
-                args, kwargs = deprovision_nodes.delay.call_args
-                assert args == ()
-                assert kwargs.keys() == {"node_ids"}
-                assert set(kwargs["node_ids"]) == {node["id"] for node in created_session["nodes"]}
-
+        if "normal" in testcase:
             assert update_response.status_code == HTTP_200_OK
             updated_session = update_result["session"]
             assert updated_session["id"] == session_id
-            if not session_active:
-                assert updated_session["active"] is False
-                assert updated_session["retired_at"] is not None
-            else:
-                assert updated_session["active"] is True
-                assert updated_session["retired_at"] is None
+
+            if "active" in testcase:
+                if session_active:
+                    deprovision_nodes.delay.assert_not_called()
+                    assert updated_session["active"] is True
+                    assert updated_session["retired_at"] is None
+                else:
+                    deprovision_nodes.delay.assert_called_once()
+                    args, kwargs = deprovision_nodes.delay.call_args
+                    assert args == ()
+                    assert kwargs.keys() == {"node_ids"}
+                    assert set(kwargs["node_ids"]) == {
+                        node["id"] for node in created_session["nodes"]
+                    }
+                    assert updated_session["active"] is False
+                    assert updated_session["retired_at"] is not None
+
+            if "expires_at" in testcase:
+                assert dt.datetime.fromisoformat(updated_session["expires_at"]) == new_expires_at
         else:
             deprovision_nodes.delay.assert_not_called()
             if testcase == "unknown-session":
