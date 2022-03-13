@@ -1,10 +1,11 @@
 from abc import ABC
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, conint
 
 from ..database.types import NodeState
+from ..misc import APITimeDelta
 from .common import APIResult, CreatableMixin, RetirableMixin
 from .node import NodeBase
 from .tenant import TenantModel
@@ -39,7 +40,8 @@ class SessionCreateModel(SessionBase):
 
 
 class SessionUpdateModel(SessionBase):
-    active: bool
+    active: Optional[bool]
+    expires_at: Optional[Union[datetime, APITimeDelta]]
 
 
 class SessionModel(SessionBase, CreatableMixin, RetirableMixin):

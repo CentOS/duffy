@@ -55,6 +55,7 @@ class DatabaseModel(BaseModel):
 
 class MiscModel(BaseModel):
     session_lifetime: ConfigTimeDelta = Field(alias="session-lifetime")
+    session_lifetime_max: ConfigTimeDelta = Field(alias="session-lifetime-max")
 
 
 class AnsibleMechanismPlaybookModel(BaseModel):

@@ -123,6 +123,7 @@ database:
 
 misc:
   session-lifetime: "6h"
+  session-lifetime-max: "12h"
 
 nodepools:
   abstract:
