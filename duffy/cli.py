@@ -15,7 +15,7 @@ from .exceptions import DuffyConfigurationError
 from .tasks import start_worker
 from .version import __version__
 
-DEFAULT_CONFIG_FILE = "/etc/duffy.yaml"
+DEFAULT_CONFIG_FILE = "/etc/duffy"
 
 log = logging.getLogger(__name__)
 
@@ -37,13 +37,14 @@ def init_config(ctx, param, filename):
 @click.option(
     "-c",
     "--config",
-    type=click.Path(dir_okay=False),
+    type=click.Path(),
     default=DEFAULT_CONFIG_FILE,
     callback=init_config,
     is_eager=True,
     expose_value=False,
-    help="Read option defaults from the specified YAML file.",
+    help="Read configuration from the specified YAML files or directories.",
     show_default=True,
+    metavar="FILE_OR_DIR",
 )
 @click.version_option(version=__version__, prog_name="Duffy")
 def cli():
