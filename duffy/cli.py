@@ -24,11 +24,13 @@ log = logging.getLogger(__name__)
 
 
 def init_config(ctx, param, filename):
+    ctx.ensure_object(dict)
     try:
-        read_configuration(filename)
+        read_configuration(filename, clear=ctx.obj.get("clear_config", True))
     except FileNotFoundError:
         if filename is not DEFAULT_CONFIG_FILE:
             raise
+    ctx.obj["clear_config"] = False
 
 
 @click.group(name="duffy")
