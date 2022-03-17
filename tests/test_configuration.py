@@ -1,4 +1,5 @@
 import copy
+from pathlib import Path
 
 import pytest
 
@@ -10,6 +11,23 @@ EXAMPLE_CONFIG = {"app": {"host": "127.0.0.1", "port": 8080}}
 
 @pytest.mark.duffy_config(EXAMPLE_CONFIG, clear=True)
 class TestConfiguration:
+    @pytest.mark.parametrize("objtype", (str, Path))
+    def test__expand_normalize_config_files(self, objtype, tmp_path, duffy_config_files):
+        (config_file,) = duffy_config_files
+
+        sub_file1 = tmp_path / "sub_file1.yaml"
+        sub_file1.touch()
+
+        sub_file2 = tmp_path / "sub_file2.yaml"
+        sub_file2.touch()
+
+        config_files = [config_file, tmp_path]
+        expanded_config_files = main._expand_normalize_config_files(
+            [objtype(f) for f in config_files]
+        )
+
+        assert expanded_config_files == [config_file, sub_file1, sub_file2]
+
     @pytest.mark.parametrize("clear", (True, False))
     def test_read_configuration_clear(self, clear):
         main.read_configuration(clear=clear)
