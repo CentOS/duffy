@@ -1,0 +1,19 @@
+---
+- tags:
+    - postgresql/client
+  block:
+    - name: Import distro-specific variables
+      include_vars: "{{ item }}"
+      register: included_file
+      failed_when: >-
+        included_file.ansible_included_var_files | length > 0 and not included_file.ansible_facts
+      loop:
+        - "{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.yml"
+        - "{{ ansible_distribution }}.yml"
+
+    - name: Install PostgreSQL client packages
+      package:
+        name: "{{ postgresql_client_packages | list }}"
+        state: present
+      tags:
+        - packages

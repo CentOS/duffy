@@ -1,0 +1,12 @@
+[Unit]
+After=network.target
+
+[Service]
+User=duffy
+Group=duffy
+EnvironmentFile=-/etc/sysconfig/duffy
+ExecStart={{ duffy_virtualenv }}/bin/duffy $DUFFY_OPTS worker -B --schedule-filename {{ duffy_tasks_schedule_filename }} $DUFFY_TASKS_OPTS
+
+[Install]
+WantedBy=default.target
+RequiredBy=duffy-app.service

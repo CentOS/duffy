@@ -1,0 +1,4 @@
+---
+postgresql_client_packages:
+  - postgresql
+  - libpq

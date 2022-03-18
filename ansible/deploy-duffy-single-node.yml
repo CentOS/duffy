@@ -1,0 +1,15 @@
+---
+- hosts: duffy_server
+  become: yes
+  roles:
+    - postgresql/server
+    - postgresql/client
+    - redis
+    - duffy
+
+- import_playbook: create-tenant.yml
+  tags:
+    - duffy
+  vars:
+    duffy_tenant: admin
+    # ssh_key can remain unset, it's used for contextualizing which the admin doesn't need

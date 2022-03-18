@@ -1,0 +1,6 @@
+---
+database:
+  sqlalchemy:
+    sync_url: "{{ duffy_database_sqlalchemy_sync_url }}"
+    # the DB dialect must be async-compatible
+    async_url: "{{ duffy_database_sqlalchemy_async_url }}"

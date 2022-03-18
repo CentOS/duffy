@@ -1,0 +1,15 @@
+---
+- name: Restart duffy-app.service
+  systemd:
+    name: duffy-app.service
+    state: restarted
+
+- name: Restart duffy-metaclient.service
+  systemd:
+    name: duffy-metaclient.service
+    state: restarted
+
+- name: Restart duffy-tasks.service
+  systemd:
+    name: duffy-tasks.service
+    state: restarted

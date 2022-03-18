@@ -1,0 +1,38 @@
+---
+nodepools:
+  abstract:
+    mech-ansible:
+      mechanism:
+        type: "ansible"
+        ansible:
+          topdir: "/home/duffy/src/duffy-ansible"
+          extra-vars:
+{% raw %}
+            nodepool: "{{ name }}"
+            template_name: "{{ name }}"
+{% endraw %}
+    virtual:
+      extends: "mech-ansible"
+      reuse-nodes: false
+      mechanism:
+        ansible:
+          extra-vars:
+            api_url: "http://n35.hufty.ci.centos.org:2633"
+            # api_username and api_password defined in 80_secrets.yaml
+          provision:
+            extra-vars:
+              # duffy_in.nodes gets passed in as a list
+              quantity: "{% raw %}{{ duffy_in.nodes | length }}{% endraw %}"
+            playbook: "provision.yml"
+          deprovision:
+            playbook: "deprovision.yml"
+    virtual-x86_64-tiny:
+      extends: virtual
+      fill-level: 1
+  concrete:
+    physical-centos8stream-x86_64:
+      extends: "virtual-x86_64-tiny"
+      mechanism:
+        ansible:
+          extra-vars:
+            template_name: "CentOS 8 x86_64 tiny"
