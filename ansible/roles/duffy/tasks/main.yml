@@ -1,0 +1,230 @@
+---
+- tags:
+    - duffy
+  block:
+    - name: Import distro-specific variables
+      include_vars: "{{ item }}"
+      register: included_file
+      failed_when: >-
+        included_file.ansible_included_var_files | length > 0 and not included_file.ansible_facts
+      loop:
+        - "{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.yml"
+        - "{{ ansible_distribution }}.yml"
+
+    - name: Install packages needed for Duffy
+      package:
+        name: "{{ duffy_dev_packages + duffy_python_packages | list }}"
+        state: present
+      tags:
+        - packages
+
+    - name: Create the duffy Unix user
+      user:
+        name: duffy
+        home: /home/duffy
+        system: yes
+        generate_ssh_key: yes
+        local: yes
+      register: duffy_user
+      tags:
+        - users
+
+    - tags:
+        - selinux
+      block:
+        - name: Install packages needed to build SELinux modules
+          package:
+            name:
+              - checkpolicy
+              - policycoreutils
+            state: installed
+          tags:
+            - packages
+
+        - name: Install directory for custom SELinux module
+          file:
+            path: "{{ duffy_virtualenv }}/selinux"
+            state: directory
+          tags:
+            - files
+
+        - name: Install SELinux module for Duffy to talk to Redis and PostgreSQL
+          template:
+            src: local-duffy.te.j2
+            dest: "{{ duffy_virtualenv }}/selinux/local-duffy.te"
+          register: local_duffy_te_file
+          tags:
+            - files
+
+        - name: Compile SELinux module for Duffy to talk to Redis and PostgreSQL
+          command:
+            chdir: "{{ duffy_virtualenv }}/selinux"
+            cmd: checkmodule -M -m -o local-duffy.mod local-duffy.te
+          when: local_duffy_te_file.changed
+          register: checkmodule_out
+
+        - name: Create installable SELinux module package for Duffy to talk to Redis and PostgreSQL
+          command:
+            chdir: "{{ duffy_virtualenv }}/selinux"
+            cmd: semodule_package -o local-duffy.pp -m local-duffy.mod
+          when: checkmodule_out.changed
+          register: semodule_package_out
+
+        - name: Install SELinux module package for Duffy to talk to Redis and PostgreSQL
+          command:
+            chdir: "{{ duffy_virtualenv }}/selinux"
+            cmd: semodule -i local-duffy.pp
+          when: semodule_package_out.changed
+
+        - name: Ensure files in virtualenv are executable by systemd
+          sefcontext:
+            target: "{{ duffy_virtualenv }}(/.*)?"
+            setype: "lib_t"
+          tags:
+            - files
+
+        - name: Relabel existing files in virtualenv
+          command: "restorecon -irv {{ duffy_virtualenv }}"
+          tags:
+            - files
+          register: relabel_out
+          changed_when: relabel_out.stdout | length
+          when:
+            - ansible_selinux.status is defined
+            - ansible_selinux.status == "enabled"
+
+        - name: Ensure Duffy processes can mmap files and connect to tcp sockets
+          seboolean:
+            name: "{{ item }}"
+            persistent: yes
+            state: true
+          loop:
+            - domain_can_mmap_files
+            - nis_enabled
+          when:
+            - ansible_selinux.status is defined
+            - ansible_selinux.status == "enabled"
+
+    - name: Install Duffy Python package
+      pip:
+        name: "duffy[tasks,postgresql,interactive,legacy,opennebula]"
+        version: ">=3.0.0a3"
+        virtualenv: "{{ duffy_virtualenv }}"
+        virtualenv_command: "{{ duffy_python_executable }} -m venv"
+        virtualenv_python: "{{ duffy_python_executable }}"
+      tags:
+        - packages
+
+    - become_user: duffy
+      tags:
+        - files
+      block:
+        - name: "Install ~/bin directory for the Duffy user"
+          file:
+            path: "/home/duffy/bin"
+            state: directory
+            mode: u=rwx,go=rx
+
+        - name: Install the duffy command wrapper for the Duffy user
+          template:
+            src: "duffy.sh.j2"
+            dest: "/home/duffy/bin/duffy"
+            owner: duffy
+            group: duffy
+            follow: no
+            mode: u=rwx,go=rx
+
+    - become_user: postgres
+      tags:
+        - database
+      block:
+        - name: Create the duffy PostgreSQL user
+          command: createuser duffy
+          register: createuser_out
+          changed_when: not createuser_out.failed
+          failed_when: createuser_out.failed and "already exists" not in createuser_out.stderr
+
+        - name: Create the duffy database
+          command: createdb duffy -O duffy
+          register: createdb_out
+          changed_when: not createdb_out.failed
+          failed_when: createdb_out.failed and "already exists" not in createdb_out.stderr
+
+    - name: Create Duffy configuration directory
+      file:
+        path: /etc/duffy
+        state: directory
+      tags:
+        - files
+
+    - name: Create Duffy tasks schedule directory
+      file:
+        path: "{{ duffy_tasks_schedule_filename | dirname }}"
+        state: directory
+        owner: duffy
+        group: duffy
+      tags:
+        - files
+
+    - name: Install Duffy configuration files
+      template:
+        src: "config/{{ item }}.yaml.j2"
+        dest: "/etc/duffy/{{ item }}.yaml"
+        owner: root
+        group: duffy
+        mode: "u=rw,g=r,o={{ ('secret' in item) | ternary('', 'r') }}"
+      loop: "{{ duffy_config_files }}"
+      tags:
+        - config
+        - files
+
+    - name: Set up Duffy database schema
+      become_user: duffy
+      command: duffy setup-db
+      register: duffy_setup_db_out
+      changed_when: not duffy_setup_db_out.failed
+      failed_when: >-
+        duffy_setup_db_out.failed
+        and "Refusing to change database schema" not in duffy_setup_db_out.stderr
+      environment:
+        PATH: "/home/duffy/bin:{{ ansible_env.PATH }}"
+      tags:
+        - database
+
+    - tags:
+      - services
+      block:
+        - name: Install Duffy systemd services
+          template:
+            src: "systemd/{{ item }}.j2"
+            dest: "/etc/systemd/system/{{ item }}"
+          notify:
+            - "Restart {{ item }}"
+          register: install_systemd_services
+          loop:
+            - duffy-app.service
+            - duffy-metaclient.service
+            - duffy-tasks.service
+
+        - name: Install shared systemd environment file
+          template:
+            src: systemd/duffy.sysconfig.j2
+            dest: /etc/sysconfig/duffy
+          notify:
+            - Restart duffy-app.service
+            - Restart duffy-metaclient.service
+            - Restart duffy-tasks.service
+
+        - name: Let systemd know about new units
+          systemd:
+            daemon_reload: yes
+          when: install_systemd_services.changed
+
+        - name: Enable Duffy systemd services
+          systemd:
+            name: "{{ item }}"
+            enabled: yes
+          loop:
+            - duffy-app.service
+            - duffy-metaclient.service
+            - duffy-tasks.service

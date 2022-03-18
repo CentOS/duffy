@@ -1,0 +1,13 @@
+---
+tasks:
+  celery:
+    broker_url: "{{ duffy_tasks_celery_broker_url }}"
+    result_backend: "{{ duffy_tasks_celery_result_backend }}"
+    worker_redirect_stdouts_level: "{{ duffy_tasks_celery_worker_redirect_stdouts_level }}"
+  locking:
+    url: "{{ duffy_tasks_locking_url }}"
+  periodic:
+    fill-pools:
+      interval: {{ duffy_tasks_fill_pools_interval }}
+    expire-sessions:
+      interval: {{ duffy_tasks_expire_sessions_interval }}

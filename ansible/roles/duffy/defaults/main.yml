@@ -1,0 +1,40 @@
+---
+duffy_python_executable: python3
+duffy_python_packages:
+  - python3
+  - python3-devel
+  - python3-pip
+  - python3-setuptools
+duffy_dev_packages:
+  - gcc
+  - libpq-devel
+duffy_virtualenv: /srv/duffy
+duffy_tasks_schedule_filename: /var/lib/duffy/celerybeat-schedule
+duffy_config_files:
+  - 10_app
+  - 20_metaclient
+  - 30_logging
+  - 40_tasks
+  - 50_database
+  - 60_misc
+  - 70_nodepools
+  - 80_secrets
+duffy_app_loglevel: "info"
+duffy_app_host: "127.0.0.1"
+duffy_app_port: 8080
+duffy_metaclient_loglevel: "info"
+duffy_metaclient_host: "127.0.0.1"
+duffy_metaclient_port: 9090
+duffy_metaclient_dest: "http://127.0.0.1:8080"
+# Map API keys to usernames in the legacy API meta client
+duffy_metaclient_usermap: {}
+duffy_tasks_celery_broker_url: "redis://localhost:6379"
+duffy_tasks_celery_result_backend: "redis://localhost:6379"
+duffy_tasks_celery_worker_redirect_stdouts_level: "INFO"
+duffy_tasks_locking_url: "redis://localhost:6379"
+duffy_tasks_fill_pools_interval: 300
+duffy_tasks_expire_sessions_interval: 300
+duffy_database_sqlalchemy_sync_url: "postgresql:///duffy"
+duffy_database_sqlalchemy_async_url: "postgresql+asyncpg:///duffy"
+duffy_session_lifetime: "6h"
+duffy_session_lifetime_max: "12h"

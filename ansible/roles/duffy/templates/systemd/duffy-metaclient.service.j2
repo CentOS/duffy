@@ -1,0 +1,12 @@
+[Unit]
+After=network.target
+Requires=duffy-app.service
+
+[Service]
+User=duffy
+Group=duffy
+EnvironmentFile=-/etc/sysconfig/duffy
+ExecStart={{ duffy_virtualenv }}/bin/duffy $DUFFY_OPTS serve-legacy $DUFFY_METACLIENT_OPTS
+
+[Install]
+WantedBy=default.target
