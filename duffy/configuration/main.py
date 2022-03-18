@@ -24,16 +24,19 @@ def _expand_normalize_config_files(config_files: List[Union[Path, str]]) -> List
     return config_file_paths
 
 
-def read_configuration(*config_files: List[Union[Path, str]], clear: bool = True):
+def read_configuration(
+    *config_files: List[Union[Path, str]], clear: bool = True, validate: bool = True
+):
     config_files = _expand_normalize_config_files(config_files)
     new_config = {}
     for config_file in config_files:
         with config_file.open("r") as fp:
             for config_doc in yaml.safe_load_all(fp):
-                # validate configuration file
-                ConfigModel(**config_doc)
-
                 new_config = merge_dicts(new_config, config_doc)
+
+    if validate:
+        # validate merged configuration
+        ConfigModel(**new_config)
 
     if clear:
         config.clear()
