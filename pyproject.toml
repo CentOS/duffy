@@ -37,13 +37,14 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.8"
 fastapi = "^0.70.0"
-SQLAlchemy = "^1.4.25"
+SQLAlchemy = {version = "^1.4.25", extras=["asyncio"]}
 click = "^8.0.3"
 uvicorn = "^0.15.0"
 PyYAML = "^6.0"
 alembic = "^1.7.5"
 ipython = {version = "^7.29.0", optional = true}
 psycopg2 = {version = "^2.9.2", optional = true}
+asyncpg = {version = "^0.25.0", optional = true}
 celery = {version = "^5.2.1", extras = ["redis"]}
 httpx = {version = "^0.18.2", optional = true}
 bcrypt = "^3.2.0"
@@ -76,7 +77,7 @@ pottery = "^3.0.0"
 
 [tool.poetry.extras]
 interactive = ["ipython"]
-postgresql = ["psycopg2"]
+postgresql = ["psycopg2", "asyncpg"]
 tasks = ["ansible-runner", "ansible-core", "ansible", "Jinja2", "jmespath", "pottery"]
 legacy = ["httpx"]
 
