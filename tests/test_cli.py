@@ -1,4 +1,5 @@
 import copy
+from tempfile import TemporaryDirectory
 from unittest import mock
 
 import click
@@ -6,15 +7,66 @@ import pytest
 import yaml
 from click.testing import CliRunner
 
+import duffy.cli
 from duffy.cli import cli
 from duffy.configuration import config
 from duffy.exceptions import DuffyConfigurationError
 from duffy.version import __version__
 
+from .util import noop_context
+
 
 @pytest.fixture
 def runner():
     return CliRunner()
+
+
+@pytest.fixture(autouse=True, scope="module")
+def dont_read_etc_duffy():
+    # Modify the default value for `--config`. For that, find the right parameter object on the
+    # (click-wrapped) cli() function, then mock its default below.
+    for param in cli.params:
+        if param.name == "config":
+            break
+    else:  # Oops, didn't find right param object. This shouldn't happen!
+        raise RuntimeError("Can't find right parameter object for `--config`.")
+
+    with TemporaryDirectory(prefix="dont_read_etc_duffy-") as tmpdir, mock.patch(
+        "duffy.cli.DEFAULT_CONFIG_FILE", new=tmpdir
+    ), mock.patch.object(param, "default", new=tmpdir):
+        yield
+
+
+@pytest.mark.parametrize(
+    "testcase", ("default", "default-not-found", "other-not-found", "default-plus-one")
+)
+@mock.patch("duffy.cli.read_configuration")
+def test_init_config(read_configuration, testcase):
+    if "not-found" in testcase:
+        read_configuration.side_effect = FileNotFoundError()
+
+    if "default" in testcase:
+        expectation = noop_context()
+        filename = duffy.cli.DEFAULT_CONFIG_FILE
+    else:
+        expectation = pytest.raises(FileNotFoundError)
+        filename = "boop"
+
+    ctx = mock.MagicMock()
+    ctx.obj = {}
+    param = mock.MagicMock()
+
+    with expectation:
+        duffy.cli.init_config(ctx, param, filename)
+
+    read_configuration.assert_called_once_with(filename, clear=True, validate=False)
+
+    if "plus-one" in testcase:
+        read_configuration.reset_mock(return_value=True, side_effect=True)
+
+        duffy.cli.init_config(ctx, param, "foo")
+
+        read_configuration.assert_called_once_with("foo", clear=False, validate=False)
 
 
 def test_cli_version(runner):
@@ -54,18 +106,7 @@ def test_config_check(config_empty, duffy_config_files, runner, tmp_path):
         with config_file.open("w") as fp:
             yaml.dump({}, fp)
 
-    # Modify the default value for `--config`. For that, find the right parameter object on the
-    # (click-wrapped) cli() function, then mock its default below.
-    for param in cli.params:
-        if param.name == "config":
-            break
-    else:  # Oops, didn't find right param object. This shouldn't happen!
-        raise RuntimeError("Can't find right parameter object for `--config`.")
-
-    with mock.patch("duffy.cli.DEFAULT_CONFIG_FILE", new=config_file), mock.patch.object(
-        param, "default", new=config_file
-    ):
-        result = runner.invoke(cli, ["config", "check"])
+    result = runner.invoke(cli, ["--config", str(config_file), "config", "check"])
 
     if config_empty:
         assert result.exit_code == 0

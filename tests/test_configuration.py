@@ -2,6 +2,7 @@ import copy
 from pathlib import Path
 
 import pytest
+import yaml
 
 from duffy.configuration import main
 from duffy.util import merge_dicts
@@ -51,3 +52,17 @@ class TestConfiguration:
     def test_read_configuration_multiple_override(self, duffy_config_files):
         assert len(duffy_config_files) > 1
         assert main.config == merge_dicts(EXAMPLE_CONFIG, {"app": {"host": "host.example.net"}})
+
+    @pytest.mark.duffy_config({"app": {}})
+    def test_read_configuration_partial(self, duffy_config_files, tmp_path):
+        assert main.config == EXAMPLE_CONFIG
+
+    @pytest.mark.duffy_config(example_config=True, clear=True)
+    def test_read_configuration_partial_validate_post(self, duffy_config_files, tmp_path):
+        partial_config_file = tmp_path / "partial-config.yaml"
+        with partial_config_file.open("w") as fp:
+            yaml.dump({"metaclient": {}}, fp)
+
+        main.read_configuration(partial_config_file, clear=True, validate=False)
+        main.read_configuration(*duffy_config_files, clear=False, validate=False)
+        main.read_configuration(clear=False, validate=True)

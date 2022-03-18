@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 def init_config(ctx, param, filename):
     ctx.ensure_object(dict)
     try:
-        read_configuration(filename, clear=ctx.obj.get("clear_config", True))
+        read_configuration(filename, clear=ctx.obj.get("clear_config", True), validate=False)
     except FileNotFoundError:
         if filename is not DEFAULT_CONFIG_FILE:
             raise
@@ -48,7 +48,7 @@ def init_config(ctx, param, filename):
 )
 @click.version_option(version=__version__, prog_name="Duffy")
 def cli():
-    pass
+    read_configuration(clear=False, validate=True)
 
 
 # Check & dump configuration
