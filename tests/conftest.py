@@ -55,7 +55,7 @@ def duffy_config_files(
     # Consult markers about desired configuration files and their contents.
 
     # request.node.iter_markers() lists markers of parent objects later, we need them early to make
-    # e.g. markers on the method override those of the class.
+    # e.g. markers on the method override those on the class.
     for node in request.node.listchain():
         for marker in node.own_markers:
             if marker.name == "duffy_config":
