@@ -136,7 +136,7 @@ class TestMain:
         return apiv1_client, apiv1_response
 
     @mock.patch("duffy.legacy.main.httpx.AsyncClient")
-    async def test_get_node_physical_auth(self, AsyncClient, client):
+    async def test_request_nodes_physical_auth(self, AsyncClient, client):
         apiv1_client, apiv1_response = self._setup_async_client(AsyncClient, "post")
 
         key = TEST_CRED.password
@@ -154,7 +154,7 @@ class TestMain:
 
     @pytest.mark.parametrize("flavour_testcase", ("default", "provided"))
     @mock.patch("duffy.legacy.main.httpx.AsyncClient")
-    async def test_get_node_virtual_auth(self, AsyncClient, flavour_testcase, client):
+    async def test_request_nodes_virtual_auth(self, AsyncClient, flavour_testcase, client):
         apiv1_client, apiv1_response = self._setup_async_client(AsyncClient, "post")
 
         key = TEST_CRED.password
@@ -185,7 +185,7 @@ class TestMain:
         ),
     )
     @mock.patch("duffy.legacy.main.httpx.AsyncClient")
-    async def test_get_node(self, AsyncClient, testcase, client):
+    async def test_request_nodes(self, AsyncClient, testcase, client):
         AsyncClient.return_value = ctxmgr = mock.MagicMock()
         ctxmgr.__aenter__.return_value = apiv1_client = mock.AsyncMock()
 
@@ -279,7 +279,7 @@ class TestMain:
         ),
     )
     @mock.patch("duffy.legacy.main.httpx.AsyncClient")
-    async def test_return_node_on_completion(self, AsyncClient, testcase, client):
+    async def test_return_nodes_on_completion(self, AsyncClient, testcase, client):
         apiv1_client, apiv1_response = self._setup_async_client(AsyncClient, "put")
 
         key = TEST_CRED.password
@@ -322,7 +322,7 @@ class TestMain:
         ("successfully-extended", "incorrect-auth", "ssid-absent", "unauthenticated", "failure"),
     )
     @mock.patch("duffy.legacy.main.httpx.AsyncClient")
-    async def test_return_node_on_failure(self, AsyncClient, testcase, client):
+    async def test_extend_nodes_on_failure(self, AsyncClient, testcase, client):
         AsyncClient.return_value = ctxmgr = mock.MagicMock()
         ctxmgr.__aenter__.return_value = apiv1_client = mock.AsyncMock()
 

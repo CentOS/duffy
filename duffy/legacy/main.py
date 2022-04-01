@@ -33,7 +33,7 @@ app = FastAPI(
 
 
 @app.get("/Node/get")
-async def get_node(
+async def request_nodes(
     ver: str = "7",
     arch: str = "x86_64",
     count: int = 1,
@@ -68,7 +68,9 @@ async def get_node(
 
 
 @app.get("/Node/done")
-async def return_node_on_completion(ssid: str = None, cred: Credentials = Depends(req_credentials)):
+async def return_nodes_on_completion(
+    ssid: str = None, cred: Credentials = Depends(req_credentials)
+):
     if ssid:
         async with httpx.AsyncClient() as client:
             dest = config["metaclient"]["dest"].rstrip("/")
@@ -95,7 +97,7 @@ async def return_node_on_completion(ssid: str = None, cred: Credentials = Depend
 
 
 @app.get("/Node/fail")
-async def return_node_on_failure(ssid: str = None, cred: Credentials = Depends(req_credentials)):
+async def extend_nodes_on_failure(ssid: str = None, cred: Credentials = Depends(req_credentials)):
     if ssid:
         async with httpx.AsyncClient() as client:
             dest = config["metaclient"]["dest"].rstrip("/")
