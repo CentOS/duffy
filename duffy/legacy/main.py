@@ -129,13 +129,12 @@ async def get_nodes(cred: Optional[Credentials] = Depends(req_credentials_option
             dest = config["metaclient"]["dest"].rstrip("/")
             response = await client.get(f"{dest}/api/v1/sessions", auth=auth)
         if response.status_code == HTTP_200_OK:
-            retnlist = []
-            sesslist = response.json()["sessions"]
-            for jndx in sesslist:
-                nodelist = jndx["nodes"]
-                for indx in nodelist:
-                    retnlist.append([indx.get("hostname"), jndx.get("id")])
-            return JSONResponse(status_code=HTTP_200_OK, content=retnlist)
+            retvals = [
+                [session_node.get("hostname"), session.get("id")]
+                for session in response.json()["sessions"]
+                for session_node in session["nodes"]
+            ]
+            return JSONResponse(status_code=HTTP_200_OK, content=retvals)
         elif (
             response.status_code == HTTP_401_UNAUTHORIZED
             or response.status_code == HTTP_403_FORBIDDEN
@@ -154,30 +153,28 @@ async def get_nodes(cred: Optional[Credentials] = Depends(req_credentials_option
             dest = config["metaclient"]["dest"].rstrip("/")
             response = await client.get(f"{dest}/api/v1/sessions", auth=auth)
         if response.status_code == HTTP_200_OK:
-            retnlist = []
-            sesslist = response.json()["sessions"]
-            for jndx in sesslist:
-                nodelist = jndx["nodes"]
-                for indx in nodelist:
-                    retnlist.append(
-                        [
-                            indx.get("id"),  # sch.data['id']
-                            indx.get("hostname"),  # sch.data['hostname']
-                            indx.get("ipaddr"),  # sch.data['ip']
-                            indx.get("type"),  # sch.data['chassis']
-                            0,  # sch.data['used_count']
-                            indx.get("state"),  # sch.data['state']
-                            indx.get("comment"),  # sch.data['comment']
-                            indx.get("distro_type"),  # sch.data['distro']
-                            indx.get("distro_version"),  # sch.data['rel']
-                            indx.get("distro_version"),  # sch.data['ver']
-                            indx.get("arch"),  # sch.data['arch']
-                            indx.get("pool"),  # sch.data['pool']
-                            indx.get("console_port"),  # sch.data['console_port']
-                            indx.get("flavour"),  # sch.data['flavor']
-                        ]
-                    )
-            return JSONResponse(status_code=HTTP_200_OK, content=retnlist)
+            retvals = [
+                [
+                    session_node.get("id"),  # sch.data['id']
+                    session_node.get("hostname"),  # sch.data['hostname']
+                    session_node.get("ipaddr"),  # sch.data['ip']
+                    None,  # sch.data['chassis']
+                    0,  # sch.data['used_count']
+                    session_node.get("state"),  # sch.data['state']
+                    # Yes, 'comment' contains the session id. Don't ask.
+                    session.get("id"),  # sch.data['comment']
+                    None,  # sch.data['distro']
+                    None,  # sch.data['rel']
+                    None,  # sch.data['ver']
+                    None,  # sch.data['arch']
+                    session_node.get("pool"),  # sch.data['pool']
+                    None,  # sch.data['console_port']
+                    None,  # sch.data['flavor']
+                ]
+                for session in response.json()["sessions"]
+                for session_node in session["nodes"]
+            ]
+            return JSONResponse(status_code=HTTP_200_OK, content=retvals)
         else:
             # Yes, the legacy API returns 200 here.
             return JSONResponse(

@@ -411,6 +411,7 @@ class TestMain:
                 "action": "get",
                 "sessions": [
                     {
+                        "id": 15,
                         "nodes": [
                             {"id": 1, "hostname": "boo", "ipaddr": "192.168.0.1"},
                             {"id": 2, "hostname": "bah", "ipaddr": "192.168.0.2"},
@@ -430,6 +431,8 @@ class TestMain:
                 self.noderesult_to_dict(node, long_form)["hostname"] in ("boo", "bah")
                 for node in result
             )
+            if long_form:
+                assert all(self.noderesult_to_dict(node, True)["comment"] == 15 for node in result)
         elif "incorrect-auth" in testcase:
             assert response.status_code == HTTP_403_FORBIDDEN
         elif "incorrect-query" in testcase or "apiv1-failure" in testcase:
