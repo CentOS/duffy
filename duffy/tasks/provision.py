@@ -33,7 +33,7 @@ def fill_single_pool(pool_name: str):
     # needed to fill it up to spec. If this was done concurrently for the same pool, both tasks
     # would allocate the same number of new nodes, overfilling the pool.
     with Lock(
-        key=f"duffy:fill-single-pool:{pool_name}",
+        key="duffy:fill-single-pool:allocate-nodes-in-db"
     ), sync_session_maker() as db_sync_session, db_sync_session.begin():
         log.debug("[%s] Determining number of available nodes ...", pool.name)
         current_fill_level = db_sync_session.execute(
