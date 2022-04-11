@@ -7,7 +7,7 @@ import click
 import uvicorn
 import yaml
 
-from . import database, shell
+from . import admin, database, shell
 from .configuration import config, read_configuration
 from .database.migrations.main import alembic_migration
 from .database.setup import setup_db_schema, setup_db_test_data
@@ -311,3 +311,69 @@ def serve_legacy(ctx, reload, host, port, dest, loglevel):
         reload=reload,
         log_config=uvicorn_log_config,
     )
+
+
+# Commands for administrative tasks
+
+
+class FakeAPITenant:
+    is_admin = True
+
+
+@cli.group()
+def tenant():
+    """Administrate Duffy tenants."""
+    pass
+
+
+@tenant.command("create")
+@click.option(
+    "--is-admin/--no-is-admin",
+    default=False,
+    help="If the tenant should have administrative rights",
+)
+@click.argument("name")
+@click.argument("ssh_key")
+def tenant_create(name: str, ssh_key: str, is_admin: bool = False):
+    """Create a new tenant."""
+    admin_ctx = admin.AdminContext.create_for_cli()
+    result = admin_ctx.create_tenant(name, ssh_key, is_admin)
+    if "error" in result:
+        click.echo(f"ERROR: {name}\nERROR DETAIL: {result['error']['detail']}", err=True)
+        sys.exit(1)
+    else:
+        click.echo(f"OK: {name}: {result['tenant'].api_key}")
+
+
+@tenant.command("retire")
+@click.option("--retire/--unretire", default=True, help="Whether to retire or unretire a tenant.")
+@click.argument("name")
+def tenant_retire(name: str, retire: bool = True):
+    """Retire or unretire a tenant."""
+    admin_ctx = admin.AdminContext.create_for_cli()
+    result = admin_ctx.retire_unretire_tenant(name, retire=retire)
+    if "error" in result:
+        click.echo(f"ERROR: {name}\nERROR DETAIL: {result['error']['detail']}", err=True)
+        sys.exit(1)
+    else:
+        click.echo(f"OK: {name}: active={result['tenant'].active}")
+
+
+@tenant.command("update")
+@click.option("--ssh-key", help="New SSH key for the tenant.")
+@click.option(
+    "--api-key", help="Either a new API key (UUID) for the tenant or 'reset' to set automatically."
+)
+@click.argument("name")
+def tenant_update(name: str, ssh_key: str = None, api_key: str = None):
+    """Update a tenant."""
+    admin_ctx = admin.AdminContext.create_for_cli()
+    result = admin_ctx.update_tenant(name, ssh_key=ssh_key, api_key=api_key)
+    if "error" in result:
+        click.echo(f"ERROR: {name}\nERROR DETAIL: {result['error']['detail']}", err=True)
+        sys.exit(1)
+    else:
+        click.echo(
+            f"OK: {name}: ssh_key={result['tenant'].ssh_key!r}"
+            + f"api_key={result['tenant'].api_key!r}"
+        )

@@ -2,9 +2,15 @@ import uuid
 
 import pytest
 from sqlalchemy import select
-from starlette.status import HTTP_201_CREATED, HTTP_403_FORBIDDEN
+from starlette.status import (
+    HTTP_200_OK,
+    HTTP_201_CREATED,
+    HTTP_403_FORBIDDEN,
+    HTTP_404_NOT_FOUND,
+    HTTP_422_UNPROCESSABLE_ENTITY,
+)
 
-from duffy.database.model import Tenant
+from duffy.database.model import Session, Tenant
 from duffy.database.setup import _gen_test_api_key
 
 from . import BaseTestController
@@ -16,7 +22,7 @@ class TestTenant(BaseTestController):
     path = "/api/v1/tenants"
     attrs = {
         "name": "Some Honky Tenant!",
-        "ssh_key": "With a honky SSH key!",
+        "ssh_key": "# With a honky SSH key!",
     }
     no_verify_attrs = ("ssh_key",)
     unique = "unique"
@@ -59,3 +65,71 @@ class TestTenant(BaseTestController):
         response = await client.get(self.path)
         result = response.json()
         assert all(tenant["id"] == auth_tenant.id for tenant in result["tenants"])
+
+    @pytest.mark.parametrize(
+        "testcase",
+        (
+            "success-retire",
+            "success-unretire",
+            "success-update-ssh-key",
+            "success-reset-api-key",
+            "inactive",
+            "not found",
+            pytest.param("not admin", marks=pytest.mark.client_auth_as("tenant")),
+        ),
+    )
+    async def test_update_tenant(self, testcase, client, auth_admin, db_async_session):
+        if testcase != "not found":
+            create_response = await self._create_obj(
+                client,
+                client_kwargs={"auth": (auth_admin.name, str(_gen_test_api_key(auth_admin.name)))},
+            )
+            obj_id = create_response.json()["tenant"]["id"]
+            tenant = (
+                await db_async_session.execute(select(Tenant).filter_by(id=obj_id))
+            ).scalar_one()
+            if "inactive" in testcase or "unretire" in testcase:
+                tenant.active = False
+            tenant_session = Session(tenant_id=obj_id)
+            db_async_session.add(tenant_session)
+            await db_async_session.commit()
+        else:
+            obj_id = -1
+
+        if "success" in testcase:
+            if "retire" in testcase:
+                json_payload = {"active": "unretire" in testcase}
+            elif "update-ssh-key" in testcase:
+                json_payload = {"ssh_key": "# changed SSH key"}
+            elif "update-api-key" in testcase:
+                api_key = str(uuid.uuid4())
+                json_payload = {"api_key": api_key}
+            else:  # "reset-api-key" in testcase
+                json_payload = {"api_key": "reset"}
+        else:
+            # ensure the request body validates
+            if "inactive" in testcase:
+                json_payload = {"ssh_key": "this shouldn't get through"}
+            else:
+                json_payload = {"active": "inactive" not in testcase}
+
+        response = await client.put(f"{self.path}/{obj_id}", json=json_payload)
+        result = response.json()
+
+        if "success" in testcase:
+            assert response.status_code == HTTP_200_OK
+            if "retire" in testcase:
+                assert result["tenant"]["active"] == ("unretire" in testcase)
+            elif "ssh-key" in testcase:
+                # The SSH key is masked out in the result, just check its presence
+                assert result["tenant"]["ssh_key"]
+            elif "reset-api-key" in testcase:
+                assert uuid.UUID(result["tenant"]["api_key"])
+            else:
+                assert result["tenant"]["api_key"]
+        elif testcase == "not admin":
+            assert response.status_code == HTTP_403_FORBIDDEN
+        elif testcase == "inactive":
+            assert response.status_code == HTTP_422_UNPROCESSABLE_ENTITY
+        else:  # not found
+            assert response.status_code == HTTP_404_NOT_FOUND
