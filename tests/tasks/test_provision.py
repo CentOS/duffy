@@ -26,6 +26,7 @@ PLAYBOOK_PATH = HERE / "playbooks"
         "fresh-nodes-invalid-results",
         "fresh-nodes-real-playbook",
         "reuse-nodes",
+        "reuse-nodes-no-reusable",
         "reuse-nodes-fewer-provisions",
         "reuse-nodes-broken-spec",
         "reuse-nodes-mechanism-failure",
@@ -54,8 +55,11 @@ def test_fill_single_pool(Lock, testcase, db_sync_session, test_mechanism, caplo
                 else:
                     foo_value = "this is not a bar"
 
-                if idx % 3 - 2:
-                    reusable = True
+                if "no-reusable" not in testcase:
+                    if idx % 3 - 2:
+                        reusable = True
+                    else:
+                        reusable = False
                 else:
                     reusable = False
 
@@ -136,6 +140,8 @@ def test_fill_single_pool(Lock, testcase, db_sync_session, test_mechanism, caplo
         elif not real_playbook:
             if "fewer-provisions" in testcase:
                 prov_count = 2
+            elif "no-provisions" in testcase:
+                prov_count = 0
             pool_provision.return_value = provision_result = {
                 "nodes": [
                     {
@@ -152,6 +158,9 @@ def test_fill_single_pool(Lock, testcase, db_sync_session, test_mechanism, caplo
                 provision_result["nodes"].insert(1, invalid_node_result)
 
         provision.fill_single_pool(pool_name)
+
+        if "no-provisions" in testcase:
+            pool_provision.assert_not_called()
 
     if testcase == "unknown-pool":
         assert not caplog.messages
@@ -189,6 +198,10 @@ def test_fill_single_pool(Lock, testcase, db_sync_session, test_mechanism, caplo
             pool_provision.assert_not_called()
             pool_mech_provision.assert_not_called()
             assert "[foo] Pool is filled to or above spec." in caplog.messages
+        elif "no-reusable" in testcase:
+            pool_provision.assert_not_called()
+            pool_mech_provision.assert_not_called()
+            assert "[foo] No sense continuing, bailing out." in caplog.messages
         else:
             assert "COMMIT" in caplog.messages
 
@@ -207,7 +220,9 @@ def test_fill_single_pool(Lock, testcase, db_sync_session, test_mechanism, caplo
             args, kwargs = pool_provision.call_args
             (nodes_in_call,) = args
             assert len(kwargs) == 0
-            if "fewer-provisions" in testcase:
+            if "no-provisions" in testcase:
+                assert not node_ids
+            elif "fewer-provisions" in testcase:
                 assert {node.id for node in nodes_in_call} > node_ids
             else:
                 assert {node.id for node in nodes_in_call} == node_ids

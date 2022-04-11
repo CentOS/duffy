@@ -91,7 +91,10 @@ def fill_single_pool(pool_name: str):
             usable_nodes_query = usable_nodes_query.limit(quantity)
             log.debug("Usable nodes query: %s", usable_nodes_query)
             nodes = db_sync_session.execute(usable_nodes_query).scalars().all()
-            log.info("Found %d suitable unused nodes.", len(nodes))
+            log.info("Found %d suitable unused node(s).", len(nodes))
+            if len(nodes) < 1:
+                log.warning("[%s] No sense continuing, bailing out.", pool.name)
+                return
         else:
             log.debug("[%s] Allocating %d new node objects in database", pool.name, quantity)
             nodes = [Node() for i in range(quantity)]
