@@ -1,4 +1,5 @@
 import copy
+import logging
 from tempfile import TemporaryDirectory
 from unittest import mock
 
@@ -305,3 +306,112 @@ def test_serve_legacy(uvicorn_run, testcase, runner, duffy_config_files, tmp_pat
     result = runner.invoke(cli, parameters)
     assert result.exit_code == 0
     uvicorn_run.assert_called_once()
+
+
+@pytest.mark.duffy_config(example_config=True)
+@mock.patch.object(duffy.cli.admin.AdminContext, "create_for_cli")
+class TestAdminCLI:
+    @pytest.mark.parametrize("testcase", ("success", "failure"))
+    def test_tenant_create(self, create_for_cli, testcase, runner, duffy_config_files, caplog):
+        caplog.set_level(logging.DEBUG)
+        (config_file,) = duffy_config_files
+
+        create_for_cli.return_value = admin_ctx = mock.MagicMock()
+
+        if testcase == "failure":
+            admin_ctx.create_tenant.return_value = {"error": {"detail": "FOO"}}
+        else:
+            result_tenant = mock.MagicMock()
+            result_tenant.api_key = "APIKEY"
+            admin_ctx.create_tenant.return_value = {"tenant": result_tenant}
+
+        parameters = (
+            f"--config={config_file.absolute()}",
+            "tenant",
+            "create",
+            "tenant-name",
+            "# no SSH key",
+        )
+
+        result = runner.invoke(cli, parameters)
+
+        if testcase == "success":
+            assert result.exit_code == 0
+            assert result.stdout.startswith("OK: tenant-name:")
+        else:
+            assert result.exit_code == 1
+            assert result.stdout.strip() == "ERROR: tenant-name\nERROR DETAIL: FOO"
+
+    @pytest.mark.parametrize("testcase", ("retire", "unretire", "failure"))
+    def test_tenant_retire_unretire(
+        self, create_for_cli, testcase, runner, duffy_config_files, caplog
+    ):
+        caplog.set_level(logging.DEBUG)
+        (config_file,) = duffy_config_files
+
+        retire = "unretire" not in testcase
+        success = "failure" not in testcase
+
+        create_for_cli.return_value = admin_ctx = mock.MagicMock()
+
+        if success:
+            result_tenant = mock.MagicMock()
+            result_tenant.active = not retire
+            admin_ctx.retire_unretire_tenant.return_value = {"tenant": result_tenant}
+        else:
+            admin_ctx.retire_unretire_tenant.return_value = {"error": {"detail": "BAR"}}
+
+        parameters = (
+            f"--config={config_file.absolute()}",
+            "tenant",
+            "retire",
+            "tenant-name",
+            "--retire" if retire else "--unretire",
+        )
+
+        result = runner.invoke(cli, parameters)
+
+        if success:
+            assert result.exit_code == 0
+            assert result.stdout.startswith("OK: tenant-name:")
+        else:
+            assert result.exit_code == 1
+            assert result.stdout.strip() == "ERROR: tenant-name\nERROR DETAIL: BAR"
+
+    @pytest.mark.parametrize("testcase", ("success", "failure"))
+    def test_tenant_update(self, create_for_cli, testcase, runner, duffy_config_files, caplog):
+        caplog.set_level(logging.DEBUG)
+        (config_file,) = duffy_config_files
+
+        new_ssh_key = "# new ssh key"
+        new_api_key = "# new API key"
+
+        create_for_cli.return_value = admin_ctx = mock.MagicMock()
+
+        if testcase == "failure":
+            admin_ctx.update_tenant.return_value = {"error": {"detail": "BLOOP"}}
+        else:
+            result_tenant = mock.MagicMock()
+            result_tenant.ssh_key = new_ssh_key
+            result_tenant.api_key = new_api_key
+            admin_ctx.update_tenant.return_value = {"tenant": result_tenant}
+
+        parameters = (
+            f"--config={config_file.absolute()}",
+            "tenant",
+            "update",
+            "tenant-name",
+            "--ssh-key",
+            new_ssh_key,
+            "--api-key",
+            new_api_key,
+        )
+
+        result = runner.invoke(cli, parameters)
+
+        if testcase == "success":
+            assert result.exit_code == 0
+            assert result.stdout.startswith("OK: tenant-name:")
+        else:
+            assert result.exit_code == 1
+            assert result.stdout.strip() == "ERROR: tenant-name\nERROR DETAIL: BLOOP"

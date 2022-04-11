@@ -15,4 +15,8 @@ from .tenant import (  # noqa: F401
     TenantModel,
     TenantResult,
     TenantResultCollection,
+    TenantRetireModel,
+    TenantUpdateModel,
+    TenantUpdateResult,
+    TenantUpdateResultModel,
 )

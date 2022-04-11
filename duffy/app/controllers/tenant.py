@@ -1,8 +1,11 @@
 """This is the tenant controller."""
 
+import datetime as dt
+from typing import Union
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import SecretStr
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +14,7 @@ from starlette.status import (
     HTTP_403_FORBIDDEN,
     HTTP_404_NOT_FOUND,
     HTTP_409_CONFLICT,
+    HTTP_422_UNPROCESSABLE_ENTITY,
 )
 
 from ...api_models import (
@@ -20,8 +24,12 @@ from ...api_models import (
     TenantModel,
     TenantResult,
     TenantResultCollection,
+    TenantRetireModel,
+    TenantUpdateModel,
+    TenantUpdateResult,
+    TenantUpdateResultModel,
 )
-from ...database.model import Tenant
+from ...database.model import Session, Tenant
 from ..auth import req_tenant
 from ..database import req_db_async_session
 
@@ -96,6 +104,68 @@ async def create_tenant(
     await db_async_session.commit()
 
     return {"action": "post", "tenant": api_tenant}
+
+
+@router.put("/{id}", response_model=TenantUpdateResult, tags=["tenants"])
+async def update_tenant(
+    id: int,
+    data: Union[TenantUpdateModel, TenantRetireModel],
+    db_async_session: AsyncSession = Depends(req_db_async_session),
+    tenant: Tenant = Depends(req_tenant),
+):
+    updated_tenant = (
+        await db_async_session.execute(select(Tenant).filter_by(id=id))
+    ).scalar_one_or_none()
+
+    api_key = None
+
+    if not updated_tenant:
+        raise HTTPException(HTTP_404_NOT_FOUND)
+
+    # Only active tenants can be retired or updated.
+    if not updated_tenant.active and (
+        not isinstance(data, TenantRetireModel) or data.active is False
+    ):
+        raise HTTPException(
+            HTTP_422_UNPROCESSABLE_ENTITY,
+            f"tenant {updated_tenant.name} (id={updated_tenant.id}) is retired",
+        )
+
+    if not tenant.is_admin:
+        raise HTTPException(HTTP_403_FORBIDDEN)
+
+    if isinstance(data, TenantRetireModel):
+        updated_tenant.active = data.active
+        if data.active is False:
+            # Cause their active sessions to be expired soon
+            now = dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc)
+
+            tenant_sessions = (
+                await db_async_session.execute(
+                    select(Session).filter_by(tenant=updated_tenant, active=True)
+                )
+            ).scalars()
+
+            for session in tenant_sessions:
+                session.expires_at = now
+    else:  # isinstance(data, TenantUpdateModel)
+        if data.ssh_key:
+            updated_tenant.ssh_key = data.ssh_key.get_secret_value()
+
+        if data.api_key == "reset":
+            # Set api_key to return the automatically generated one in the result.
+            updated_tenant.api_key = api_key = uuid4()
+        else:
+            updated_tenant.api_key = data.api_key
+            api_key = SecretStr("this is hidden anyway")
+
+    api_tenant = TenantUpdateResultModel(
+        api_key=api_key, **TenantModel.from_orm(updated_tenant).dict()
+    )
+
+    await db_async_session.commit()
+
+    return {"action": "put", "tenant": api_tenant}
 
 
 # http delete http://localhost:8080/api/v1/tenant/2
