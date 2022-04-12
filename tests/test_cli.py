@@ -378,7 +378,7 @@ class TestAdminCLI:
             assert result.exit_code == 1
             assert result.stdout.strip() == "ERROR: tenant-name\nERROR DETAIL: BAR"
 
-    @pytest.mark.parametrize("testcase", ("success", "failure"))
+    @pytest.mark.parametrize("testcase", ("success", "failure", "missing-arguments"))
     def test_tenant_update(self, create_for_cli, testcase, runner, duffy_config_files, caplog):
         caplog.set_level(logging.DEBUG)
         (config_file,) = duffy_config_files
@@ -396,16 +396,10 @@ class TestAdminCLI:
             result_tenant.api_key = new_api_key
             admin_ctx.update_tenant.return_value = {"tenant": result_tenant}
 
-        parameters = (
-            f"--config={config_file.absolute()}",
-            "tenant",
-            "update",
-            "tenant-name",
-            "--ssh-key",
-            new_ssh_key,
-            "--api-key",
-            new_api_key,
-        )
+        parameters = (f"--config={config_file.absolute()}", "tenant", "update", "tenant-name")
+
+        if testcase != "missing-arguments":
+            parameters += ("--ssh-key", new_ssh_key, "--api-key", new_api_key)
 
         result = runner.invoke(cli, parameters)
 
@@ -414,4 +408,7 @@ class TestAdminCLI:
             assert result.stdout.startswith("OK: tenant-name:")
         else:
             assert result.exit_code == 1
-            assert result.stdout.strip() == "ERROR: tenant-name\nERROR DETAIL: BLOOP"
+            if testcase == "failure":
+                assert result.stdout.strip() == "ERROR: tenant-name\nERROR DETAIL: BLOOP"
+            else:
+                assert result.stdout.strip() == "ERROR: Either --ssh-key or --api-key must be set."

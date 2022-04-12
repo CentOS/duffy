@@ -367,6 +367,9 @@ def tenant_retire(name: str, retire: bool = True):
 @click.argument("name")
 def tenant_update(name: str, ssh_key: str = None, api_key: str = None):
     """Update a tenant."""
+    if not ssh_key and not api_key:
+        click.echo("ERROR: Either --ssh-key or --api-key must be set.", err=True)
+        sys.exit(1)
     admin_ctx = admin.AdminContext.create_for_cli()
     result = admin_ctx.update_tenant(name, ssh_key=ssh_key, api_key=api_key)
     if "error" in result:
@@ -374,6 +377,6 @@ def tenant_update(name: str, ssh_key: str = None, api_key: str = None):
         sys.exit(1)
     else:
         click.echo(
-            f"OK: {name}: ssh_key={result['tenant'].ssh_key!r}"
-            + f"api_key={result['tenant'].api_key!r}"
+            f"OK: {name}: ssh_key={result['tenant'].ssh_key}"
+            + f" api_key={result['tenant'].api_key}"
         )
