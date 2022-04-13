@@ -312,6 +312,62 @@ def test_serve_legacy(uvicorn_run, testcase, runner, duffy_config_files, tmp_pat
 @mock.patch.object(duffy.cli.admin.AdminContext, "create_for_cli")
 class TestAdminCLI:
     @pytest.mark.parametrize("testcase", ("success", "failure"))
+    def test_tenant_list(self, create_for_cli, testcase, runner, duffy_config_files, caplog):
+        caplog.set_level(logging.DEBUG)
+        (config_file,) = duffy_config_files
+
+        success = "failure" not in testcase
+
+        create_for_cli.return_value = admin_ctx = mock.MagicMock()
+
+        if success:
+            result_tenant_1 = mock.MagicMock()
+            result_tenant_1.name = "tenant-1-name"
+            result_tenant_2 = mock.MagicMock()
+            result_tenant_2.name = "tenant-2-name"
+            result_tenant_2.active = False
+            admin_ctx.list_tenants.return_value = {"tenants": [result_tenant_1, result_tenant_2]}
+        else:
+            admin_ctx.list_tenants.return_value = {"error": {"detail": "BOOM"}}
+
+        parameters = (f"--config={config_file.absolute()}", "tenant", "list")
+
+        result = runner.invoke(cli, parameters)
+
+        if success:
+            assert result.exit_code == 0
+            assert result.stdout.strip() == "OK: tenant-1-name"
+        else:
+            assert result.exit_code == 1
+            assert result.stdout.strip() == "ERROR: couldn't list tenants\nERROR DETAIL: BOOM"
+
+    @pytest.mark.parametrize("testcase", ("success", "failure"))
+    def test_tenant_show(self, create_for_cli, testcase, runner, duffy_config_files, caplog):
+        caplog.set_level(logging.DEBUG)
+        (config_file,) = duffy_config_files
+
+        success = "failure" not in testcase
+
+        create_for_cli.return_value = admin_ctx = mock.MagicMock()
+
+        if success:
+            result_tenant = mock.MagicMock()
+            admin_ctx.show_tenant.return_value = {"tenant": result_tenant}
+        else:
+            admin_ctx.show_tenant.return_value = {"error": {"detail": "BAR"}}
+
+        parameters = (f"--config={config_file.absolute()}", "tenant", "show", "tenant-name")
+
+        result = runner.invoke(cli, parameters)
+
+        if success:
+            assert result.exit_code == 0
+            assert result.stdout.startswith("OK: tenant-name:")
+        else:
+            assert result.exit_code == 1
+            assert result.stdout.strip() == "ERROR: tenant-name\nERROR DETAIL: BAR"
+
+    @pytest.mark.parametrize("testcase", ("success", "failure"))
     def test_tenant_create(self, create_for_cli, testcase, runner, duffy_config_files, caplog):
         caplog.set_level(logging.DEBUG)
         (config_file,) = duffy_config_files

@@ -53,6 +53,12 @@ class AdminContext:
                 select(Tenant.id).filter_by(name=name)
             ).scalar_one_or_none()
 
+    def list_tenants(self):
+        return self.proxy_controller_function(tenant.get_all_tenants)
+
+    def show_tenant(self, name: str):
+        return self.proxy_controller_function(tenant.get_tenant, id=self.get_tenant_id(name))
+
     def create_tenant(self, name: str, ssh_key: str, is_admin: bool = False):
         return self.proxy_controller_function(
             tenant.create_tenant,

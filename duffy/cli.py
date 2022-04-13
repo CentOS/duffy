@@ -326,6 +326,43 @@ def tenant():
     pass
 
 
+@tenant.command("list")
+@click.option("--quiet/--no-quiet", default=False, help="Show only tenant information.")
+@click.option("--active/--all", default=True, help="Whether to list retired tenants.")
+def tenant_list(quiet, active):
+    """List tenants."""
+    admin_ctx = admin.AdminContext.create_for_cli()
+    result = admin_ctx.list_tenants()
+    if "error" in result:
+        click.echo(
+            f"ERROR: couldn't list tenants\nERROR DETAIL: {result['error']['detail']}", err=True
+        )
+        sys.exit(1)
+    else:
+        prefix = "OK: " if not quiet else ""
+        for tenant in sorted(result["tenants"], key=lambda t: t.name):
+            if active and not tenant.active:
+                continue
+            click.echo(f"{prefix}{tenant.name}")
+
+
+@tenant.command("show")
+@click.argument("name")
+def tenant_show(name: str):
+    """Show a tenant."""
+    admin_ctx = admin.AdminContext.create_for_cli()
+    result = admin_ctx.show_tenant(name)
+    if "error" in result:
+        click.echo(f"ERROR: {name}\nERROR DETAIL: {result['error']['detail']}", err=True)
+        sys.exit(1)
+    else:
+        tenant = result["tenant"]
+        click.echo(
+            f"OK: {name}: id={tenant.id} active={tenant.active} created_at={tenant.created_at}"
+            + f" retired_at={tenant.retired_at}"
+        )
+
+
 @tenant.command("create")
 @click.option(
     "--is-admin/--no-is-admin",

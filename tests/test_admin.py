@@ -96,6 +96,29 @@ class TestAdminContext:
 
         assert admin_ctx.get_tenant_id("test") == tenant.id
 
+    @mock.patch.object(AdminContext, "proxy_controller_function")
+    def test_list_tenants(self, proxy_controller_function, admin_ctx):
+        proxy_controller_function.return_value = sentinel = object()
+
+        result = admin_ctx.list_tenants()
+
+        assert result == sentinel
+
+        proxy_controller_function.assert_called_once_with(controllers.tenant.get_all_tenants)
+
+    @mock.patch.object(AdminContext, "get_tenant_id")
+    @mock.patch.object(AdminContext, "proxy_controller_function")
+    def test_show_tenant(self, proxy_controller_function, get_tenant_id, admin_ctx):
+        proxy_controller_function.return_value = sentinel = object()
+        get_tenant_id.return_value = 6
+
+        result = admin_ctx.show_tenant(name="name")
+
+        assert result == sentinel
+
+        get_tenant_id.assert_called_once_with("name")
+        proxy_controller_function.assert_called_once_with(controllers.tenant.get_tenant, id=6)
+
     @pytest.mark.parametrize("testcase", ("normal", "is-admin"))
     @mock.patch.object(AdminContext, "proxy_controller_function")
     def test_create_tenant(self, proxy_controller_function, testcase, admin_ctx):
