@@ -40,7 +40,7 @@ class Node(Base, CreatableMixin, RetirableMixin):
         NodeState.db_type(),
         nullable=False,
         default=NodeState.unused,
-        server_default=NodeState.ready.value,
+        server_default=NodeState.unused.value,
     )
     comment = Column(UnicodeText, nullable=True)
 
