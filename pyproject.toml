@@ -52,7 +52,6 @@ ipython = {version = ">=7.29,<9", optional = true}
 jmespath = {version = ">=0.10,<2", optional = true}
 pottery = {version = "^3", optional = true}
 psycopg2 = {version = "^2.9.2", optional = true}
-pyone = {version = "^6.2.2", optional = true}
 
 [tool.poetry.dev-dependencies]
 Jinja2 = "^3.0.3"
@@ -76,10 +75,16 @@ pytest-isort = ">=2,<4"
 tox = "^3.24.4"
 
 [tool.poetry.extras]
+# keep this in sync with the real extras
+all = [
+    "ipython",
+    "psycopg2", "asyncpg",
+    "ansible-runner", "Jinja2", "jmespath", "pottery",
+    "httpx",
+]
 interactive = ["ipython"]
 postgresql = ["psycopg2", "asyncpg"]
 tasks = ["ansible-runner", "Jinja2", "jmespath", "pottery"]
-opennebula = ["pyone"]
 legacy = ["httpx"]
 
 [tool.pytest.ini_options]
