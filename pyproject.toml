@@ -40,16 +40,16 @@ PyYAML = "^6"
 SQLAlchemy = {version = "^1.4.25", extras=["asyncio"]}
 alembic = "^1.7.5"
 bcrypt = "^3.2"
-click = "^8.0.3,<8.1"
-fastapi = ">=0.70,<0.76"
-uvicorn = ">=0.15,<0.18"
+click = "^8.0.3"
+fastapi = ">=0.70"
+uvicorn = ">=0.15"
 Jinja2 = {version = "^3.0.3", optional = true}
 ansible-runner = {version = "^2.1.1", optional = true}
 asyncpg = {version = "^0.25", optional = true}
 celery = {version = "^5.2.1", extras = ["redis"]}
-httpx = {version = ">=0.18.2,<0.23", optional = true}
-ipython = {version = ">=7.29,<9", optional = true}
-jmespath = {version = ">=0.10,<2", optional = true}
+httpx = {version = ">=0.18.2", optional = true}
+ipython = {version = ">=7.29", optional = true}
+jmespath = {version = ">=0.10", optional = true}
 pottery = {version = "^3", optional = true}
 psycopg2 = {version = "^2.9.2", optional = true}
 
@@ -58,20 +58,20 @@ Jinja2 = "^3.0.3"
 ansible = "^5.2"
 ansible-core = "^2.12.1"
 ansible-runner = "^2.1.1"
-black = ">=21.9b0,<23"
-fastapi = {version = ">=0.70,<0.76", extras = ["test"]}
-flake8 = ">=3.9.2,<5"
-httpx = ">=0.18.2,<0.23"
+black = ">=21.9b0"
+fastapi = {version = ">=0.70", extras = ["test"]}
+flake8 = ">=3.9.2"
+httpx = ">=0.18.2"
 isort = "^5.9.3"
-jmespath = ">=0.10,<2"
+jmespath = ">=0.10"
 poetry = "^1.1.13"
 pottery = "^3"
-pytest = ">=6.2.5,<8"
-pytest-asyncio = ">=0.16,<0.19"
+pytest = ">=6.2.5"
+pytest-asyncio = ">=0.16"
 pytest-black = "^0.3.12"
 pytest-cov = "^3"
 pytest-flake8 = "^1.0.7"
-pytest-isort = ">=2,<4"
+pytest-isort = ">=2"
 tox = "^3.24.4"
 
 [tool.poetry.extras]
