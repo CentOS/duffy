@@ -177,7 +177,8 @@ class TestAnsibleMechanism:
             nodes[0]["data"] = node.data
 
         expected_playbook_vars = {"duffy_in": {"nodes": nodes}}
-        expected_result = {"duffy_out": {"nodes": nodes}}
+        # run_playbook() strips off "duffy_out"
+        expected_result = {"nodes": nodes}
         run_playbook.return_value = expected_result
 
         mech = self.create_mech()
