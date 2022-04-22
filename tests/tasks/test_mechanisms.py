@@ -51,15 +51,24 @@ class TestMechanism:
 
 @mock.patch.dict(NodePool.known_pools, clear=True)
 class TestAnsibleMechanism:
-    def create_mech(self, with_extra_vars: bool = True, extra_vars_loc: str = "default"):
+    def create_mech(
+        self,
+        with_extra_vars: bool = True,
+        extra_vars_loc: str = "default",
+        with_deprovision_playbook: bool = True,
+    ):
         mech_config = {
             "type": "ansible",
             "ansible": {
                 "topdir": "/foo",
                 "provision": {"playbook": "provision.yaml"},
-                "deprovision": {"playbook": "deprovision.yaml"},
             },
         }
+        if with_deprovision_playbook:
+            mech_config["ansible"]["deprovision"] = {"playbook": "deprovision.yaml"}
+        elif with_deprovision_playbook is None:
+            mech_config["ansible"]["deprovision"] = None
+
         if with_extra_vars:
             extra_vars = {
                 "nodepool": "{{ name }}",
@@ -164,9 +173,17 @@ class TestAnsibleMechanism:
         if not error:
             assert result == duffy_result
 
-    @pytest.mark.parametrize("playbook_type", (PlaybookType.provision, PlaybookType.deprovision))
+    @pytest.mark.parametrize(
+        "playbook_type, with_deprovision_playbook",
+        (
+            (PlaybookType.provision, None),
+            (PlaybookType.deprovision, True),
+            (PlaybookType.deprovision, False),
+            (PlaybookType.deprovision, None),
+        ),
+    )
     @mock.patch.object(AnsibleMechanism, "run_playbook")
-    def test_provision_deprovision(self, run_playbook, playbook_type):
+    def test_provision_deprovision(self, run_playbook, playbook_type, with_deprovision_playbook):
         method = playbook_type.name
         failuremsg = f"{method.title()}ing failed"
 
@@ -181,13 +198,18 @@ class TestAnsibleMechanism:
         expected_result = {"nodes": nodes}
         run_playbook.return_value = expected_result
 
-        mech = self.create_mech()
+        mech = self.create_mech(with_deprovision_playbook=with_deprovision_playbook)
 
         result = getattr(mech, method)(nodes=[node])
+
         assert result == expected_result
-        run_playbook.assert_called_once_with(
-            playbook_type,
-            failuremsg,
-            extra_vars=expected_playbook_vars,
-            overrides=expected_playbook_vars,
-        )
+
+        if playbook_type != PlaybookType.deprovision or with_deprovision_playbook:
+            run_playbook.assert_called_once_with(
+                playbook_type,
+                failuremsg,
+                extra_vars=expected_playbook_vars,
+                overrides=expected_playbook_vars,
+            )
+        else:
+            run_playbook.assert_not_called()
