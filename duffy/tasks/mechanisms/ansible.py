@@ -103,9 +103,12 @@ class AnsibleMechanism(Mechanism, mech_type="ansible"):
                 ],
             },
         }
-        return self.run_playbook(
-            PlaybookType.deprovision,
-            "Deprovisioning failed",
-            extra_vars=playbook_input,
-            overrides=playbook_input,
-        )
+        if self.get("deprovision") and self["deprovision"].get("playbook"):
+            return self.run_playbook(
+                PlaybookType.deprovision,
+                "Deprovisioning failed",
+                extra_vars=playbook_input,
+                overrides=playbook_input,
+            )
+        else:  # no deprovisioning playbook configured
+            return playbook_input["duffy_in"]

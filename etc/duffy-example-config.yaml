@@ -140,8 +140,8 @@ nodepools:
         ansible:
           provision:
             playbook: "playbooks/baremetal/provision.yml"
-          deprovision:
-            playbook: "playbooks/baremetal/deprovision.yml"
+          # The `deprovision` section is optional, or can be nulled.
+          deprovision: ~
     physical-x86_64:
       extends: physical
       fill-level: 5
