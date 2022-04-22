@@ -169,7 +169,6 @@ class TestAnsibleMechanism:
     def test_provision_deprovision(self, run_playbook, playbook_type):
         method = playbook_type.name
         failuremsg = f"{method.title()}ing failed"
-        playbook = f"{method}.yml"
 
         node = mock.Mock(id=5, hostname="hostname", ipaddr="ipaddr")
         nodes = [{"id": node.id, "hostname": node.hostname, "ipaddr": node.ipaddr}]
@@ -180,7 +179,9 @@ class TestAnsibleMechanism:
         expected_playbook_vars = {"duffy_in": {"nodes": nodes}}
         expected_result = {"duffy_out": {"nodes": nodes}}
         run_playbook.return_value = expected_result
-        mech = self.create_mech({method: {"playbook": playbook}})
+
+        mech = self.create_mech()
+
         result = getattr(mech, method)(nodes=[node])
         assert result == expected_result
         run_playbook.assert_called_once_with(
