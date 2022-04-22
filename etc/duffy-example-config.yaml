@@ -133,6 +133,9 @@ nodepools:
         # the pool in question but have to be of simple types like strings or
         # integers.
         architecture: "{{ architecture }}"
+      # Whether or not the playbooks should be run for single nodes, many
+      # playbook runs in parallel, or not (one playbook run for all nodes).
+      run-parallel: true
       mechanism:
         ansible:
           provision:
@@ -147,6 +150,7 @@ nodepools:
       type: "virtual"
       extends: "mech-ansible"
       reuse-nodes: false
+      run-parallel: false
       mechanism:
         ansible:
           provision:

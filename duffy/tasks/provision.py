@@ -15,6 +15,110 @@ log = get_task_logger(__name__)
 
 
 @celery.task
+def provision_nodes_into_pool(pool_name: str, node_ids: List[id]):
+    try:
+        pool = NodePool.known_pools[pool_name]
+    except KeyError as exc:
+        raise RuntimeError(f"[{pool_name}] Unknown pool, bailing out") from exc
+
+    if not node_ids:
+        raise RuntimeError(f"[{pool.name}] Empty list of node ids, bailing out")
+
+    log.debug(
+        "[%s] Provisioning nodes, id(s): %s", pool.name, ", ".join(str(id) for id in node_ids)
+    )
+
+    reuse_nodes = pool.get("reuse-nodes")
+
+    with sync_session_maker() as db_sync_session, db_sync_session.begin():
+        # Grab the node objects from the database (again).
+        nodes = db_sync_session.execute(select(Node).filter(Node.id.in_(node_ids))).scalars().all()
+
+        if not len(nodes):
+            node_ids_str = ", ".join(str(node_id) for node_id in node_ids)
+            raise RuntimeError(
+                f"[{pool.name}] Didn't find any nodes with these ids: {node_ids_str}"
+            )
+
+        if len(nodes) != len(node_ids):
+            missing_node_ids = set(node_ids) - {node.id for node in nodes}
+            missing_node_ids_str = ", ".join(str(node_id) for node_id in sorted(missing_node_ids))
+            log.warning("[%s]: Didn't find nodes with ids: %s", pool.name, missing_node_ids_str)
+
+        log.info("[%s] Attempting to provision %d nodes ...", pool.name, len(nodes))
+        try:
+            prov_result = pool.provision(nodes)
+        except MechanismFailure:
+            log.error("[%s] Provisioning failed.", pool.name)
+            if not reuse_nodes:
+                for node in nodes:
+                    db_sync_session.delete(node)
+            else:
+                for node in nodes:
+                    node.state = NodeState.unused
+                    node.pool = None
+            return
+        log.info("[%s] Backend provisioning finished.", pool.name)
+        log.debug("[%s] Result: %s", pool.name, prov_result)
+
+        # The playbook needs to provide hostname and ipaddr for provisioned nodes in the
+        # result, otherwise they can't be used.
+        log.debug("[%s] Validating backend provisioning node results.", pool.name)
+        valid_node_results = []
+        invalid_node_results = []
+        for node_res in prov_result["nodes"]:
+            hostname = node_res.get("hostname")
+            ipaddr = node_res.get("ipaddr")
+
+            if not (hostname and ipaddr):
+                invalid_node_results.append(node_res)
+                continue
+
+            valid_node_results.append(node_res)
+
+        log.debug("[%s] valid results: %s", pool.name, valid_node_results)
+        log.debug("[%s] invalid results: %s", pool.name, invalid_node_results)
+
+        if invalid_node_results:
+            log.error("[%s] Backend provisioning yielded invalid node results:", pool.name)
+            for node_res in invalid_node_results:
+                log.error("[%s]     %s", pool.name, node_res)
+
+        log.debug("[%s] Setting hostname and ipaddr fields of nodes.", pool.name)
+        for node, node_result in zip(nodes, valid_node_results):
+            node.hostname = node_result["hostname"]
+            node.ipaddr = node_result["ipaddr"]
+
+        log.debug("[%s] Storing information about provisioned hosts.", pool.name)
+        for node, node_result in zip(nodes, valid_node_results):
+            if not reuse_nodes:
+                node.hostname = node_result["hostname"]
+                node.ipaddr = node_result["ipaddr"]
+            node.data["provision"] = node_result
+            node.state = NodeState.ready
+
+        num_valid_nodes = len(valid_node_results)
+        leftover_nodes = nodes[num_valid_nodes:]
+        if leftover_nodes:
+            if reuse_nodes:
+                log.warning(
+                    "[%s] Returning %d left-over reusable node(s)", pool.name, len(leftover_nodes)
+                )
+                for node in leftover_nodes:
+                    node.state = NodeState.unused
+                    node.pool = None
+                    node.data.pop("provision", None)
+            else:
+                log.warning(
+                    "[%s] Cleaning up %d left-over preallocated node(s)",
+                    pool.name,
+                    len(leftover_nodes),
+                )
+                for node in leftover_nodes:
+                    db_sync_session.delete(node)
+
+
+@celery.task
 def fill_single_pool(pool_name: str):
     try:
         pool = NodePool.known_pools[pool_name]
@@ -104,91 +208,19 @@ def fill_single_pool(pool_name: str):
             node.state = NodeState.provisioning
             node.pool = pool.name
 
-    # In a second (longer running) transaction, provision the nodes.
+    # In (a) follow-up (longer running) transaction(s), provision the nodes. Here, `nodes` is a list
+    # of node objects which are in state "provisioning" and assigned to the pool. It can be shorter
+    # than `quantity`, e.g. if there aren't enough reusable unused nodes.
+    if pool.get("run-parallel", True):
+        # Run one sub-task per node in parallel.
+        async_results = [provision_nodes_into_pool.delay(pool.name, [node.id]) for node in nodes]
+    else:
+        # Run one sub-task for all nodes.
+        async_results = [provision_nodes_into_pool.delay(pool.name, [node.id for node in nodes])]
 
-    with sync_session_maker() as db_sync_session, db_sync_session.begin():
-        # Make the nodes available in the new transaction/session.
-        nodes = [db_sync_session.merge(node, load=False) for node in nodes]
-
-        # Here, `nodes` is a list of node objects which are in state "provisioning" and assigned
-        # to the pool. It can be shorter than `quantity`, e.g. if there aren't enough reusable
-        # unused nodes.
-        log.info("[%s] Attempting to provision %d nodes ...", pool.name, quantity)
-        try:
-            prov_result = pool.provision(nodes)
-        except MechanismFailure:
-            log.error("[%s] Provisioning failed.", pool.name)
-            if not reuse_nodes:
-                for node in nodes:
-                    db_sync_session.delete(node)
-            else:
-                for node in nodes:
-                    node.state = NodeState.unused
-                    node.pool = None
-            return
-        log.info("[%s] Backend provisioning finished.", pool.name)
-        log.debug("[%s] Result: %s", pool.name, prov_result)
-
-        if reuse_nodes:
-            # As existing nodes are used, hostname and ipaddr (if any) in the results will be
-            # ignored, only the size of the result set will be considered.
-            valid_node_results = prov_result["nodes"]
-        else:
-            # The playbook needs to provide hostname and ipaddr for provisioned nodes in the
-            # result, otherwise they can't be used.
-            log.debug("[%s] Validating backend provisioning node results.", pool.name)
-            valid_node_results = []
-            invalid_node_results = []
-            for node_res in prov_result["nodes"]:
-                hostname = node_res.get("hostname")
-                ipaddr = node_res.get("ipaddr")
-
-                if not (hostname and ipaddr):
-                    invalid_node_results.append(node_res)
-                    continue
-
-                valid_node_results.append(node_res)
-
-            log.debug("[%s] valid results: %s", pool.name, valid_node_results)
-            log.debug("[%s] invalid results: %s", pool.name, invalid_node_results)
-
-            if invalid_node_results:
-                log.error("[%s] Backend provisioning yielded invalid node results:", pool.name)
-                for node_res in invalid_node_results:
-                    log.error("[%s]     %s", pool.name, node_res)
-
-            log.debug("[%s] Setting hostname and ipaddr fields of nodes.", pool.name)
-            for node, node_result in zip(nodes, valid_node_results):
-                node.hostname = node_result["hostname"]
-                node.ipaddr = node_result["ipaddr"]
-
-        log.debug("[%s] Storing information about provisioned hosts.", pool.name)
-        for node, node_result in zip(nodes, valid_node_results):
-            if not reuse_nodes:
-                node.hostname = node_result["hostname"]
-                node.ipaddr = node_result["ipaddr"]
-            node.data["provision"] = node_result
-            node.state = NodeState.ready
-
-        num_valid_nodes = len(valid_node_results)
-        leftover_nodes = nodes[num_valid_nodes:]
-        if leftover_nodes:
-            if reuse_nodes:
-                log.warning(
-                    "[%s] Returning %d left-over reusable nodes", pool.name, len(leftover_nodes)
-                )
-                for node in leftover_nodes:
-                    node.state = NodeState.unused
-                    node.pool = None
-                    node.data.pop("provision", None)
-            else:
-                log.warning(
-                    "[%s] Cleaning up %d left-over preallocated nodes",
-                    pool.name,
-                    len(leftover_nodes),
-                )
-                for node in leftover_nodes:
-                    db_sync_session.delete(node)
+    # Collect the results to ensure all sub-tasks have finished.
+    for result in async_results:
+        result.get()
 
     log.info("[%s] Filling up nodes finished", pool.name)
 

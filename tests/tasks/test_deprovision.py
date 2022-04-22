@@ -205,9 +205,21 @@ def test_deprovision_pool_nodes(testcase, test_mechanism, db_sync_session, caplo
                 assert "[foo] Pool must be a concrete node pool." in caplog.messages
 
 
-@pytest.mark.parametrize("testcase", ("normal", "unknown-ids"))
+@mock.patch.dict(NodePool.known_pools, clear=True)
+@pytest.mark.parametrize(
+    "testcase", ("success-run-parallel", "success-run-once", "unknown-ids", "unknown-pool")
+)
 @mock.patch("duffy.tasks.deprovision.deprovision_pool_nodes")
-def test_deprovision_nodes(deprovision_pool_nodes, testcase, db_sync_session, caplog):
+@mock.patch("duffy.tasks.deprovision.sync_session_maker")
+def test_deprovision_nodes(
+    sync_session_maker, deprovision_pool_nodes, testcase, test_mechanism, db_sync_session, caplog
+):
+    run_parallel = "run-parallel" in testcase
+
+    mech_config = {"type": "test", "test": {}}
+    ConcreteNodePool(name="odd", mechanism=mech_config, **{"run-parallel": run_parallel})
+    ConcreteNodePool(name="even", mechanism=mech_config, **{"run-parallel": run_parallel})
+
     known_ids = []
     unknown_ids = []
     with db_sync_session.begin():
@@ -218,6 +230,8 @@ def test_deprovision_nodes(deprovision_pool_nodes, testcase, db_sync_session, ca
         if "unknown-ids" in testcase:
             # ensure one isn't deployed
             nodes[2].state = "ready"
+        if "unknown-pool" in testcase:
+            nodes[1].pool = "barf"
         for node in nodes:
             if node.state == "deployed":
                 known_ids.append(node.id)
@@ -238,26 +252,45 @@ def test_deprovision_nodes(deprovision_pool_nodes, testcase, db_sync_session, ca
         node_ids += [32]
         unknown_ids.append(32)
 
-    deprovision_pool_nodes.delay = delay = mock.MagicMock()
-
     caplog.clear()
+
+    # I wonder why this is needed, without it, the check of the failed node below fails.
+    sync_session_maker.return_value = db_sync_session
+
     deprovision.deprovision_nodes(node_ids)
 
     deprovision_pool_nodes.assert_not_called()
 
     found_pool_names = set()
-    for args, kwargs in delay.call_args_list:
+    for args, kwargs in deprovision_pool_nodes.delay.call_args_list:
         assert not args
         pool_name = kwargs["pool_name"]
         found_pool_names.add(pool_name)
-        node_ids = node_ids_by_pool[pool_name]
-        assert set(kwargs["node_ids"]) == node_ids
+        remaining_node_ids = node_ids_by_pool[pool_name]
+        node_ids_in_call = set(kwargs["node_ids"])
+        if run_parallel:
+            assert remaining_node_ids == remaining_node_ids
+        else:
+            assert len(node_ids_in_call) == 1
+            node_ids_by_pool[pool_name].discard(node_ids_in_call.pop())
+
+    if "unknown-ids" not in testcase and not run_parallel:
+        assert not any(remaining_node_ids for remaining_node_ids in node_ids_by_pool.values())
 
     assert node_ids_by_pool.keys() == found_pool_names
+
     if "unknown-ids" in testcase:
         assert f"Didn't find deployed nodes with ids: {unknown_ids}" in caplog.messages
     else:
         assert all("Didn't find deployed nodes with ids:" not in m for m in caplog.messages)
+
+    if "unknown-pool" in testcase:
+        with db_sync_session.begin():
+            failed_node = db_sync_session.execute(
+                select(Node).filter_by(state="failed")
+            ).scalar_one()
+
+            assert failed_node.data["error"] == "deprovisioning node failed, pool 'barf' not found"
 
     with db_sync_session.begin():
         # deprovision_nodes() doesn't set nodes to "deprovisioning"
