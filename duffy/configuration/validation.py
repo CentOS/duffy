@@ -82,6 +82,7 @@ class NodePoolsModel(BaseModel):
     reuse_nodes: Optional[Union[Dict[str, Union[int, str]], Literal[False]]] = Field(
         alias="reuse-nodes"
     )
+    run_parallel: Optional[bool] = Field(alias="run-parallel")
 
     class Config:
         extra = "allow"

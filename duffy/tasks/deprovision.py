@@ -135,7 +135,8 @@ def deprovision_nodes(node_ids: List[int]):
     """Deprovision nodes e.g. of an expired session.
 
     This divides up nodes by their pools and kicks off sub tasks for
-    each pool.
+    each pool or each node, depending on the respective `run-parallel` setting
+    of the pool.
     """
     log.debug("deprovision_nodes(%r) begin", node_ids)
     pools_node_ids = defaultdict(list)
@@ -161,10 +162,23 @@ def deprovision_nodes(node_ids: List[int]):
             log.warning("Didn't find deployed nodes with ids: %s", not_found_node_ids)
 
         for node in nodes:
+            try:
+                pool = NodePool.known_pools[node.pool]
+            except KeyError:
+                log.error("[%s] Pool not found for node with id: %d", node.pool, node.id)
+                node.state = NodeState.failed
+                node.data["error"] = f"deprovisioning node failed, pool '{node.pool}' not found"
+                continue
+
             pools_node_ids[node.pool].append(node.id)
 
     for pool_name, node_ids in pools_node_ids.items():
-        log.debug("Creating task to deprovision session nodes in pool %s", pool_name)
-        deprovision_pool_nodes.delay(pool_name=pool_name, node_ids=node_ids).forget()
+        pool = NodePool.known_pools[pool_name]
+        log.debug("Creating task(s) to deprovision session nodes in pool %s", pool.name)
+        if pool.get("run-parallel", True):
+            deprovision_pool_nodes.delay(pool_name=pool.name, node_ids=node_ids).forget()
+        else:
+            for node_id in node_ids:
+                deprovision_pool_nodes.delay(pool_name=pool.name, node_ids=[node_id]).forget()
 
     log.debug("deprovision_nodes(%r) end", node_ids)
