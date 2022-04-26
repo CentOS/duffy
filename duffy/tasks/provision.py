@@ -213,16 +213,13 @@ def fill_single_pool(pool_name: str):
     # than `quantity`, e.g. if there aren't enough reusable unused nodes.
     if pool.get("run-parallel", True):
         # Run one sub-task per node in parallel.
-        async_results = [provision_nodes_into_pool.delay(pool.name, [node.id]) for node in nodes]
+        for node in nodes:
+            provision_nodes_into_pool.delay(pool.name, [node.id]).forget()
     else:
-        # Run one sub-task for all nodes.
-        async_results = [provision_nodes_into_pool.delay(pool.name, [node.id for node in nodes])]
+        # Run one sub-task synchronously for all nodes.
+        provision_nodes_into_pool.delay(pool.name, [node.id for node in nodes]).forget()
 
-    # Collect the results to ensure all sub-tasks have finished.
-    for result in async_results:
-        result.get()
-
-    log.info("[%s] Filling up nodes finished", pool.name)
+    log.info("[%s] Filling up nodes: subtasks kicked off", pool.name)
 
 
 @celery.task
