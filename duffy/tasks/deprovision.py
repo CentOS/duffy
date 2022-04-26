@@ -176,9 +176,9 @@ def deprovision_nodes(node_ids: List[int]):
         pool = NodePool.known_pools[pool_name]
         log.debug("Creating task(s) to deprovision session nodes in pool %s", pool.name)
         if pool.get("run-parallel", True):
-            deprovision_pool_nodes.delay(pool_name=pool.name, node_ids=node_ids).forget()
-        else:
             for node_id in node_ids:
                 deprovision_pool_nodes.delay(pool_name=pool.name, node_ids=[node_id]).forget()
+        else:
+            deprovision_pool_nodes.delay(pool_name=pool.name, node_ids=node_ids).forget()
 
     log.debug("deprovision_nodes(%r) end", node_ids)

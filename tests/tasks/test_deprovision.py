@@ -269,12 +269,12 @@ def test_deprovision_nodes(
         remaining_node_ids = node_ids_by_pool[pool_name]
         node_ids_in_call = set(kwargs["node_ids"])
         if run_parallel:
-            assert remaining_node_ids == remaining_node_ids
-        else:
             assert len(node_ids_in_call) == 1
             node_ids_by_pool[pool_name].discard(node_ids_in_call.pop())
+        else:
+            assert remaining_node_ids == remaining_node_ids
 
-    if "unknown-ids" not in testcase and not run_parallel:
+    if "unknown-ids" not in testcase and run_parallel:
         assert not any(remaining_node_ids for remaining_node_ids in node_ids_by_pool.values())
 
     assert node_ids_by_pool.keys() == found_pool_names
