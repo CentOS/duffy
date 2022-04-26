@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "duffy"
-version = "3.0.0a6"
+version = "3.0.0a7"
 description = "CentOS CI provisioner"
 authors = ["Nils Philippsen <nils@redhat.com>", "Vipul Siddharth <siddharthvipul1@gmail.com>", "Akashdeep Dhar <akashdeep@redhat.com>", "Ben Capper <bcapper@redhat.com>"]
 license = "MIT"
