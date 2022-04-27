@@ -1,4 +1,5 @@
 from typing import Any, Dict
+from unittest import mock
 from uuid import uuid4
 
 import pytest
@@ -117,6 +118,21 @@ def _gen_node_attrs(index: int = None, **addl_attrs: Dict[str, Any]) -> dict:
 class TestNode(ModelTestBase):
     klass = model.Node
     attrs = _gen_node_attrs()
+
+    @mock.patch("duffy.database.model.node.dt.datetime")
+    def test_fail(self, datetime, db_sync_obj):
+        datetime.utcnow.return_value = utcnow = mock.MagicMock()
+        utcnow.isoformat.return_value = failed_at_sentinel = object()
+
+        db_sync_obj.fail("information about the error")
+
+        datetime.utcnow.assert_called_once_with()
+        utcnow.isoformat.assert_called_once_with()
+
+        assert db_sync_obj.data["error"] == {
+            "failed_at": failed_at_sentinel,
+            "detail": "information about the error",
+        }
 
 
 @pytest.mark.asyncio
