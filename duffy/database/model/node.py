@@ -1,3 +1,5 @@
+import datetime as dt
+
 from sqlalchemy import JSON, Boolean, Column, ForeignKey, Index, Integer, Text, UnicodeText, and_
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship
@@ -52,6 +54,11 @@ class Node(Base, CreatableMixin, RetirableMixin):
     data = Column(
         MutableDict.as_mutable(JSON), nullable=False, default=lambda: {}, server_default="{}"
     )
+
+    def fail(self, detail: str):
+        """Set the state of a node to failed with details"""
+        self.state = NodeState.failed
+        self.data["error"] = {"failed_at": dt.datetime.utcnow().isoformat(), "detail": detail}
 
 
 class SessionNode(Base):
