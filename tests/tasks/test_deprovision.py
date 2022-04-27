@@ -65,16 +65,20 @@ def test_deprovision_pool_nodes(testcase, test_mechanism, db_sync_session, caplo
     with db_sync_session.begin():
         # create some testing nodes
         reusable = "reuse-nodes" in testcase
-        nodes = [
-            Node(
+        nodes = []
+        for id in range(1, 5):
+            node = Node(
                 id=id,
+                hostname=f"node-{id}",
+                ipaddr=f"172.16.12.{id}",
                 state="deployed",
                 pool="foo",
                 reusable=reusable,
                 data={"provision": {"mech_id": id + 20, "some_more_data": "fortytwo"}},
             )
-            for id in range(1, 5)
-        ]
+            if reusable:
+                node.data["somefield"] = "somevalue"
+            nodes.append(node)
         db_sync_session.add_all(nodes)
 
         node_ids = [node.id for node in nodes]
@@ -164,10 +168,13 @@ def test_deprovision_pool_nodes(testcase, test_mechanism, db_sync_session, caplo
                     final_state = "unused"
                     active = True
                     fill_pools.delay.assert_called_once_with()
+                    assert all("provision" not in node.data for node in nodes)
+                    assert all(node.data["somefield"] == "somevalue" for node in nodes)
                 else:
                     final_state = "done"
                     active = False
                     fill_pools.delay.assert_not_called()
+                    assert all("provision" in node.data for node in nodes)
                 if "node-unhandled" in testcase:
                     assert all(rec.levelno < logging.ERROR for rec in caplog.records)
                     counts = defaultdict(int)

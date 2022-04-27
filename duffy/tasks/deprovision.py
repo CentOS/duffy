@@ -18,6 +18,9 @@ log = get_task_logger(__name__)
 
 UNSET = object()
 
+# These fields should be cleaned out when deprovisioning a reusable node.
+NODE_DATA_EPHEMERAL_FIELDS = ("error", "nodes_spec", "provision")
+
 
 @celery.task(bind=True)
 def deprovision_pool_nodes(self, pool_name: str, node_ids: List[int]):
@@ -116,6 +119,8 @@ def deprovision_pool_nodes(self, pool_name: str, node_ids: List[int]):
             for node in matched_nodes:
                 if node.reusable:
                     node.state = NodeState.unused
+                    for fname in NODE_DATA_EPHEMERAL_FIELDS:
+                        node.data.pop(fname, None)
                 else:
                     node.state = NodeState.done
                     node.active = False
