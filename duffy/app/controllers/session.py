@@ -183,8 +183,7 @@ async def create_session(
         for node, ipaddr in zip(nodes_in_transaction, contextualized_ipaddrs):
             if not ipaddr:
                 log.error("    id: %s hostname: %s ipaddr: %s", node.id, node.hostname, node.ipaddr)
-                node.state = NodeState.failed
-                node.data["error"] = "contextualizing node failed"
+                node.fail("contextualizing node failed")
             else:
                 nodes_to_decontextualize.append(node)
 
@@ -199,8 +198,7 @@ async def create_session(
                     log.error(
                         "    id: %s hostname: %s ipaddr: %s", node.id, node.hostname, node.ipaddr
                     )
-                    node.state = NodeState.failed
-                    node.data["error"] = "decontextualizing node failed"
+                    node.fail("decontextualizing node failed")
                 else:
                     node.state = NodeState.ready
 
