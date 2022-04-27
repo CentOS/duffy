@@ -253,15 +253,16 @@ class TestSessionWorkflow:
                 if testcase == "decontextualizing failure":
                     assert len(failed_nodes) == 2
                     assert any(
-                        node.data["error"] == "contextualizing node failed" for node in failed_nodes
+                        node.data["error"]["detail"] == "contextualizing node failed"
+                        for node in failed_nodes
                     )
                     assert any(
-                        node.data["error"] == "decontextualizing node failed"
+                        node.data["error"]["detail"] == "decontextualizing node failed"
                         for node in failed_nodes
                     )
                 else:
                     assert len(failed_nodes) == 1
-                    assert failed_nodes[0].data["error"] == "contextualizing node failed"
+                    assert failed_nodes[0].data["error"]["detail"] == "contextualizing node failed"
 
     @mock.patch("duffy.nodes_context.run_remote_cmd", new=mock.AsyncMock())
     @mock.patch("duffy.app.controllers.session.fill_pools", new=mock.MagicMock())

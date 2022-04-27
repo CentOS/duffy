@@ -297,7 +297,9 @@ def test_deprovision_nodes(
                 select(Node).filter_by(state="failed")
             ).scalar_one()
 
-            assert failed_node.data["error"] == "deprovisioning node failed, pool 'barf' not found"
+            assert failed_node.data["error"]["detail"] == (
+                "deprovisioning node failed, pool 'barf' not found"
+            )
 
     with db_sync_session.begin():
         # deprovision_nodes() doesn't set nodes to "deprovisioning"
