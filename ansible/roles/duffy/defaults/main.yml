@@ -1,5 +1,5 @@
 ---
-duffy_minimum_version: 3.0.0a7
+duffy_minimum_version: 3.0.0a8
 duffy_python_executable: python3
 duffy_python_packages:
   - python3
