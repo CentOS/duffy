@@ -25,57 +25,64 @@ class MechanismType(str, Enum):
 # Pydantic models
 
 
+class ConfigBaseModel(BaseModel):
+    class Config:
+        extra = "forbid"
+
+
 class CeleryModel(BaseModel):
+    # This is intentionally not a subclass of ConfigBaseModel, it is passed on to Celery, i.e. can
+    # contain arbitrarily named fields.
     broker_url: AnyUrl
     result_backend: AnyUrl
 
 
-class LockingModel(BaseModel):
+class LockingModel(ConfigBaseModel):
     url: RedisDsn
 
 
-class PeriodicTaskModel(BaseModel):
+class PeriodicTaskModel(ConfigBaseModel):
     interval: conint(gt=0)
 
 
-class TasksModel(BaseModel):
+class TasksModel(ConfigBaseModel):
     celery: CeleryModel
     locking: LockingModel
     periodic: Optional[Dict[str, PeriodicTaskModel]]
 
 
-class SQLAlchemyModel(BaseModel):
+class SQLAlchemyModel(ConfigBaseModel):
     sync_url: stricturl(tld_required=False, host_required=False)
     async_url: stricturl(tld_required=False, host_required=False)
 
 
-class DatabaseModel(BaseModel):
+class DatabaseModel(ConfigBaseModel):
     sqlalchemy: SQLAlchemyModel
 
 
-class MiscModel(BaseModel):
+class MiscModel(ConfigBaseModel):
     session_lifetime: ConfigTimeDelta = Field(alias="session-lifetime")
     session_lifetime_max: ConfigTimeDelta = Field(alias="session-lifetime-max")
 
 
-class AnsibleMechanismPlaybookModel(BaseModel):
+class AnsibleMechanismPlaybookModel(ConfigBaseModel):
     extra_vars: Optional[Dict[str, Any]] = Field(alias="extra-vars")
     playbook: Path
 
 
-class AnsibleMechanismModel(BaseModel):
+class AnsibleMechanismModel(ConfigBaseModel):
     topdir: Optional[Path]
     extra_vars: Optional[Dict[str, Any]] = Field(alias="extra-vars")
     provision: Optional[AnsibleMechanismPlaybookModel]
     deprovision: Optional[AnsibleMechanismPlaybookModel]
 
 
-class MechanismModel(BaseModel):
+class MechanismModel(ConfigBaseModel):
     type_: Optional[MechanismType] = Field(alias="type")
     ansible: Optional[AnsibleMechanismModel]
 
 
-class NodePoolsModel(BaseModel):
+class NodePoolsModel(ConfigBaseModel):
     extends: Optional[str]
     mechanism: Optional[MechanismModel]
     fill_level: Optional[conint(gt=0)] = Field(alias="fill-level")
@@ -88,26 +95,26 @@ class NodePoolsModel(BaseModel):
         extra = "allow"
 
 
-class NodePoolsRootModel(BaseModel):
+class NodePoolsRootModel(ConfigBaseModel):
     abstract: Optional[Dict[str, NodePoolsModel]]
     concrete: Dict[str, NodePoolsModel]
 
 
-class LoggingModel(BaseModel):
+class LoggingModel(ConfigBaseModel):
     version: Literal[1]
 
     class Config:
         extra = "allow"
 
 
-class AppModel(BaseModel):
+class AppModel(ConfigBaseModel):
     loglevel: Optional[LogLevel]
     host: Optional[str]
     port: Optional[conint(gt=0, lt=65536)]
     logging: Optional[LoggingModel]
 
 
-class LegacyModel(BaseModel):
+class LegacyModel(ConfigBaseModel):
     host: Optional[str]
     port: Optional[conint(gt=0, lt=65536)]
     dest: Optional[str]
@@ -116,7 +123,7 @@ class LegacyModel(BaseModel):
     usermap: Dict[str, str]
 
 
-class ConfigModel(BaseModel):
+class ConfigModel(ConfigBaseModel):
     app: Optional[AppModel]
     tasks: Optional[TasksModel]
     database: Optional[DatabaseModel]
