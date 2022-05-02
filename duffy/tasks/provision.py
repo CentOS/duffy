@@ -64,19 +64,15 @@ def provision_nodes_into_pool(pool_name: str, node_ids: List[id]):
         # The playbook needs to provide hostname and ipaddr for provisioned nodes in the
         # result, otherwise they can't be used.
         log.debug("[%s] Validating backend provisioning node results.", pool.name)
-        valid_node_results = []
+        valid_node_results = {}
         invalid_node_results = []
-        for node_res in prov_result["nodes"]:
-            hostname = node_res.get("hostname")
-            ipaddr = node_res.get("ipaddr")
-
-            if not (hostname and ipaddr):
+        for node, node_res in zip(nodes, prov_result["nodes"]):
+            if "hostname" in node_res and "ipaddr" in node_res:
+                valid_node_results[node] = node_res
+            else:
                 invalid_node_results.append(node_res)
-                continue
 
-            valid_node_results.append(node_res)
-
-        log.debug("[%s] valid results: %s", pool.name, valid_node_results)
+        log.debug("[%s] valid results: %s", pool.name, valid_node_results.values())
         log.debug("[%s] invalid results: %s", pool.name, invalid_node_results)
 
         if invalid_node_results:
@@ -85,20 +81,19 @@ def provision_nodes_into_pool(pool_name: str, node_ids: List[id]):
                 log.error("[%s]     %s", pool.name, node_res)
 
         log.debug("[%s] Setting hostname and ipaddr fields of nodes.", pool.name)
-        for node, node_result in zip(nodes, valid_node_results):
+        for node, node_result in valid_node_results.items():
             node.hostname = node_result["hostname"]
             node.ipaddr = node_result["ipaddr"]
 
         log.debug("[%s] Storing information about provisioned hosts.", pool.name)
-        for node, node_result in zip(nodes, valid_node_results):
+        for node, node_result in valid_node_results.items():
             if not reuse_nodes:
                 node.hostname = node_result["hostname"]
                 node.ipaddr = node_result["ipaddr"]
             node.data["provision"] = node_result
             node.state = NodeState.ready
 
-        num_valid_nodes = len(valid_node_results)
-        leftover_nodes = nodes[num_valid_nodes:]
+        leftover_nodes = [node for node in nodes if node not in valid_node_results]
         if leftover_nodes:
             if reuse_nodes:
                 log.warning(
