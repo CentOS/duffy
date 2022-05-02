@@ -46,6 +46,37 @@ def _gen_provision_nodes_into_pool_param_combinations():
     ]
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize("testcase", ("success", "success-no-name", "failure"))
+@mock.patch("duffy.tasks.provision.aiodns")
+async def test__node_lookup_hostname_from_ipaddr(aiodns, testcase):
+    aiodns.DNSResolver.return_value = resolver = mock.MagicMock()
+    resolver.gethostbyaddr = gethostbyaddr = mock.AsyncMock()
+
+    if "success" in testcase:
+        gethostbyaddr.return_value = result = mock.Mock()
+        if "no-name" in testcase:
+            result.name = None
+        else:
+            result.name = "a name"
+    else:
+        gethostbyaddr.side_effect = RuntimeError("just a friendly lookup error")
+
+    hostname_sentinel = object()
+    # This IP address is from TEST-NET-1 and shouldn't be used/in use
+    node = mock.MagicMock(hostname=hostname_sentinel, ipaddr="192.0.2.1")
+
+    await provision._node_lookup_hostname_from_ipaddr(node)
+
+    assert node.hostname is not hostname_sentinel
+    gethostbyaddr.assert_awaited_once_with(node.ipaddr)
+
+    if "no-name" in testcase or "failure" in testcase:
+        assert node.hostname == node.ipaddr
+    else:
+        assert node.hostname == "a name"
+
+
 @pytest.mark.parametrize(
     "reuse_nodes, testcase", _gen_provision_nodes_into_pool_param_combinations()
 )
@@ -65,14 +96,14 @@ def test_provision_nodes_into_pool(reuse_nodes, testcase, foo_pool, db_sync_sess
             for node_id in range(1, 11):
                 node = Node(
                     id=node_id,
-                    hostname=f"node-{node_id}",
+                    hostname=f"preset-node-{node_id}",
                     ipaddr=f"172.16.13.{node_id}",
                     state="provisioning",
                     pool=pool_name,
                     reusable=reuse_nodes,
                     data={"architecture": "zumbitsu_8000"} if reuse_nodes else {},
                 )
-                if "missing-nodes" not in testcase or node_id % 2:
+                if "missing-nodes" not in testcase or node_id % 2 + node_id % 3:
                     db_sync_session.add(node)
 
                 created_node_ids.append(node_id)
@@ -108,11 +139,22 @@ def test_provision_nodes_into_pool(reuse_nodes, testcase, foo_pool, db_sync_sess
 
     caplog.clear()
 
+    def _fake_lookup(node):
+        if node.id % 2:
+            raise RuntimeError(
+                "The name shouldn't be looked up for this node as the hostname is set in the"
+                " mechanism result."
+            )
+        else:
+            node.hostname = f"looked-up-node-{node.id}"
+
     with mock.patch.object(
         foo_pool, "provision", wraps=wraps_pool_provision
     ) as pool_provision, mock.patch.object(
         foo_pool.mechanism, "provision", wraps=wraps_pool_mech_provision
-    ) as pool_mech_provision, caplog.at_level(
+    ) as pool_mech_provision, mock.patch.object(
+        provision, "_node_lookup_hostname_from_ipaddr", wraps=_fake_lookup
+    ) as _node_lookup_hostname_from_ipaddr, caplog.at_level(
         "DEBUG"
     ), expectation:
         if "mechanism-failure" in testcase:
@@ -129,13 +171,17 @@ def test_provision_nodes_into_pool(reuse_nodes, testcase, foo_pool, db_sync_sess
                 "nodes": [
                     {
                         "id": idx + 1,
-                        "hostname": f"node-{idx + 1}",
                         "ipaddr": f"192.168.123.{idx + 1}",
                         "opennebula": {"id": idx + 1},
                     }
                     for idx in range(prov_count)
                 ],
             }
+
+            # Ensure some results have hostname set, some don't.
+            for node in provision_result["nodes"]:
+                if node["id"] % 2:
+                    node["hostname"] = f"playbook-node-{node['id']}"
 
             if "invalid-node-results" in testcase:
                 del provision_result["nodes"][0]["ipaddr"]
@@ -163,12 +209,18 @@ def test_provision_nodes_into_pool(reuse_nodes, testcase, foo_pool, db_sync_sess
         if "invalid-node-results" in testcase or "fewer-provisions" in testcase:
             assert nodes_in_call
             assert {node.id for node in nodes_in_call} > node_ids
+            assert 0 < _node_lookup_hostname_from_ipaddr.await_count <= len(nodes) // 2
             if reuse_nodes:
                 assert "[foo] Returning 2 left-over reusable node(s)" in caplog.messages
             else:
                 assert "[foo] Cleaning up 2 left-over preallocated node(s)" in caplog.messages
         else:
             assert {node.id for node in nodes_in_call} == node_ids
+            _node_lookup_hostname_from_ipaddr.await_count = len(nodes) // 2
+
+        if "real-playbook" not in testcase:
+            assert any(node.hostname.startswith("looked-up-node") for node in nodes)
+            assert any(node.hostname.startswith("playbook-node") for node in nodes)
 
         if real_playbook:
             assert any("[foo] Result: {" in msg for msg in caplog.messages)

@@ -1,5 +1,7 @@
+import asyncio
 from typing import List, Optional
 
+import aiodns
 from celery.utils.log import get_task_logger
 from sqlalchemy import func, select
 
@@ -12,6 +14,19 @@ from .mechanisms import MechanismFailure
 from .node_pools import ConcreteNodePool, NodePool
 
 log = get_task_logger(__name__)
+
+
+async def _node_lookup_hostname_from_ipaddr(node: Node):
+    """Look up a node hostname from its IP address
+
+    Falls back to the IP address itself on any failure."""
+    resolver = aiodns.DNSResolver()
+    try:
+        lookup_result = await resolver.gethostbyaddr(node.ipaddr)
+    except Exception:
+        node.hostname = node.ipaddr
+    else:
+        node.hostname = lookup_result.name or node.ipaddr
 
 
 @celery.task
@@ -61,13 +76,13 @@ def provision_nodes_into_pool(pool_name: str, node_ids: List[id]):
         log.info("[%s] Backend provisioning finished.", pool.name)
         log.debug("[%s] Result: %s", pool.name, prov_result)
 
-        # The playbook needs to provide hostname and ipaddr for provisioned nodes in the
+        # The playbook needs to provide IP addresses for provisioned nodes as `ipaddr` in the
         # result, otherwise they can't be used.
         log.debug("[%s] Validating backend provisioning node results.", pool.name)
         valid_node_results = {}
         invalid_node_results = []
         for node, node_res in zip(nodes, prov_result["nodes"]):
-            if "hostname" in node_res and "ipaddr" in node_res:
+            if "ipaddr" in node_res:
                 valid_node_results[node] = node_res
             else:
                 invalid_node_results.append(node_res)
@@ -80,10 +95,30 @@ def provision_nodes_into_pool(pool_name: str, node_ids: List[id]):
             for node_res in invalid_node_results:
                 log.error("[%s]     %s", pool.name, node_res)
 
+        # If the playbook provides a hostname, this will be used, otherwise Duffy will attempt a
+        # reverse lookup of the IP address and if it fails, fall back to using it as the hostname.
+
         log.debug("[%s] Setting hostname and ipaddr fields of nodes.", pool.name)
+        nodes_need_hostname_looked_up = []
         for node, node_result in valid_node_results.items():
-            node.hostname = node_result["hostname"]
             node.ipaddr = node_result["ipaddr"]
+            hostname = node_result.get("hostname")
+            if hostname:
+                node.hostname = hostname
+            else:
+                nodes_need_hostname_looked_up.append(node)
+
+        if nodes_need_hostname_looked_up:
+            log.debug("[%s] Looking up hostname for nodes from ipaddr...", pool.name)
+
+            asyncio.run(
+                asyncio.wait(
+                    [
+                        _node_lookup_hostname_from_ipaddr(node)
+                        for node in nodes_need_hostname_looked_up
+                    ]
+                )
+            )
 
         log.debug("[%s] Storing information about provisioned hosts.", pool.name)
         for node, node_result in valid_node_results.items():

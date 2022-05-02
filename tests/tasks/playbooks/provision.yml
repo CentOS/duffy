@@ -42,12 +42,13 @@
         index_var: index
 
     # ... as long as this (mandatory) task transforms it into the expected output format, i.e. sets
-    # a fact `duffy_out` which looks like this:
+    # a fact `duffy_out` which looks like this (`hostname` is optional, if set, it is used,
+    # otherwise it will be looked up from `ipaddr`).
     #
     # duffy_out ->
     #   {
     #     "nodes": [
-    #       {"hostname": "hostname1.domain.tld", "ipaddr": "...", "anything": "else"},
+    #       {"ipaddr": "...", "anything": "else"},
     #       {"hostname": "hostname2.domain.tld", "ipaddr": "...", "anything": "else"},
     #     ]
     #   }
