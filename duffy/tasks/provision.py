@@ -87,9 +87,6 @@ def provision_nodes_into_pool(pool_name: str, node_ids: List[id]):
 
         log.debug("[%s] Storing information about provisioned hosts.", pool.name)
         for node, node_result in valid_node_results.items():
-            if not reuse_nodes:
-                node.hostname = node_result["hostname"]
-                node.ipaddr = node_result["ipaddr"]
             node.data["provision"] = node_result
             node.state = NodeState.ready
 
