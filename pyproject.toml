@@ -52,6 +52,7 @@ ipython = {version = ">=7.29", optional = true}
 jmespath = {version = ">=0.10", optional = true}
 pottery = {version = "^3", optional = true}
 psycopg2 = {version = "^2.9.2", optional = true}
+aiodns = {version = "^3.0.0", optional = true}
 
 [tool.poetry.dev-dependencies]
 Jinja2 = "^3.0.3"
@@ -79,12 +80,12 @@ tox = "^3.24.4"
 all = [
     "ipython",
     "psycopg2", "asyncpg",
-    "ansible-runner", "Jinja2", "jmespath", "pottery",
+    "aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery",
     "httpx",
 ]
 interactive = ["ipython"]
 postgresql = ["psycopg2", "asyncpg"]
-tasks = ["ansible-runner", "Jinja2", "jmespath", "pottery"]
+tasks = ["aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery"]
 legacy = ["httpx"]
 
 [tool.pytest.ini_options]
