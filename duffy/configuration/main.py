@@ -1,3 +1,4 @@
+from copy import deepcopy
 from itertools import chain
 from pathlib import Path
 from typing import List, Union
@@ -28,7 +29,12 @@ def read_configuration(
     *config_files: List[Union[Path, str]], clear: bool = True, validate: bool = True
 ):
     config_files = _expand_normalize_config_files(config_files)
-    new_config = {}
+
+    if clear:
+        new_config = {}
+    else:
+        new_config = deepcopy(config)
+
     for config_file in config_files:
         with config_file.open("r") as fp:
             for config_doc in yaml.safe_load_all(fp):
@@ -38,7 +44,5 @@ def read_configuration(
         # validate merged configuration
         ConfigModel(**new_config)
 
-    if clear:
-        config.clear()
-
+    config.clear()
     config.update(new_config)
