@@ -1,8 +1,9 @@
+import re
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
-from pydantic import AnyUrl, BaseModel, Field, RedisDsn, conint, stricturl
+from pydantic import AnyUrl, BaseModel, Field, RedisDsn, conint, stricturl, validator
 
 from ..misc import ConfigTimeDelta
 
@@ -114,6 +115,19 @@ class AppModel(ConfigBaseModel):
     logging: Optional[LoggingModel]
 
 
+class LegacyPoolMapModel(ConfigBaseModel):
+    pool: str
+    ver: Optional[str]
+    arch: Optional[str]
+    flavor: Optional[str]
+
+    @validator("ver", "arch", "flavor")
+    def detect_regex(cls, v: str):
+        if v.startswith("^") and v.endswith("$"):
+            return re.compile(v)
+        return v
+
+
 class LegacyModel(ConfigBaseModel):
     host: Optional[str]
     port: Optional[conint(gt=0, lt=65536)]
@@ -121,6 +135,7 @@ class LegacyModel(ConfigBaseModel):
     loglevel: Optional[LogLevel]
     logging: Optional[LoggingModel]
     usermap: Dict[str, str]
+    poolmap: List[LegacyPoolMapModel]
 
 
 class ConfigModel(ConfigBaseModel):

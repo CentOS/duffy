@@ -50,6 +50,15 @@ metaclient:
   dest: http://127.0.0.1:8080
   usermap:
     "fca07101-daea-4b8c-acb4-88ba8ae7654c": "hahahahahatheystoppedlegacysupporthahahahaha"
+  poolmap:
+  # Valid selection keys: ver, arch, flavor
+  # Values can be simple strings or regexes (surrounded by "^...$")
+  # and must map to a pool which can use Jinja macros.
+  # First match wins.
+  - arch: "^(aarch64|ppc64|ppc64le)$"
+    pool: "virtual-centos{{ ver | replace('-', '') }}-{{ arch }}-{{ flavor | default('medium') }}"
+  - arch: "x86_64"
+    pool: "physical-centos{{ ver | replace('-', '') }}-{{ arch }}"
   logging:
     version: 1
     disable_existing_loggers: false
