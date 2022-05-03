@@ -1,6 +1,8 @@
-from typing import Optional
+import re
+from typing import Dict, Optional
 
 import httpx
+import jinja2
 from fastapi import Depends, FastAPI
 from fastapi.responses import JSONResponse
 from starlette.status import (
@@ -11,6 +13,7 @@ from starlette.status import (
 )
 
 from ..configuration import config
+from ..configuration.validation import LegacyPoolMapModel
 from ..version import __version__
 from .api_models import Credentials
 from .auth import req_credentials, req_credentials_optional
@@ -32,6 +35,35 @@ app = FastAPI(
 )
 
 
+def lookup_pool_from_map(**req_specs: Dict[str, Optional[str]]) -> Optional[str]:
+    req_specs = {k: v for k, v in req_specs.items() if v is not None}
+    pool_template = pool = None
+
+    for item in config["metaclient"]["poolmap"]:
+        map_spec = LegacyPoolMapModel(**item)
+
+        for sel_key in ("ver", "arch", "flavor"):
+            sel_value = getattr(map_spec, sel_key)
+            req_value = req_specs.get(sel_key)
+            if sel_value:
+                if req_value is None:
+                    break
+                elif isinstance(sel_value, re.Pattern):
+                    sel_match = sel_value.match(req_value)
+                    if not sel_match:
+                        break
+                elif sel_value != req_value:
+                    break
+        else:
+            pool_template = map_spec.pool
+
+        if pool_template:
+            pool = jinja2.Template(pool_template).render(**req_specs)
+            break
+
+    return pool
+
+
 @app.get("/Node/get")
 async def request_nodes(
     ver: str = "7",
@@ -40,13 +72,8 @@ async def request_nodes(
     flavor: str = None,
     cred: Credentials = Depends(req_credentials),
 ):
-    ver = "".join(i.replace("-", "") for i in ver)
-    if arch in ["aarch64", "ppc64", "ppc64le"]:
-        if not flavor:
-            flavor = "medium"
-        nodes_specs = [{"quantity": count, "pool": f"virtual-centos{ver}-{arch}-{flavor}"}]
-    else:
-        nodes_specs = [{"quantity": count, "pool": f"physical-centos{ver}-{arch}"}]
+    pool = lookup_pool_from_map(ver=ver, arch=arch, flavor=flavor)
+    nodes_specs = [{"quantity": count, "pool": pool}]
 
     async with httpx.AsyncClient() as client:
         dest = config["metaclient"]["dest"].rstrip("/")

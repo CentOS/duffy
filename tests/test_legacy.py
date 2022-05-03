@@ -135,6 +135,27 @@ class TestMain:
         apiv1_response.json.return_value = self.apiv1_result
         return apiv1_client, apiv1_response
 
+    @pytest.mark.parametrize("flavor", ("tiny", "medium", None))
+    @pytest.mark.parametrize("arch", ("x86_64", "aarch64", "unknown", None))
+    @pytest.mark.parametrize("ver", ("7", "8-stream", "9-stream"))
+    def test_lookup_pool_from_map(self, ver, arch, flavor):
+        ver_wo_dashes = ver.replace("-", "")
+        if arch == "unknown" or arch is None:
+            expected = None
+        else:
+            if arch == "x86_64":
+                expected = f"physical-centos{ver_wo_dashes}-{arch}"
+            else:
+                if flavor:
+                    expected_flavor = flavor
+                else:
+                    expected_flavor = "medium"
+                expected = f"virtual-centos{ver_wo_dashes}-{arch}-{expected_flavor}"
+
+        pool = main.lookup_pool_from_map(ver=ver, arch=arch, flavor=flavor)
+
+        assert pool == expected
+
     @mock.patch("duffy.legacy.main.httpx.AsyncClient")
     async def test_request_nodes_physical_auth(self, AsyncClient, client):
         apiv1_client, apiv1_response = self._setup_async_client(AsyncClient, "post")
