@@ -11,6 +11,7 @@ except ImportError:  # pragma: no cover
 import sqlalchemy
 
 from . import database
+from .configuration import config
 from .database import model
 from .exceptions import DuffyShellUnavailableError
 
@@ -24,6 +25,7 @@ def get_available_shells():
 
 def get_shell_variables(shell_type: str):
     variables = {
+        "config": config,
         "db_sync_session": database.sync_session_maker(),
         "sqlalchemy": sqlalchemy,
         "select": sqlalchemy.select,
