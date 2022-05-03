@@ -64,6 +64,7 @@ class DatabaseModel(ConfigBaseModel):
 class MiscModel(ConfigBaseModel):
     session_lifetime: ConfigTimeDelta = Field(alias="session-lifetime")
     session_lifetime_max: ConfigTimeDelta = Field(alias="session-lifetime-max")
+    default_node_quota: conint(gt=0) = Field(alias="default-node-quota")
 
 
 class AnsibleMechanismPlaybookModel(ConfigBaseModel):

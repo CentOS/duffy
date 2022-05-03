@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import sys
-from typing import Optional
+from typing import Optional, Union
 
 from fastapi import HTTPException
 from sqlalchemy import select
@@ -11,6 +11,7 @@ from .app.controllers import tenant
 from .database import async_session_maker, init_model, sync_session_maker
 from .database.model import Tenant
 from .exceptions import DuffyConfigurationError
+from .util import UNSET, SentinelType
 
 log = logging.getLogger(__name__)
 
@@ -59,10 +60,14 @@ class AdminContext:
     def show_tenant(self, name: str):
         return self.proxy_controller_function(tenant.get_tenant, id=self.get_tenant_id(name))
 
-    def create_tenant(self, name: str, ssh_key: str, is_admin: bool = False):
+    def create_tenant(
+        self, name: str, ssh_key: str, node_quota: Optional[int], is_admin: bool = False
+    ):
         return self.proxy_controller_function(
             tenant.create_tenant,
-            data=TenantCreateModel(name=name, ssh_key=ssh_key, is_admin=is_admin),
+            data=TenantCreateModel(
+                name=name, ssh_key=ssh_key, is_admin=is_admin, node_quota=node_quota
+            ),
         )
 
     def retire_unretire_tenant(self, name: str, retire: bool):
@@ -73,10 +78,17 @@ class AdminContext:
         )
 
     def update_tenant(
-        self, name: str, api_key: Optional[str] = None, ssh_key: Optional[str] = None
+        self,
+        name: str,
+        api_key: Optional[Union[str, SentinelType]] = UNSET,
+        ssh_key: Optional[Union[str, SentinelType]] = UNSET,
+        node_quota: Optional[Union[int, SentinelType]] = UNSET,
     ):
+        data = {}
+        for key in ("api_key", "ssh_key", "node_quota"):
+            value = locals()[key]
+            if value is not UNSET:
+                data[key] = value
         return self.proxy_controller_function(
-            tenant.update_tenant,
-            id=self.get_tenant_id(name),
-            data=TenantUpdateModel(api_key=api_key, ssh_key=ssh_key),
+            tenant.update_tenant, id=self.get_tenant_id(name), data=TenantUpdateModel(**data)
         )

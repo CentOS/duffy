@@ -16,6 +16,7 @@ from duffy.database.setup import _gen_test_api_key
 from . import BaseTestController
 
 
+@pytest.mark.duffy_config(example_config=True, clear=True)
 class TestTenant(BaseTestController):
 
     name = "tenant"
@@ -23,6 +24,7 @@ class TestTenant(BaseTestController):
     attrs = {
         "name": "Some Honky Tenant!",
         "ssh_key": "# With a honky SSH key!",
+        "node_quota": 5,
     }
     no_verify_attrs = ("ssh_key",)
     unique = "unique"
@@ -73,6 +75,8 @@ class TestTenant(BaseTestController):
             "success-unretire",
             "success-update-ssh-key",
             "success-reset-api-key",
+            "success-update-node-quota",
+            "success-unset-node-quota",
             "inactive",
             "not found",
             pytest.param("not admin", marks=pytest.mark.client_auth_as("tenant")),
@@ -104,8 +108,12 @@ class TestTenant(BaseTestController):
             elif "update-api-key" in testcase:
                 api_key = str(uuid.uuid4())
                 json_payload = {"api_key": api_key}
-            else:  # "reset-api-key" in testcase
+            elif "reset-api-key" in testcase:
                 json_payload = {"api_key": "reset"}
+            elif "update-node-quota" in testcase:
+                json_payload = {"node_quota": 20}
+            else:  # "unset-node-quota" in testcase
+                json_payload = {"node_quota": None}
         else:
             # ensure the request body validates
             if "inactive" in testcase:
@@ -125,8 +133,13 @@ class TestTenant(BaseTestController):
                 assert result["tenant"]["ssh_key"]
             elif "reset-api-key" in testcase:
                 assert uuid.UUID(result["tenant"]["api_key"])
+            elif "update-node-quota" in testcase:
+                assert result["tenant"]["node_quota"] == 20
+            elif "unset-node-quota" in testcase:
+                assert result["tenant"]["node_quota"] is None
             else:
                 assert result["tenant"]["api_key"]
+                assert result["tenant"]["node_quota"] == 5
         elif testcase == "not admin":
             assert response.status_code == HTTP_403_FORBIDDEN
         elif testcase == "inactive":

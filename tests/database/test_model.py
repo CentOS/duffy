@@ -83,6 +83,38 @@ class TestTenant(ModelTestBase):
         else:
             assert db_sync_obj.validate_api_key(self.attrs["api_key"])
 
+    @pytest.mark.duffy_config(example_config=True, clear=True)
+    @pytest.mark.parametrize("quota_set", (True, False))
+    def test_effective_node_quota_instance(self, quota_set, db_sync_obj):
+        with mock.patch.dict("duffy.database.model.tenant.config") as config:
+            if quota_set:
+                db_sync_obj.node_quota = 5
+                assert db_sync_obj.effective_node_quota == 5
+            else:
+                config["misc"]["default-node-quota"] = sentinel = object()
+                assert db_sync_obj.effective_node_quota is sentinel
+
+    @pytest.mark.duffy_config(example_config=True, clear=True)
+    @pytest.mark.parametrize("quota_set", (True, False))
+    def test_effective_node_quota_class(self, quota_set, db_sync_session, db_sync_obj):
+        with mock.patch.dict("duffy.database.model.tenant.config") as config:
+            if quota_set:
+                db_sync_obj.node_quota = 5
+
+                selected = db_sync_session.execute(
+                    select(model.Tenant).filter(model.Tenant.effective_node_quota == 5)
+                ).scalars()
+
+                assert db_sync_obj in selected
+            else:
+                config["misc"]["default-node-quota"] = 10
+
+                selected = db_sync_session.execute(
+                    select(model.Tenant).filter(model.Tenant.effective_node_quota == 10)
+                ).scalars()
+
+                assert db_sync_obj in selected
+
 
 class TestSession(ModelTestBase):
     klass = model.Session

@@ -121,6 +121,7 @@ database:
 misc:
   session-lifetime: "6h"
   session-lifetime-max: "12h"
+  default-node-quota: 10
 
 nodepools:
   abstract:

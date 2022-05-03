@@ -4,7 +4,7 @@ import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Response
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -129,6 +129,27 @@ async def create_session(
             )
     elif not tenant.is_admin and data.tenant_id is not None and data.tenant_id != tenant.id:
         raise HTTPException(HTTP_403_FORBIDDEN, "can't create session for other tenant")
+
+    if not tenant.is_admin:
+        requested_nodes = sum(nodes_spec.quantity for nodes_spec in data.nodes_specs)
+
+        current_allocation = (
+            await db_async_session.execute(
+                select(func.count())
+                .select_from(SessionNode)
+                .join(Session, Session.id == SessionNode.session_id)
+                .join(Node, Node.id == SessionNode.node_id)
+                .filter(Session.active == True, Session.tenant == tenant)  # noqa: E712
+            )
+        ).scalar_one()
+
+        if requested_nodes + current_allocation > tenant.effective_node_quota:
+            raise HTTPException(
+                HTTP_403_FORBIDDEN,
+                f"quota exceeded: requested nodes ({requested_nodes}) + current allocation"
+                f" ({current_allocation}) = {requested_nodes + current_allocation}"
+                f" > {tenant.effective_node_quota}",
+            )
 
     session = Session(
         tenant=tenant,
