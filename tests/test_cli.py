@@ -12,6 +12,7 @@ import duffy.cli
 from duffy.cli import cli
 from duffy.configuration import config
 from duffy.exceptions import DuffyConfigurationError
+from duffy.util import UNSET
 from duffy.version import __version__
 
 from .util import noop_context
@@ -36,6 +37,22 @@ def dont_read_etc_duffy():
         "duffy.cli.DEFAULT_CONFIG_FILE", new=tmpdir
     ), mock.patch.object(param, "default", new=tmpdir):
         yield
+
+
+class TestIntOrNoneType:
+    @pytest.mark.parametrize("value", (UNSET, 5))
+    def test_convert_verbatim(self, value):
+        assert duffy.cli.INT_OR_NONE.convert(value, None, None) == value
+
+    @pytest.mark.parametrize("value", ("None", "null"))
+    def test_convert_none(self, value):
+        assert duffy.cli.INT_OR_NONE.convert(value, None, None) is None
+
+    def test_convert_invalid(self):
+        with pytest.raises(click.ClickException) as exc:
+            duffy.cli.INT_OR_NONE.convert("hello", "<param>", None)
+
+        assert exc.match("'hello' is not a valid integer")
 
 
 @pytest.mark.parametrize(
@@ -434,13 +451,17 @@ class TestAdminCLI:
             assert result.exit_code == 1
             assert result.stdout.strip() == "ERROR: tenant-name\nERROR DETAIL: BAR"
 
-    @pytest.mark.parametrize("testcase", ("success", "failure", "missing-arguments"))
+    @pytest.mark.parametrize(
+        "testcase",
+        ("success", "success-update-quota", "success-unset-quota", "failure", "missing-arguments"),
+    )
     def test_tenant_update(self, create_for_cli, testcase, runner, duffy_config_files, caplog):
         caplog.set_level(logging.DEBUG)
         (config_file,) = duffy_config_files
 
         new_ssh_key = "# new ssh key"
         new_api_key = "# new API key"
+        node_quota = object()
 
         create_for_cli.return_value = admin_ctx = mock.MagicMock()
 
@@ -450,16 +471,23 @@ class TestAdminCLI:
             result_tenant = mock.MagicMock()
             result_tenant.ssh_key = new_ssh_key
             result_tenant.api_key = new_api_key
+            if "update-quota" in testcase:
+                result_tenant.effective_quota = result_tenant.node_quota = node_quota = 5
+            else:
+                result_tenant.node_quota = node_quota = None
+                result_tenant.effective_quota = 10
             admin_ctx.update_tenant.return_value = {"tenant": result_tenant}
 
         parameters = (f"--config={config_file.absolute()}", "tenant", "update", "tenant-name")
 
         if testcase != "missing-arguments":
             parameters += ("--ssh-key", new_ssh_key, "--api-key", new_api_key)
+            if node_quota is None or isinstance(node_quota, int):
+                parameters += ("--node-quota", str(node_quota))
 
         result = runner.invoke(cli, parameters)
 
-        if testcase == "success":
+        if "success" in testcase:
             assert result.exit_code == 0
             assert result.stdout.startswith("OK: tenant-name:")
         else:
@@ -467,4 +495,6 @@ class TestAdminCLI:
             if testcase == "failure":
                 assert result.stdout.strip() == "ERROR: tenant-name\nERROR DETAIL: BLOOP"
             else:
-                assert result.stdout.strip() == "ERROR: Either --ssh-key or --api-key must be set."
+                assert result.stdout.strip() == (
+                    "ERROR: Either --ssh-key, --api-key or --node-quota must be set."
+                )

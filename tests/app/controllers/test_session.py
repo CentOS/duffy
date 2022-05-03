@@ -155,6 +155,7 @@ class TestSessionWorkflow:
             "wrong tenant",
             "contextualizing failure",
             "decontextualizing failure",
+            "quota exceeded",
         ),
     )
     @mock.patch("duffy.app.controllers.session.decontextualize")
@@ -189,6 +190,10 @@ class TestSessionWorkflow:
         request_payload = {"nodes_specs": self.nodes_specs}
         if testcase == "wrong tenant":
             request_payload["tenant_id"] = auth_tenant.id + 1
+
+        if testcase == "quota exceeded":
+            auth_tenant.node_quota = 0
+            await db_async_session.commit()
 
         response = await client.post(self.path, json=request_payload)
         result = response.json()
@@ -242,6 +247,9 @@ class TestSessionWorkflow:
             elif testcase == "wrong tenant":
                 assert response.status_code == HTTP_403_FORBIDDEN
                 assert result["detail"] == "can't create session for other tenant"
+            elif testcase == "quota exceeded":
+                assert response.status_code == HTTP_403_FORBIDDEN
+                assert result["detail"].startswith("quota exceeded:")
             else:  # testcase in ("contextualizing failure", "decontextualizing failure")
                 assert response.status_code == HTTP_503_SERVICE_UNAVAILABLE
                 assert result["detail"] == "contextualization of nodes failed"

@@ -119,21 +119,25 @@ class TestAdminContext:
         get_tenant_id.assert_called_once_with("name")
         proxy_controller_function.assert_called_once_with(controllers.tenant.get_tenant, id=6)
 
-    @pytest.mark.parametrize("testcase", ("normal", "is-admin"))
+    @pytest.mark.parametrize("testcase", ("normal", "normal-with-quota", "is-admin"))
     @mock.patch.object(AdminContext, "proxy_controller_function")
     def test_create_tenant(self, proxy_controller_function, testcase, admin_ctx):
         is_admin = testcase == "is-admin"
+        with_quota = "with-quota" in testcase
+        node_quota = 5 if with_quota else None
 
         proxy_controller_function.return_value = sentinel = object()
 
-        result = admin_ctx.create_tenant(name="name", ssh_key="# no ssh key", is_admin=is_admin)
+        result = admin_ctx.create_tenant(
+            name="name", ssh_key="# no ssh key", node_quota=node_quota, is_admin=is_admin
+        )
 
         assert result == sentinel
 
         proxy_controller_function.assert_called_once_with(
             controllers.tenant.create_tenant,
             data=api_models.TenantCreateModel(
-                name="name", ssh_key="# no ssh key", is_admin=is_admin
+                name="name", ssh_key="# no ssh key", node_quota=node_quota, is_admin=is_admin
             ),
         )
 

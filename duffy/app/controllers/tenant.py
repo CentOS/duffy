@@ -90,6 +90,7 @@ async def create_tenant(
         is_admin=data.is_admin,
         api_key=api_key,
         ssh_key=data.ssh_key.get_secret_value(),
+        node_quota=data.node_quota,
     )
     db_async_session.add(created_tenant)
     try:
@@ -158,6 +159,9 @@ async def update_tenant(
         else:
             updated_tenant.api_key = data.api_key
             api_key = SecretStr("this is hidden anyway")
+
+        if "node_quota" in data.dict(exclude_unset=True):
+            updated_tenant.node_quota = data.node_quota
 
     api_tenant = TenantUpdateResultModel(
         api_key=api_key, **TenantModel.from_orm(updated_tenant).dict()

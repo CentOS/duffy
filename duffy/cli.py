@@ -1,7 +1,7 @@
 import copy
 import logging
 import sys
-from typing import Tuple
+from typing import Optional, Tuple, Union
 
 import click
 import uvicorn
@@ -13,11 +13,34 @@ from .database.migrations.main import alembic_migration
 from .database.setup import setup_db_schema, setup_db_test_data
 from .exceptions import DuffyConfigurationError
 from .tasks import start_worker
+from .util import UNSET, SentinelType
 from .version import __version__
 
 DEFAULT_CONFIG_FILE = "/etc/duffy"
 
 log = logging.getLogger(__name__)
+
+
+# Custom Click parameter types
+
+
+class IntOrNoneType(click.ParamType):
+    name = "int_or_none"
+
+    def convert(self, value, param, ctx):
+        if value is UNSET or isinstance(value, int):
+            return value
+
+        try:
+            if isinstance(value, str) and value.lower() in ("none", "null"):
+                return None
+
+            return int(value)
+        except ValueError:
+            self.fail(f"{value!r} is not a valid integer", param, ctx)
+
+
+INT_OR_NONE = IntOrNoneType()
 
 
 # Global setup and CLI options
@@ -358,8 +381,9 @@ def tenant_show(name: str):
     else:
         tenant = result["tenant"]
         click.echo(
-            f"OK: {name}: id={tenant.id} active={tenant.active} created_at={tenant.created_at}"
-            + f" retired_at={tenant.retired_at}"
+            f"OK: {name}: id={tenant.id} node_quota={tenant.node_quota}"
+            f" effective_node_quota={tenant.effective_node_quota} active={tenant.active}"
+            f" created_at={tenant.created_at} retired_at={tenant.retired_at}"
         )
 
 
@@ -369,12 +393,20 @@ def tenant_show(name: str):
     default=False,
     help="If the tenant should have administrative rights",
 )
+@click.option(
+    "--node-quota",
+    type=INT_OR_NONE,
+    default=None,
+    help="How many nodes the tenant can use at a time (optional, will use default if unset).",
+)
 @click.argument("name")
 @click.argument("ssh_key")
-def tenant_create(name: str, ssh_key: str, is_admin: bool = False):
+def tenant_create(name: str, ssh_key: str, is_admin: bool, node_quota: Optional[int]):
     """Create a new tenant."""
     admin_ctx = admin.AdminContext.create_for_cli()
-    result = admin_ctx.create_tenant(name, ssh_key, is_admin)
+    result = admin_ctx.create_tenant(
+        name=name, ssh_key=ssh_key, node_quota=node_quota, is_admin=is_admin
+    )
     if "error" in result:
         click.echo(f"ERROR: {name}\nERROR DETAIL: {result['error']['detail']}", err=True)
         sys.exit(1)
@@ -401,19 +433,34 @@ def tenant_retire(name: str, retire: bool = True):
 @click.option(
     "--api-key", help="Either a new API key (UUID) for the tenant or 'reset' to set automatically."
 )
+@click.option(
+    "--node-quota",
+    type=INT_OR_NONE,
+    default=UNSET,
+    help="How many nodes the tenant can use at a time (optional, will use default if unset).",
+)
 @click.argument("name")
-def tenant_update(name: str, ssh_key: str = None, api_key: str = None):
+def tenant_update(
+    name: str,
+    node_quota: Optional[Union[int, SentinelType]],
+    ssh_key: str = None,
+    api_key: str = None,
+):
     """Update a tenant."""
-    if not ssh_key and not api_key:
-        click.echo("ERROR: Either --ssh-key or --api-key must be set.", err=True)
+    if not ssh_key and not api_key and node_quota is UNSET:
+        click.echo("ERROR: Either --ssh-key, --api-key or --node-quota must be set.", err=True)
         sys.exit(1)
     admin_ctx = admin.AdminContext.create_for_cli()
-    result = admin_ctx.update_tenant(name, ssh_key=ssh_key, api_key=api_key)
+    kwargs = {"name": name, "ssh_key": ssh_key, "api_key": api_key}
+    if node_quota is not UNSET:
+        kwargs["node_quota"] = node_quota
+    result = admin_ctx.update_tenant(**kwargs)
     if "error" in result:
         click.echo(f"ERROR: {name}\nERROR DETAIL: {result['error']['detail']}", err=True)
         sys.exit(1)
     else:
+        tenant = result["tenant"]
         click.echo(
-            f"OK: {name}: ssh_key={result['tenant'].ssh_key}"
-            + f" api_key={result['tenant'].api_key}"
+            f"OK: {name}: ssh_key={tenant.ssh_key} api_key={tenant.api_key}"
+            f" node_quota={tenant.node_quota} effective_node_quota={tenant.effective_node_quota}"
         )
