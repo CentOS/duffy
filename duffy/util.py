@@ -1,3 +1,6 @@
+import enum
+
+
 def camel_case_to_lower_with_underscores(camelcased: str) -> str:
     """Convert CamelCased names to lower_case_with_underscores."""
     chunk_positions = []
@@ -50,3 +53,11 @@ def merge_dicts(*src_dicts):
                 res_dict[key] = src_value
 
     return res_dict
+
+
+class SentinelType(enum.Enum):
+    UNSET = 1
+
+
+UNSET = SentinelType.UNSET
+"""A sentinel object for unset values."""
