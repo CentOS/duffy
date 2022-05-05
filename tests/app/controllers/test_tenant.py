@@ -1,3 +1,4 @@
+import datetime as dt
 import uuid
 
 import pytest
@@ -74,6 +75,7 @@ class TestTenant(BaseTestController):
             "success-retire",
             "success-unretire",
             "success-update-ssh-key",
+            "success-update-api-key",
             "success-reset-api-key",
             "success-update-node-quota",
             "success-unset-node-quota",
@@ -88,17 +90,28 @@ class TestTenant(BaseTestController):
                 client,
                 client_kwargs={"auth": (auth_admin.name, str(_gen_test_api_key(auth_admin.name)))},
             )
-            obj_id = create_response.json()["tenant"]["id"]
-            tenant = (
-                await db_async_session.execute(select(Tenant).filter_by(id=obj_id))
-            ).scalar_one()
-            if "inactive" in testcase or "unretire" in testcase:
-                tenant.active = False
-            tenant_session = Session(tenant_id=obj_id)
-            db_async_session.add(tenant_session)
-            await db_async_session.commit()
+            tenant_id = create_response.json()["tenant"]["id"]
+            async with db_async_session.begin():
+                tenant = (
+                    await db_async_session.execute(select(Tenant).filter_by(id=tenant_id))
+                ).scalar_one()
+                tenant_api_key = tenant.api_key
+                if "inactive" in testcase or "unretire" in testcase:
+                    tenant.active = False
+                # Ensure there's a session around to be expired.
+                tenant_session = Session(
+                    tenant_id=tenant_id,
+                    expires_at=(
+                        dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc) + dt.timedelta(days=1)
+                    ),
+                )
+                db_async_session.add(tenant_session)
+                await db_async_session.flush()
+                tenant_session_id = tenant_session.id
+                tenant_session_expires_at = tenant_session.expires_at
         else:
-            obj_id = -1
+            tenant_id = -1
+            tenant = None
 
         if "success" in testcase:
             if "retire" in testcase:
@@ -119,15 +132,24 @@ class TestTenant(BaseTestController):
             if "inactive" in testcase:
                 json_payload = {"ssh_key": "this shouldn't get through"}
             else:
-                json_payload = {"active": "inactive" not in testcase}
+                json_payload = {"active": True}
 
-        response = await client.put(f"{self.path}/{obj_id}", json=json_payload)
+        response = await client.put(f"{self.path}/{tenant_id}", json=json_payload)
         result = response.json()
+
+        db_async_session.expire_all()
 
         if "success" in testcase:
             assert response.status_code == HTTP_200_OK
             if "retire" in testcase:
                 assert result["tenant"]["active"] == ("unretire" in testcase)
+                if "unretire" not in testcase:
+                    updated_tenant_session = (
+                        await db_async_session.execute(
+                            select(Session).filter_by(id=tenant_session_id)
+                        )
+                    ).scalar_one()
+                    assert updated_tenant_session.expires_at < tenant_session_expires_at
             elif "ssh-key" in testcase:
                 # The SSH key is masked out in the result, just check its presence
                 assert result["tenant"]["ssh_key"]
@@ -146,3 +168,9 @@ class TestTenant(BaseTestController):
             assert response.status_code == HTTP_422_UNPROCESSABLE_ENTITY
         else:  # not found
             assert response.status_code == HTTP_404_NOT_FOUND
+
+        if "api-key" not in testcase and tenant:
+            updated_tenant = (
+                await db_async_session.execute(select(Tenant).filter_by(id=tenant_id))
+            ).scalar_one()
+            assert tenant_api_key == updated_tenant.api_key
