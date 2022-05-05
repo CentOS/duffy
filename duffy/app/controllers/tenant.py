@@ -157,7 +157,8 @@ async def update_tenant(
             # Set api_key to return the automatically generated one in the result.
             updated_tenant.api_key = api_key = uuid4()
         else:
-            updated_tenant.api_key = data.api_key
+            if data.api_key:
+                updated_tenant.api_key = data.api_key
             api_key = SecretStr("this is hidden anyway")
 
         if "node_quota" in data.dict(exclude_unset=True):
