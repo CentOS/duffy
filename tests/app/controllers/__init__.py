@@ -249,30 +249,3 @@ class BaseTestController:
         assert obj["id"] == len(objs)
         attrs = {**self.attrs, **self._add_attrs_from_response(create_response)}
         self._verify_item(obj, attrs=attrs)
-
-    @pytest.mark.parametrize(
-        "testcase",
-        (
-            "found",
-            "not found",
-            pytest.param("not admin", marks=pytest.mark.client_auth_as("tenant")),
-        ),
-    )
-    async def test_delete_obj(self, client, testcase, auth_admin):
-        if testcase != "not found":
-            create_response = await self._create_obj(
-                client,
-                client_kwargs={"auth": (auth_admin.name, str(_gen_test_api_key(auth_admin.name)))},
-            )
-            obj_id = create_response.json()[self.name]["id"]
-        else:
-            obj_id = -1
-
-        response = await client.delete(f"{self.path}/{obj_id}")
-
-        if testcase == "found":
-            assert response.status_code == HTTP_200_OK
-        elif testcase == "not admin":
-            assert response.status_code == HTTP_403_FORBIDDEN
-        else:
-            assert response.status_code == HTTP_404_NOT_FOUND
