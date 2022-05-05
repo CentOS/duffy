@@ -170,25 +170,3 @@ async def update_tenant(
     await db_async_session.commit()
 
     return {"action": "put", "tenant": api_tenant}
-
-
-# http delete http://localhost:8080/api/v1/tenant/2
-@router.delete("/{id}", response_model=TenantResult, tags=["tenants"])
-async def delete_tenant(
-    id: int,
-    db_async_session: AsyncSession = Depends(req_db_async_session),
-    tenant: Tenant = Depends(req_tenant),
-):
-    """Delete the tenant with the specified **ID**."""
-    if not tenant.is_admin:
-        raise HTTPException(HTTP_403_FORBIDDEN)
-
-    tenant = (await db_async_session.execute(select(Tenant).filter_by(id=id))).scalar_one_or_none()
-
-    if not tenant:
-        raise HTTPException(HTTP_404_NOT_FOUND)
-
-    await db_async_session.delete(tenant)
-    await db_async_session.commit()
-
-    return {"action": "delete", "tenant": tenant}

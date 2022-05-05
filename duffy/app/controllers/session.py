@@ -309,30 +309,3 @@ async def update_session(
     await db_async_session.commit()
 
     return {"action": "put", "session": session}
-
-
-# http delete http://localhost:8080/api/v1/sessions/2
-@router.delete("/{id}", response_model=SessionResult, tags=["sessions"])
-async def delete_session(
-    id: int,
-    db_async_session: AsyncSession = Depends(req_db_async_session),
-    tenant: Tenant = Depends(req_tenant),
-):
-    """Delete the session with the specified **ID**."""
-    if not tenant.is_admin:
-        raise HTTPException(HTTP_403_FORBIDDEN)
-    session = (
-        await db_async_session.execute(
-            select(Session)
-            .filter_by(id=id)
-            .options(
-                selectinload(Session.tenant),
-                selectinload(Session.session_nodes).selectinload(SessionNode.node),
-            )
-        )
-    ).scalar_one_or_none()
-    if not session:
-        raise HTTPException(HTTP_404_NOT_FOUND)
-    await db_async_session.delete(session)
-    await db_async_session.commit()
-    return {"action": "delete", "session": session}

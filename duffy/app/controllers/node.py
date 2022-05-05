@@ -76,26 +76,3 @@ async def create_node(
     await db_async_session.refresh(node)
 
     return {"action": "post", "node": node}
-
-
-@router.delete("/{id}", response_model=NodeResult, tags=["nodes"])
-async def delete_node(
-    id: int,
-    db_async_session: AsyncSession = Depends(req_db_async_session),
-    tenant: Tenant = Depends(req_tenant),
-):
-    """Delete the node with the specified **ID**."""
-    if not tenant.is_admin:
-        raise HTTPException(HTTP_403_FORBIDDEN)
-
-    node = (
-        await db_async_session.execute(select(Node).filter_by(id=id).options(selectinload("*")))
-    ).scalar_one_or_none()
-
-    if not node:
-        raise HTTPException(HTTP_404_NOT_FOUND)
-
-    await db_async_session.delete(node)
-    await db_async_session.commit()
-
-    return {"action": "delete", "node": node}

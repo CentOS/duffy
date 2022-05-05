@@ -16,7 +16,6 @@ class RetirableMixin(BaseModel):
 
 
 class APIResultAction(str, Enum):
-    delete = "delete"
     get = "get"
     post = "post"
     put = "put"
