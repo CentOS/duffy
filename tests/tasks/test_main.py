@@ -2,6 +2,7 @@ from unittest import mock
 
 import pytest
 
+from duffy.configuration import config
 from duffy.tasks import main
 
 TEST_CONFIG = {
@@ -17,12 +18,24 @@ TEST_CONFIG = {
 
 
 @pytest.mark.duffy_config(TEST_CONFIG)
+@pytest.mark.parametrize("period_type", ("dimensionless", "complex"))
 @mock.patch("duffy.tasks.main.expire_sessions")
 @mock.patch("duffy.tasks.main.fill_pools")
-def test_setup_periodic_tasks(fill_pools, expire_sessions):
+def test_setup_periodic_tasks(fill_pools, expire_sessions, period_type):
     sender = mock.MagicMock()
     fill_pools.signature.return_value = fill_pools_sentinel = object()
     expire_sessions.signature.return_value = expire_sessions_sentinel = object()
+
+    if period_type == "dimensionless":
+        expected_fill_pool_schedule = TEST_CONFIG["tasks"]["periodic"]["fill-pools"]["interval"]
+        expected_expire_sessions_schedule = TEST_CONFIG["tasks"]["periodic"]["expire-sessions"][
+            "interval"
+        ]
+    else:
+        config["tasks"]["periodic"]["fill-pools"]["interval"] = "5m"
+        expected_fill_pool_schedule = 300
+        config["tasks"]["periodic"]["expire-sessions"]["interval"] = "7m"
+        expected_expire_sessions_schedule = 420
 
     main.setup_periodic_tasks(sender)
 
@@ -30,13 +43,8 @@ def test_setup_periodic_tasks(fill_pools, expire_sessions):
     expire_sessions.signature.assert_called_once_with()
     sender.add_periodic_task.assert_has_calls(
         [
-            mock.call(
-                TEST_CONFIG["tasks"]["periodic"]["fill-pools"]["interval"], fill_pools_sentinel
-            ),
-            mock.call(
-                TEST_CONFIG["tasks"]["periodic"]["expire-sessions"]["interval"],
-                expire_sessions_sentinel,
-            ),
+            mock.call(expected_fill_pool_schedule, fill_pools_sentinel),
+            mock.call(expected_expire_sessions_schedule, expire_sessions_sentinel),
         ],
         any_order=True,
     )

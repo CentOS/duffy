@@ -3,7 +3,6 @@ from datetime import timedelta
 from typing import Type
 
 from pydantic.types import _registered
-from pydantic.validators import constr_lower, constr_strip_whitespace, strict_str_validator
 
 
 class _TimeDelta(timedelta):
@@ -11,6 +10,7 @@ class _TimeDelta(timedelta):
     to_lower = True
     needs_sign = False
     allow_negative = True
+    allow_dimensionless_seconds = True
 
     def __init_subclass__(cls):
         sign = "+-" if cls.allow_negative else "+"
@@ -27,9 +27,6 @@ class _TimeDelta(timedelta):
 
     @classmethod
     def __get_validators__(cls):
-        yield strict_str_validator
-        yield constr_strip_whitespace
-        yield constr_lower
         yield cls.validate
 
     @classmethod
@@ -46,9 +43,16 @@ class _TimeDelta(timedelta):
 
     @classmethod
     def validate(cls, v):
-        if not isinstance(v, str):
+        if cls.allow_dimensionless_seconds:
+            if isinstance(v, int):
+                return timedelta(seconds=v)
+            if not isinstance(v, str):
+                raise TypeError("input value must be a string or an integer")
+            if v.isdigit():
+                return timedelta(seconds=int(v))
+        elif not isinstance(v, str):
             raise TypeError("input value must be a string")
-        m = cls.timedelta_re.fullmatch(v)
+        m = cls.timedelta_re.fullmatch(v.strip().lower())
         if not m:
             raise ValueError("invalid timedelta format")
         sign = -1 if m.group("sign") == "-" else 1
@@ -68,15 +72,17 @@ def readable_timedelta(
     to_lower: bool = True,
     needs_sign: bool = False,
     allow_negative: bool = True,
+    allow_dimensionless_seconds: bool = True,
 ) -> Type[timedelta]:
     namespace = {
         "strip_whitespace": strip_whitespace,
         "to_lower": to_lower,
         "needs_sign": needs_sign,
         "allow_negative": allow_negative,
+        "allow_dimensionless_seconds": allow_dimensionless_seconds,
     }
     return _registered(type("TimeDeltaValue", (_TimeDelta,), namespace))
 
 
 ConfigTimeDelta = readable_timedelta(allow_negative=False)
-APITimeDelta = readable_timedelta(needs_sign=True)
+APITimeDelta = readable_timedelta(needs_sign=True, allow_dimensionless_seconds=False)

@@ -4,6 +4,7 @@ from celery import Celery
 
 from .. import database
 from ..configuration import config
+from ..configuration.validation import PeriodicTaskModel
 from .base import celery, init_tasks
 from .expire import expire_sessions
 from .node_pools import NodePool
@@ -16,15 +17,16 @@ DEFAULT_PERIODIC_INTERVAL = 5 * 60
 def setup_periodic_tasks(sender: Celery, **kwargs):
     periodic_config = config.get("tasks", {}).get("periodic", {})
 
-    sender.add_periodic_task(
-        periodic_config.get("fill-pools", {}).get("interval", DEFAULT_PERIODIC_INTERVAL),
-        fill_pools.signature(),
-    )
+    fill_pools_interval = PeriodicTaskModel(
+        **periodic_config.get("fill-pools", {"interval": DEFAULT_PERIODIC_INTERVAL})
+    ).interval
 
-    sender.add_periodic_task(
-        periodic_config.get("expire-sessions", {}).get("interval", DEFAULT_PERIODIC_INTERVAL),
-        expire_sessions.signature(),
-    )
+    expire_sessions_interval = PeriodicTaskModel(
+        **periodic_config.get("expire-sessions", {"interval": DEFAULT_PERIODIC_INTERVAL})
+    ).interval
+
+    sender.add_periodic_task(fill_pools_interval.total_seconds(), fill_pools.signature())
+    sender.add_periodic_task(expire_sessions_interval.total_seconds(), expire_sessions.signature())
 
 
 @celery.on_after_finalize.connect
