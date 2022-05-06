@@ -43,7 +43,7 @@ class LockingModel(ConfigBaseModel):
 
 
 class PeriodicTaskModel(ConfigBaseModel):
-    interval: conint(gt=0)
+    interval: ConfigTimeDelta
 
 
 class TasksModel(ConfigBaseModel):
