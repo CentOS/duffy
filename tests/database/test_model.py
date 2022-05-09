@@ -90,7 +90,7 @@ class TestTenant(ModelTestBase):
                 db_sync_obj.node_quota = 5
                 assert db_sync_obj.effective_node_quota == 5
             else:
-                config["misc"]["default-node-quota"] = sentinel = object()
+                config["defaults"]["node-quota"] = sentinel = object()
                 assert db_sync_obj.effective_node_quota is sentinel
 
     @pytest.mark.duffy_config(example_config=True, clear=True)
@@ -106,7 +106,7 @@ class TestTenant(ModelTestBase):
 
                 assert db_sync_obj in selected
             else:
-                config["misc"]["default-node-quota"] = 10
+                config["defaults"]["node-quota"] = 10
 
                 selected = db_sync_session.execute(
                     select(model.Tenant).filter(model.Tenant.effective_node_quota == 10)

@@ -23,7 +23,7 @@ from ...api_models import (
     SessionUpdateModel,
 )
 from ...configuration import config
-from ...configuration.validation import MiscModel
+from ...configuration.validation import DefaultsModel
 from ...database.model import Node, Session, SessionNode, Tenant
 from ...database.types import NodeState
 from ...nodes_context import contextualize, decontextualize
@@ -41,9 +41,9 @@ SESSION_LIFETIME_MAX = None
 
 def _parse_lifetime_values():
     global SESSION_LIFETIME, SESSION_LIFETIME_MAX
-    misc = MiscModel(**config["misc"])
-    SESSION_LIFETIME = misc.session_lifetime
-    SESSION_LIFETIME_MAX = misc.session_lifetime_max
+    defaults = DefaultsModel(**config["defaults"])
+    SESSION_LIFETIME = defaults.session_lifetime
+    SESSION_LIFETIME_MAX = defaults.session_lifetime_max
 
 
 def session_lifetime():

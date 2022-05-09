@@ -38,11 +38,11 @@ class Tenant(Base, CreatableMixin, RetirableMixin):
         if self.node_quota is not None:
             return self.node_quota
 
-        return config["misc"]["default-node-quota"]
+        return config["defaults"]["node-quota"]
 
     @effective_node_quota.expression
     def effective_node_quota(cls):
         return case(
             [(cls.node_quota != None, cls.node_quota)],  # noqa: E711
-            else_=config["misc"]["default-node-quota"],
+            else_=config["defaults"]["node-quota"],
         )
