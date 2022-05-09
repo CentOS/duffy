@@ -263,7 +263,9 @@ def fill_pools(*, pool_names: Optional[List[str]] = None):
     else:
         unknown_pool_names = set(pool_names).difference(pool.name for pool in pools_to_process)
         if unknown_pool_names:
-            log.warn("fill_pools: unknown pool names, ignoring: %s", ", ".join(unknown_pool_names))
+            log.warning(
+                "fill_pools: unknown pool names, ignoring: %s", ", ".join(unknown_pool_names)
+            )
         pools_to_process = [pool for pool in pools_to_process if pool.name in pool_names]
 
     for pool in pools_to_process:
