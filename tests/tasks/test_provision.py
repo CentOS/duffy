@@ -205,19 +205,19 @@ def test_provision_nodes_into_pool(reuse_nodes, testcase, foo_pool, db_sync_sess
         args, kwargs = pool_provision.call_args
         (nodes_in_call,) = args
         assert len(kwargs) == 0
-        if "invalid-node-results" in testcase or "fewer-provisions" in testcase:
-            assert nodes_in_call
-            assert {node.id for node in nodes_in_call} > node_ids
-            assert 0 < _node_lookup_hostname_from_ipaddr.await_count <= len(nodes) // 2
-            if reuse_nodes:
-                assert "[foo] Returning 2 left-over reusable node(s)" in caplog.messages
-            else:
-                assert "[foo] Cleaning up 2 left-over preallocated node(s)" in caplog.messages
-        else:
-            assert {node.id for node in nodes_in_call} == node_ids
-            _node_lookup_hostname_from_ipaddr.await_count = len(nodes) // 2
-
         if "real-playbook" not in testcase:
+            if "invalid-node-results" in testcase or "fewer-provisions" in testcase:
+                assert nodes_in_call
+                assert {node.id for node in nodes_in_call} > node_ids
+                assert 0 < _node_lookup_hostname_from_ipaddr.await_count <= len(nodes) // 2
+                if reuse_nodes:
+                    assert "[foo] Returning 2 left-over reusable node(s)" in caplog.messages
+                else:
+                    assert "[foo] Cleaning up 2 left-over preallocated node(s)" in caplog.messages
+            else:
+                assert {node.id for node in nodes_in_call} == node_ids
+                assert _node_lookup_hostname_from_ipaddr.await_count == len(nodes) // 2
+
             assert any(node.hostname.startswith("looked-up-node") for node in nodes)
             assert any(node.hostname.startswith("playbook-node") for node in nodes)
 
