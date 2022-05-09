@@ -1,6 +1,7 @@
 import copy
 import logging
 import sys
+from datetime import timedelta
 from typing import Optional, Tuple, Union
 
 import click
@@ -12,6 +13,7 @@ from .configuration import config, read_configuration
 from .database.migrations.main import alembic_migration
 from .database.setup import setup_db_schema, setup_db_test_data
 from .exceptions import DuffyConfigurationError
+from .misc import ConfigTimeDelta
 from .tasks import start_worker
 from .util import UNSET, SentinelType
 from .version import __version__
@@ -41,6 +43,25 @@ class IntOrNoneType(click.ParamType):
 
 
 INT_OR_NONE = IntOrNoneType()
+
+
+class IntervalOrNoneType(click.ParamType):
+    name = "interval_or_none"
+
+    def convert(self, value, param, ctx):
+        if value is UNSET:
+            return value
+
+        try:
+            if isinstance(value, str) and value.lower() in ("none", "null"):
+                return None
+
+            return ConfigTimeDelta.validate(value)
+        except ValueError as exc:
+            self.fail(exc.args[0] if exc.args else f"Can't convert value {value!r}", param, ctx)
+
+
+INTERVAL_OR_NONE = IntervalOrNoneType()
 
 
 # Global setup and CLI options
@@ -382,8 +403,12 @@ def tenant_show(name: str):
         tenant = result["tenant"]
         click.echo(
             f"OK: {name}: id={tenant.id} node_quota={tenant.node_quota}"
-            f" effective_node_quota={tenant.effective_node_quota} active={tenant.active}"
-            f" created_at={tenant.created_at} retired_at={tenant.retired_at}"
+            f" effective_node_quota={tenant.effective_node_quota}"
+            f" session_lifetime={tenant.session_lifetime}"
+            f" effective_session_lifetime={tenant.effective_session_lifetime}"
+            f" session_lifetime_max={tenant.session_lifetime_max}"
+            f" effective_session_lifetime_max={tenant.effective_session_lifetime_max}"
+            f" active={tenant.active} created_at={tenant.created_at} retired_at={tenant.retired_at}"
         )
 
 
@@ -399,13 +424,37 @@ def tenant_show(name: str):
     default=None,
     help="How many nodes the tenant can use at a time (optional, will use default if unset).",
 )
+@click.option(
+    "--session-lifetime",
+    type=INTERVAL_OR_NONE,
+    default=None,
+    help="The initial session lifetime for this tenant.",
+)
+@click.option(
+    "--session-lifetime-max",
+    type=INTERVAL_OR_NONE,
+    default=None,
+    help="The maximum session lifetime for this tenant.",
+)
 @click.argument("name")
 @click.argument("ssh_key")
-def tenant_create(name: str, ssh_key: str, is_admin: bool, node_quota: Optional[int]):
+def tenant_create(
+    name: str,
+    ssh_key: str,
+    is_admin: bool,
+    node_quota: Optional[int],
+    session_lifetime: Optional[timedelta],
+    session_lifetime_max: Optional[timedelta],
+):
     """Create a new tenant."""
     admin_ctx = admin.AdminContext.create_for_cli()
     result = admin_ctx.create_tenant(
-        name=name, ssh_key=ssh_key, node_quota=node_quota, is_admin=is_admin
+        name=name,
+        ssh_key=ssh_key,
+        node_quota=node_quota,
+        session_lifetime=session_lifetime,
+        session_lifetime_max=session_lifetime_max,
+        is_admin=is_admin,
     )
     if "error" in result:
         click.echo(f"ERROR: {name}\nERROR DETAIL: {result['error']['detail']}", err=True)
@@ -439,21 +488,49 @@ def tenant_retire(name: str, retire: bool = True):
     default=UNSET,
     help="How many nodes the tenant can use at a time (optional, will use default if unset).",
 )
+@click.option(
+    "--session-lifetime",
+    type=INTERVAL_OR_NONE,
+    default=UNSET,
+    help="The initial session lifetime for this tenant.",
+)
+@click.option(
+    "--session-lifetime-max",
+    type=INTERVAL_OR_NONE,
+    default=UNSET,
+    help="The maximum session lifetime for this tenant.",
+)
 @click.argument("name")
 def tenant_update(
     name: str,
     node_quota: Optional[Union[int, SentinelType]],
+    session_lifetime: Optional[Union[timedelta, SentinelType]],
+    session_lifetime_max: Optional[Union[timedelta, SentinelType]],
     ssh_key: str = None,
     api_key: str = None,
 ):
     """Update a tenant."""
-    if not ssh_key and not api_key and node_quota is UNSET:
-        click.echo("ERROR: Either --ssh-key, --api-key or --node-quota must be set.", err=True)
+    if (
+        not ssh_key
+        and not api_key
+        and node_quota is UNSET
+        and session_lifetime is UNSET
+        and session_lifetime_max is UNSET
+    ):
+        click.echo(
+            "ERROR: Either --ssh-key, --api-key, --node-quota, --session-lifetime or"
+            " --session-lifetime-max must be set.",
+            err=True,
+        )
         sys.exit(1)
     admin_ctx = admin.AdminContext.create_for_cli()
     kwargs = {"name": name, "ssh_key": ssh_key, "api_key": api_key}
     if node_quota is not UNSET:
         kwargs["node_quota"] = node_quota
+    if session_lifetime is not UNSET:
+        kwargs["session_lifetime"] = session_lifetime
+    if session_lifetime_max is not UNSET:
+        kwargs["session_lifetime_max"] = session_lifetime_max
     result = admin_ctx.update_tenant(**kwargs)
     if "error" in result:
         click.echo(f"ERROR: {name}\nERROR DETAIL: {result['error']['detail']}", err=True)
@@ -463,4 +540,8 @@ def tenant_update(
         click.echo(
             f"OK: {name}: ssh_key={tenant.ssh_key} api_key={tenant.api_key}"
             f" node_quota={tenant.node_quota} effective_node_quota={tenant.effective_node_quota}"
+            f" session_lifetime={tenant.session_lifetime}"
+            f" effective_session_lifetime={tenant.effective_session_lifetime}"
+            f" session_lifetime_max={tenant.session_lifetime_max}"
+            f" effective_session_lifetime_max={tenant.effective_session_lifetime_max}"
         )

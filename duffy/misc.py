@@ -1,5 +1,6 @@
 import re
 from datetime import timedelta
+from functools import lru_cache
 from typing import Type
 
 from pydantic.types import _registered
@@ -42,6 +43,7 @@ class _TimeDelta(timedelta):
             field_schema["examples"].append("-20m25s")
 
     @classmethod
+    @lru_cache
     def validate(cls, v):
         if isinstance(v, timedelta):
             return v

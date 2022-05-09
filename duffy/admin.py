@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import sys
+from datetime import timedelta
 from typing import Optional, Union
 
 from fastapi import HTTPException
@@ -61,12 +62,23 @@ class AdminContext:
         return self.proxy_controller_function(tenant.get_tenant, id=self.get_tenant_id(name))
 
     def create_tenant(
-        self, name: str, ssh_key: str, node_quota: Optional[int], is_admin: bool = False
+        self,
+        name: str,
+        ssh_key: str,
+        node_quota: Optional[int],
+        session_lifetime: Optional[timedelta],
+        session_lifetime_max: Optional[timedelta],
+        is_admin: bool = False,
     ):
         return self.proxy_controller_function(
             tenant.create_tenant,
             data=TenantCreateModel(
-                name=name, ssh_key=ssh_key, is_admin=is_admin, node_quota=node_quota
+                name=name,
+                ssh_key=ssh_key,
+                is_admin=is_admin,
+                node_quota=node_quota,
+                session_lifetime=session_lifetime,
+                session_lifetime_max=session_lifetime_max,
             ),
         )
 
@@ -83,9 +95,11 @@ class AdminContext:
         api_key: Optional[Union[str, SentinelType]] = UNSET,
         ssh_key: Optional[Union[str, SentinelType]] = UNSET,
         node_quota: Optional[Union[int, SentinelType]] = UNSET,
+        session_lifetime: Optional[timedelta] = UNSET,
+        session_lifetime_max: Optional[timedelta] = UNSET,
     ):
         data = {}
-        for key in ("api_key", "ssh_key", "node_quota"):
+        for key in ("api_key", "ssh_key", "node_quota", "session_lifetime", "session_lifetime_max"):
             value = locals()[key]
             if value is not UNSET:
                 data[key] = value

@@ -22,8 +22,6 @@ from ...api_models import (
     SessionResultCollection,
     SessionUpdateModel,
 )
-from ...configuration import config
-from ...configuration.validation import DefaultsModel
 from ...database.model import Node, Session, SessionNode, Tenant
 from ...database.types import NodeState
 from ...nodes_context import contextualize, decontextualize
@@ -34,28 +32,6 @@ from ..database import req_db_async_session
 log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/sessions")
-
-SESSION_LIFETIME = None
-SESSION_LIFETIME_MAX = None
-
-
-def _parse_lifetime_values():
-    global SESSION_LIFETIME, SESSION_LIFETIME_MAX
-    defaults = DefaultsModel(**config["defaults"])
-    SESSION_LIFETIME = defaults.session_lifetime
-    SESSION_LIFETIME_MAX = defaults.session_lifetime_max
-
-
-def session_lifetime():
-    if not SESSION_LIFETIME:
-        _parse_lifetime_values()
-    return SESSION_LIFETIME
-
-
-def session_lifetime_max():
-    if not SESSION_LIFETIME_MAX:
-        _parse_lifetime_values()
-    return SESSION_LIFETIME_MAX
 
 
 # http get http://localhost:8080/api/v1/sessions
@@ -154,7 +130,9 @@ async def create_session(
     session = Session(
         tenant=tenant,
         data={"nodes_specs": [spec.dict() for spec in data.nodes_specs]},
-        expires_at=dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc) + session_lifetime(),
+        expires_at=(
+            dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc) + tenant.effective_session_lifetime
+        ),
     )
     db_async_session.add(session)
 
@@ -287,7 +265,9 @@ async def update_session(
         new_expires_at = max(new_expires_at, session.created_at)
 
         if not tenant.is_admin:
-            new_expires_at = min(new_expires_at, session.created_at + session_lifetime_max())
+            new_expires_at = min(
+                new_expires_at, session.created_at + tenant.effective_session_lifetime_max
+            )
 
         session.expires_at = new_expires_at
 

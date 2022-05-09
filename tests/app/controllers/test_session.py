@@ -14,44 +14,10 @@ from starlette.status import (
     HTTP_503_SERVICE_UNAVAILABLE,
 )
 
-from duffy.app.controllers import session as session_controller
 from duffy.database.model import Node, Session, Tenant
 from duffy.database.setup import _gen_test_api_key
 
 from . import BaseTestController
-
-
-@pytest.mark.duffy_config(example_config=True)
-@mock.patch.object(session_controller, "SESSION_LIFETIME", None)
-@mock.patch.object(session_controller, "SESSION_LIFETIME_MAX", None)
-class TestSessionModule:
-    def test__parse_timetime_values(self):
-        session_controller._parse_lifetime_values()
-        assert session_controller.SESSION_LIFETIME == dt.timedelta(hours=6)
-        assert session_controller.SESSION_LIFETIME_MAX == dt.timedelta(hours=12)
-
-    @pytest.mark.parametrize("function", ("session_lifetime", "session_lifetime_max"))
-    @pytest.mark.parametrize("cached", (False, True))
-    @mock.patch(
-        "duffy.app.controllers.session._parse_lifetime_values",
-        wraps=session_controller._parse_lifetime_values,
-    )
-    def test_session_lifetime_functions(self, _parse_lifetime_values, function, cached):
-        if "max" in function:
-            expected = dt.timedelta(hours=12)
-        else:
-            expected = dt.timedelta(hours=6)
-
-        if cached:
-            _parse_lifetime_values()
-            _parse_lifetime_values.reset_mock()
-
-        assert getattr(session_controller, function)() == expected
-
-        if cached:
-            _parse_lifetime_values.assert_not_called()
-        else:
-            _parse_lifetime_values.assert_called_once_with()
 
 
 @pytest.mark.duffy_config(example_config=True)
@@ -343,7 +309,7 @@ class TestSessionWorkflow:
 
             if "auth-admin" not in testcase:
                 new_expires_at = max(
-                    new_expires_at, created_at + session_controller.session_lifetime_max()
+                    new_expires_at, created_at + auth_tenant.effective_session_lifetime_max
                 )
 
         update_response = await client.put(f"{self.path}/{session_id}", json=request_payload)

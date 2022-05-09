@@ -1,5 +1,6 @@
 import copy
 import logging
+from datetime import timedelta
 from tempfile import TemporaryDirectory
 from unittest import mock
 
@@ -53,6 +54,21 @@ class TestIntOrNoneType:
             duffy.cli.INT_OR_NONE.convert("hello", "<param>", None)
 
         assert exc.match("'hello' is not a valid integer")
+
+
+class TestIntervalOrNoneType:
+    def test_convert_verbatim(self):
+        assert duffy.cli.INTERVAL_OR_NONE.convert(UNSET, None, None) == UNSET
+
+    @pytest.mark.parametrize("value", ("None", "null"))
+    def test_convert_none(self, value):
+        assert duffy.cli.INTERVAL_OR_NONE.convert(value, None, None) is None
+
+    def test_convert_invalid(self):
+        with pytest.raises(click.ClickException) as exc:
+            duffy.cli.INTERVAL_OR_NONE.convert("hello", "<param>", None)
+
+        assert exc.match("invalid timedelta format")
 
 
 @pytest.mark.parametrize(
@@ -453,7 +469,17 @@ class TestAdminCLI:
 
     @pytest.mark.parametrize(
         "testcase",
-        ("success", "success-update-quota", "success-unset-quota", "failure", "missing-arguments"),
+        (
+            "success",
+            "success-update-quota",
+            "success-unset-quota",
+            "success-update-session-lifetime",
+            "success-unset-session-lifetime",
+            "success-update-session-lifetime-max",
+            "success-unset-session-lifetime-max",
+            "failure",
+            "missing-arguments",
+        ),
     )
     def test_tenant_update(self, create_for_cli, testcase, runner, duffy_config_files, caplog):
         caplog.set_level(logging.DEBUG)
@@ -461,7 +487,7 @@ class TestAdminCLI:
 
         new_ssh_key = "# new ssh key"
         new_api_key = "# new API key"
-        node_quota = object()
+        node_quota = session_lifetime = session_lifetime_max = object()
 
         create_for_cli.return_value = admin_ctx = mock.MagicMock()
 
@@ -476,6 +502,23 @@ class TestAdminCLI:
             else:
                 result_tenant.node_quota = node_quota = None
                 result_tenant.effective_quota = 10
+
+            if "update-session-lifetime-max" in testcase:
+                session_lifetime_max = "7200"
+                result_tenant.session_lifetime_max = timedelta(hours=2)
+                result_tenant.effective_session_lifetime_max = result_tenant.session_lifetime_max
+            else:
+                result_tenant.session_lifetime_max = session_lifetime_max = None
+                result_tenant.effective_session_lifetime_max = timedelta(hours=12)
+
+                if "update-session-lifetime" in testcase:
+                    session_lifetime = "1h"
+                    result_tenant.session_lifetime = timedelta(hours=1)
+                    result_tenant.effective_session_lifetime = result_tenant.session_lifetime
+                else:
+                    result_tenant.session_lifetime = session_lifetime = None
+                    result_tenant.effective_session_lifetime = timedelta(hours=6)
+
             admin_ctx.update_tenant.return_value = {"tenant": result_tenant}
 
         parameters = (f"--config={config_file.absolute()}", "tenant", "update", "tenant-name")
@@ -484,6 +527,10 @@ class TestAdminCLI:
             parameters += ("--ssh-key", new_ssh_key, "--api-key", new_api_key)
             if node_quota is None or isinstance(node_quota, int):
                 parameters += ("--node-quota", str(node_quota))
+            if session_lifetime is None or isinstance(session_lifetime, timedelta):
+                parameters += ("--session-lifetime", str(session_lifetime))
+            if session_lifetime_max is None or isinstance(session_lifetime_max, timedelta):
+                parameters += ("--session-lifetime-max", str(session_lifetime_max))
 
         result = runner.invoke(cli, parameters)
 
@@ -496,5 +543,6 @@ class TestAdminCLI:
                 assert result.stdout.strip() == "ERROR: tenant-name\nERROR DETAIL: BLOOP"
             else:
                 assert result.stdout.strip() == (
-                    "ERROR: Either --ssh-key, --api-key or --node-quota must be set."
+                    "ERROR: Either --ssh-key, --api-key, --node-quota, --session-lifetime or"
+                    " --session-lifetime-max must be set."
                 )

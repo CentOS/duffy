@@ -91,6 +91,8 @@ async def create_tenant(
         api_key=api_key,
         ssh_key=data.ssh_key.get_secret_value(),
         node_quota=data.node_quota,
+        session_lifetime=data.session_lifetime,
+        session_lifetime_max=data.session_lifetime_max,
     )
     db_async_session.add(created_tenant)
     try:
@@ -161,8 +163,16 @@ async def update_tenant(
                 updated_tenant.api_key = data.api_key
             api_key = SecretStr("this is hidden anyway")
 
-        if "node_quota" in data.dict(exclude_unset=True):
+        data_dict = data.dict(exclude_unset=True)
+
+        if "node_quota" in data_dict:
             updated_tenant.node_quota = data.node_quota
+
+        if "session_lifetime" in data_dict:
+            updated_tenant.session_lifetime = data.session_lifetime
+
+        if "session_lifetime_max" in data_dict:
+            updated_tenant.session_lifetime_max = data.session_lifetime_max
 
     api_tenant = TenantUpdateResultModel(
         api_key=api_key, **TenantModel.from_orm(updated_tenant).dict()
