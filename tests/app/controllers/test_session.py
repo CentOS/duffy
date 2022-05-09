@@ -134,7 +134,6 @@ class TestSession(BaseTestController):
 
 @pytest.mark.duffy_config(example_config=True)
 @pytest.mark.usefixtures("db_async_test_data", "db_async_model_initialized")
-@pytest.mark.asyncio
 class TestSessionWorkflow:
 
     path = "/api/v1/sessions"

@@ -27,7 +27,6 @@ def test_init_sync_model(get_sync_engine, sync_session_maker):
     sync_session_maker.configure.assert_called_once_with(bind=sentinel)
 
 
-@pytest.mark.asyncio
 @pytest.mark.duffy_config(TEST_CONFIG)
 @mock.patch("duffy.database.async_session_maker", new_callable=mock.AsyncMock)
 @mock.patch("duffy.database.get_async_engine")
@@ -43,7 +42,6 @@ async def test_init_async_model(get_async_engine, async_session_maker):
     async_session_maker.configure.assert_called_once_with(bind=sentinel)
 
 
-@pytest.mark.asyncio
 @mock.patch("duffy.database.init_async_model")
 @mock.patch("duffy.database.init_sync_model")
 def test_init_model(init_sync_model, init_async_model):

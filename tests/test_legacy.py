@@ -44,7 +44,6 @@ class TestAuth:
             "authenticated-retired",
         ),
     )
-    @pytest.mark.asyncio
     async def test__req_credentials_factory(self, testcase):
         if "unauthenticated" in testcase:
             password = None
@@ -84,7 +83,6 @@ class TestAuth:
                 assert password is None
 
 
-@pytest.mark.asyncio
 @pytest.mark.duffy_config(example_config=True)
 class TestMain:
     apiv1_result = {

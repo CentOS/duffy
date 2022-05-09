@@ -12,7 +12,6 @@ from starlette.status import (
 from duffy.database.setup import _gen_test_api_key
 
 
-@pytest.mark.asyncio
 @pytest.mark.usefixtures(
     "db_sync_schema",
     "db_sync_model_initialized",
