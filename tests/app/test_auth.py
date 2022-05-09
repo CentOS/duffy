@@ -22,7 +22,6 @@ from ..util import noop_context
         "authenticated-retired",
     ),
 )
-@pytest.mark.asyncio
 async def test__req_tenant_factory(testcase, db_async_session, db_async_test_data):
     if "unauthenticated" in testcase:
         credentials = None

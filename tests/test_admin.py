@@ -51,7 +51,6 @@ class TestAdminContext:
         else:
             assert "Configuration key missing or wrong: BOO" in caplog.text
 
-    @pytest.mark.asyncio
     @pytest.mark.parametrize("testcase", ("success", "exception"))
     @mock.patch("duffy.admin.async_session_maker")
     async def test_proxy_controller_function_async(self, async_session_maker, testcase, admin_ctx):

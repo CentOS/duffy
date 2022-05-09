@@ -6,7 +6,6 @@ import pytest
 from duffy import nodes_context
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("with_stdin", (True, False))
 @pytest.mark.parametrize("success", (True, False))
 @mock.patch("asyncio.create_subprocess_exec")
@@ -45,7 +44,6 @@ async def test_run_remote_cmd(create_subprocess_exec, success, with_stdin):
         assert result is None
 
 
-@pytest.mark.asyncio
 @mock.patch("duffy.nodes_context.run_remote_cmd")
 async def test_decontextualize_one(run_remote_cmd):
     run_remote_cmd.return_value = sentinel = object()
@@ -58,7 +56,6 @@ async def test_decontextualize_one(run_remote_cmd):
     assert result == sentinel
 
 
-@pytest.mark.asyncio
 @mock.patch("duffy.nodes_context.decontextualize_one")
 async def test_decontextualize(decontextualize_one):
     nodes = [f"node{idx}.domain.tld" for idx in range(1, 6)]
@@ -71,7 +68,6 @@ async def test_decontextualize(decontextualize_one):
     decontextualize_one.assert_has_awaits(mock.call(node=node) for node in nodes)
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("decontextualize_fail", (False, True))
 @mock.patch("duffy.nodes_context.run_remote_cmd")
 @mock.patch("duffy.nodes_context.decontextualize_one")
@@ -100,7 +96,6 @@ async def test_contextualize_one(decontextualize_one, run_remote_cmd, decontextu
         assert result is None
 
 
-@pytest.mark.asyncio
 @mock.patch("duffy.nodes_context.contextualize_one")
 async def test_contextualize(contextualize_one):
     nodes = [f"node{idx}.domain.tld" for idx in range(1, 6)]

@@ -46,7 +46,6 @@ def _gen_provision_nodes_into_pool_param_combinations():
     ]
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("testcase", ("success", "success-no-name", "failure"))
 @mock.patch("duffy.tasks.provision.aiodns")
 async def test__node_lookup_hostname_from_ipaddr(aiodns, testcase):

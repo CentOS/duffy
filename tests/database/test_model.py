@@ -33,7 +33,6 @@ class ModelTestBase:
             if isinstance(objvalue, (int, str)):
                 assert objvalue == value
 
-    @pytest.mark.asyncio
     async def test_query_obj_async(self, db_async_obj, db_async_session):
         # The selectinload() option tells SQLAlchemy to load related objects and lazy loading breaks
         # things here. See here for details:
@@ -167,7 +166,6 @@ class TestNode(ModelTestBase):
         }
 
 
-@pytest.mark.asyncio
 class TestSessionNode(ModelTestBase):
     klass = model.SessionNode
     attrs = {"pool": "virtual-centos8stream-x86_64-small"}

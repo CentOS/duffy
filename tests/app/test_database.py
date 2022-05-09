@@ -1,12 +1,9 @@
 from unittest import mock
 
-import pytest
-
 from duffy.app.database import req_db_async_session
 
 
 @mock.patch("duffy.app.database.async_session_maker")
-@pytest.mark.asyncio
 async def test_req_db_async_session(async_session_maker):
     mock_session = mock.MagicMock()
     mock_session.close = mock.AsyncMock()
