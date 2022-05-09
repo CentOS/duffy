@@ -1,3 +1,4 @@
+import datetime as dt
 from typing import Any, Dict
 from unittest import mock
 from uuid import uuid4
@@ -7,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from duffy.database import model, types
+from duffy.database.model.tenant import _defaults_config
 
 
 class ModelTestBase:
@@ -110,6 +112,46 @@ class TestTenant(ModelTestBase):
 
                 selected = db_sync_session.execute(
                     select(model.Tenant).filter(model.Tenant.effective_node_quota == 10)
+                ).scalars()
+
+                assert db_sync_obj in selected
+
+    @pytest.mark.duffy_config(example_config=True, clear=True)
+    @pytest.mark.parametrize("item_set", (True, False))
+    @pytest.mark.parametrize("item", ("session_lifetime", "session_lifetime_max"))
+    def test_effective_session_lifetime_instance(self, item, item_set, db_sync_obj):
+        with mock.patch.dict("duffy.database.model.tenant.config") as config:
+            if item_set:
+                setattr(db_sync_obj, item, dt.timedelta(hours=24))
+                assert getattr(db_sync_obj, f"effective_{item}") == dt.timedelta(hours=24)
+            else:
+                _defaults_config.cache_clear()
+                config["defaults"][item.replace("_", "-")] = "5h"
+                assert getattr(db_sync_obj, f"effective_{item}") == dt.timedelta(hours=5)
+
+    @pytest.mark.duffy_config(example_config=True, clear=True)
+    @pytest.mark.parametrize("item_set", (True, False))
+    @pytest.mark.parametrize("item", ("session_lifetime", "session_lifetime_max"))
+    def test_effective_session_lifetime_class(self, item, item_set, db_sync_session, db_sync_obj):
+        with mock.patch.dict("duffy.database.model.tenant.config") as config:
+            if item_set:
+                setattr(db_sync_obj, item, dt.timedelta(hours=24))
+
+                selected = db_sync_session.execute(
+                    select(model.Tenant).filter(
+                        getattr(model.Tenant, f"effective_{item}") == dt.timedelta(hours=24)
+                    )
+                ).scalars()
+
+                assert db_sync_obj in selected
+            else:
+                _defaults_config.cache_clear()
+                config["defaults"][item.replace("_", "-")] = "10h"
+
+                selected = db_sync_session.execute(
+                    select(model.Tenant).filter(
+                        getattr(model.Tenant, f"effective_{item}") == dt.timedelta(hours=10)
+                    )
                 ).scalars()
 
                 assert db_sync_obj in selected

@@ -118,17 +118,33 @@ class TestAdminContext:
         get_tenant_id.assert_called_once_with("name")
         proxy_controller_function.assert_called_once_with(controllers.tenant.get_tenant, id=6)
 
-    @pytest.mark.parametrize("testcase", ("normal", "normal-with-quota", "is-admin"))
+    @pytest.mark.parametrize(
+        "testcase",
+        (
+            "normal",
+            "normal-with-quota",
+            "normal-with-session-lifetime",
+            "normal-with-session-lifetime-max",
+            "is-admin",
+        ),
+    )
     @mock.patch.object(AdminContext, "proxy_controller_function")
     def test_create_tenant(self, proxy_controller_function, testcase, admin_ctx):
         is_admin = testcase == "is-admin"
         with_quota = "with-quota" in testcase
         node_quota = 5 if with_quota else None
+        session_lifetime = 3600 if "with-session-lifetime" in testcase else None
+        session_lifetime_max = 7200 if "with-session-lifetime-max" in testcase else None
 
         proxy_controller_function.return_value = sentinel = object()
 
         result = admin_ctx.create_tenant(
-            name="name", ssh_key="# no ssh key", node_quota=node_quota, is_admin=is_admin
+            name="name",
+            ssh_key="# no ssh key",
+            node_quota=node_quota,
+            session_lifetime=session_lifetime,
+            session_lifetime_max=session_lifetime_max,
+            is_admin=is_admin,
         )
 
         assert result == sentinel
@@ -136,7 +152,12 @@ class TestAdminContext:
         proxy_controller_function.assert_called_once_with(
             controllers.tenant.create_tenant,
             data=api_models.TenantCreateModel(
-                name="name", ssh_key="# no ssh key", node_quota=node_quota, is_admin=is_admin
+                name="name",
+                ssh_key="# no ssh key",
+                node_quota=node_quota,
+                session_lifetime=session_lifetime,
+                session_lifetime_max=session_lifetime_max,
+                is_admin=is_admin,
             ),
         )
 

@@ -26,6 +26,8 @@ class TestTenant(BaseTestController):
         "name": "Some Honky Tenant!",
         "ssh_key": "# With a honky SSH key!",
         "node_quota": 5,
+        "session_lifetime": 60,
+        "session_lifetime_max": 120,
     }
     no_verify_attrs = ("ssh_key",)
     unique = "unique"
@@ -79,6 +81,10 @@ class TestTenant(BaseTestController):
             "success-reset-api-key",
             "success-update-node-quota",
             "success-unset-node-quota",
+            "success-update-session-lifetime",
+            "success-unset-session-lifetime",
+            "success-update-session-lifetime-max",
+            "success-unset-session-lifetime-max",
             "inactive",
             "not found",
             pytest.param("not admin", marks=pytest.mark.client_auth_as("tenant")),
@@ -125,8 +131,17 @@ class TestTenant(BaseTestController):
                 json_payload = {"api_key": "reset"}
             elif "update-node-quota" in testcase:
                 json_payload = {"node_quota": 20}
-            else:  # "unset-node-quota" in testcase
+            elif "unset-node-quota" in testcase:
                 json_payload = {"node_quota": None}
+            elif "update-session-lifetime-max" in testcase:
+                json_payload = {"session_lifetime_max": "2h"}
+            elif "unset-session-lifetime-max" in testcase:
+                json_payload = {"session_lifetime_max": None}
+            elif "update-session-lifetime" in testcase:
+                json_payload = {"session_lifetime": 3600}
+            else:  # "unset-session-lifetime" in testcase
+                json_payload = {"session_lifetime": None}
+
         else:
             # ensure the request body validates
             if "inactive" in testcase:
@@ -159,9 +174,19 @@ class TestTenant(BaseTestController):
                 assert result["tenant"]["node_quota"] == 20
             elif "unset-node-quota" in testcase:
                 assert result["tenant"]["node_quota"] is None
+            elif "update-session-lifetime-max" in testcase:
+                assert result["tenant"]["session_lifetime_max"] == 7200
+            elif "unset-session-lifetime-max" in testcase:
+                assert result["tenant"]["session_lifetime_max"] is None
+            elif "update-session-lifetime" in testcase:
+                assert result["tenant"]["session_lifetime"] == 3600
+            elif "unset-session-lifetime" in testcase:
+                assert result["tenant"]["session_lifetime"] is None
             else:
                 assert result["tenant"]["api_key"]
                 assert result["tenant"]["node_quota"] == 5
+                assert result["tenant"]["session_lifetime"] == 60
+                assert result["tenant"]["session_lifetime_max"] == 120
         elif testcase == "not admin":
             assert response.status_code == HTTP_403_FORBIDDEN
         elif testcase == "inactive":
