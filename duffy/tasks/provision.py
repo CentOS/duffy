@@ -29,6 +29,12 @@ async def _node_lookup_hostname_from_ipaddr(node: Node):
         node.hostname = lookup_result.name or node.ipaddr
 
 
+async def _nodes_lookup_hostnames_from_ipaddrs(nodes: List[Node]):
+    await asyncio.wait(
+        [asyncio.create_task(_node_lookup_hostname_from_ipaddr(node)) for node in nodes]
+    )
+
+
 @celery.task
 def provision_nodes_into_pool(pool_name: str, node_ids: List[id]):
     try:
@@ -111,14 +117,7 @@ def provision_nodes_into_pool(pool_name: str, node_ids: List[id]):
         if nodes_need_hostname_looked_up:
             log.debug("[%s] Looking up hostname for nodes from ipaddr...", pool.name)
 
-            asyncio.run(
-                asyncio.wait(
-                    [
-                        _node_lookup_hostname_from_ipaddr(node)
-                        for node in nodes_need_hostname_looked_up
-                    ]
-                )
-            )
+            asyncio.run(_nodes_lookup_hostnames_from_ipaddrs(nodes_need_hostname_looked_up))
 
         log.debug("[%s] Storing information about provisioned hosts.", pool.name)
         for node, node_result in valid_node_results.items():
