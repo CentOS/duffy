@@ -61,10 +61,10 @@ class DatabaseModel(ConfigBaseModel):
     sqlalchemy: SQLAlchemyModel
 
 
-class MiscModel(ConfigBaseModel):
+class DefaultsModel(ConfigBaseModel):
     session_lifetime: ConfigTimeDelta = Field(alias="session-lifetime")
     session_lifetime_max: ConfigTimeDelta = Field(alias="session-lifetime-max")
-    default_node_quota: conint(gt=0) = Field(alias="default-node-quota")
+    node_quota: conint(gt=0) = Field(alias="node-quota")
 
 
 class AnsibleMechanismPlaybookModel(ConfigBaseModel):
@@ -143,6 +143,6 @@ class ConfigModel(ConfigBaseModel):
     app: Optional[AppModel]
     tasks: Optional[TasksModel]
     database: Optional[DatabaseModel]
-    misc: Optional[MiscModel]
+    defaults: Optional[DefaultsModel]
     metaclient: Optional[LegacyModel]
     nodepools: Optional[NodePoolsRootModel]

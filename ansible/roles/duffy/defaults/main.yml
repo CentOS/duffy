@@ -17,7 +17,7 @@ duffy_config_files:
   - 30_logging
   - 40_tasks
   - 50_database
-  - 60_misc
+  - 60_defaults
   - 70_nodepools
   - 80_secrets
 duffy_app_loglevel: "info"
@@ -37,5 +37,5 @@ duffy_tasks_fill_pools_interval: 300
 duffy_tasks_expire_sessions_interval: 300
 duffy_database_sqlalchemy_sync_url: "postgresql:///duffy"
 duffy_database_sqlalchemy_async_url: "postgresql+asyncpg:///duffy"
-duffy_session_lifetime: "6h"
-duffy_session_lifetime_max: "12h"
+duffy_default_session_lifetime: "6h"
+duffy_default_session_lifetime_max: "12h"

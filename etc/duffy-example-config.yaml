@@ -118,10 +118,10 @@ database:
     # the DB dialect must be async-compatible
     async_url: "sqlite+aiosqlite:///:memory:"
 
-misc:
+defaults:
   session-lifetime: "6h"
   session-lifetime-max: "12h"
-  default-node-quota: 10
+  node-quota: 10
 
 nodepools:
   abstract:
