@@ -39,6 +39,7 @@ class TestAPITimeDelta(_BaseTestTimeDelta):
     cls_to_test = APITimeDelta
 
     input_to_expected = {
+        timedelta(minutes=5): timedelta(minutes=5),
         "+3h30m": timedelta(hours=3, minutes=30),
         "-2d": timedelta(days=-2),
         "300": ValueError,
@@ -59,6 +60,7 @@ class TestConfigTimeDelta(_BaseTestTimeDelta):
     cls_to_test = ConfigTimeDelta
 
     input_to_expected = {
+        timedelta(minutes=5): timedelta(minutes=5),
         "+3h30m": timedelta(hours=3, minutes=30),
         "1h": timedelta(hours=1),
         "300": timedelta(minutes=5),
