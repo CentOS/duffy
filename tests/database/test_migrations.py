@@ -3,6 +3,7 @@ from unittest import mock
 
 import pytest
 
+from duffy.configuration import config
 from duffy.database.migrations.main import alembic_migration
 
 HERE = Path(__file__).parent
@@ -14,10 +15,27 @@ MIGRATIONSDIR = HERE.parent.parent / "duffy" / "database" / "migrations"
 )
 class TestAlembicMigration:
     def test_config(self):
+        if hasattr(alembic_migration, "_config"):
+            del alembic_migration._config
+
         assert alembic_migration.config.get_main_option("script_location") == str(
             MIGRATIONSDIR.absolute()
         )
         assert alembic_migration.config.get_main_option("sqlalchemy.url") == "sync://url"
+
+    def test_config_with_percent_signs(self):
+        if hasattr(alembic_migration, "_config"):
+            del alembic_migration._config
+
+        sqla_config = config["database"]["sqlalchemy"]
+        sqla_config["sync_url"] += "/%"
+        MIGRATIONSDIR_WITH_PERCENT = MIGRATIONSDIR / "%"
+
+        with mock.patch("duffy.database.migrations.main.HERE", MIGRATIONSDIR_WITH_PERCENT):
+            assert alembic_migration.config.get_main_option("script_location") == str(
+                MIGRATIONSDIR_WITH_PERCENT.absolute()
+            )
+            assert alembic_migration.config.get_main_option("sqlalchemy.url") == "sync://url/%"
 
     @pytest.mark.parametrize("autogenerate", (False, True))
     @mock.patch("duffy.database.migrations.main.alembic.command")
