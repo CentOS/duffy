@@ -43,11 +43,14 @@ class _TimeDelta(timedelta):
 
     @classmethod
     def validate(cls, v):
+        if isinstance(v, timedelta):
+            return v
+
         if cls.allow_dimensionless_seconds:
             if isinstance(v, int):
                 return timedelta(seconds=v)
             if not isinstance(v, str):
-                raise TypeError("input value must be a string or an integer")
+                raise TypeError(f"input value {v!r} must be a string or an integer")
             if v.isdigit():
                 return timedelta(seconds=int(v))
         elif not isinstance(v, str):
