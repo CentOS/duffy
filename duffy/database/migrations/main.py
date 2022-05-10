@@ -18,9 +18,9 @@ class AlembicMigration:
     def config(self):
         if not hasattr(self, "_config"):
             self._config = alembic.config.Config()
-            self._config.set_main_option("script_location", str(HERE.absolute()))
+            self._config.set_main_option("script_location", str(HERE.absolute()).replace("%", "%%"))
             self._config.set_main_option(
-                "sqlalchemy.url", config["database"]["sqlalchemy"]["sync_url"]
+                "sqlalchemy.url", config["database"]["sqlalchemy"]["sync_url"].replace("%", "%%")
             )
         return self._config
 
