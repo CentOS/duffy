@@ -1,8 +1,11 @@
 import logging
 from pathlib import Path
+from typing import Set
 
 import alembic.command
 import alembic.config
+import alembic.runtime.environment
+import alembic.script
 
 from ...configuration import config
 
@@ -33,14 +36,44 @@ class AlembicMigration:
                 " any support table not registered with your SQLAlchemy metadata."
             )
 
+    def _get_current(self) -> Set[str]:
+        script = alembic.script.ScriptDirectory.from_config(self.config)
+
+        current_revs = set()
+
+        def _get_rev_current(rev, context):
+            current_revs.update(
+                _rev.cmd_format(verbose=False) for _rev in script.get_all_current(rev)
+            )
+            return []
+
+        with alembic.runtime.environment.EnvironmentContext(
+            self.config, script, fn=_get_rev_current, dont_mutate=True
+        ):
+            script.run_env()
+
+        return current_revs
+
     def db_version(self):
-        alembic.command.current(self.config)
+        print("\n".join(self._get_current()))
 
     def upgrade(self, version: str):
+        pre_revs = self._get_current()
         alembic.command.upgrade(self.config, version)
+        post_revs = self._get_current()
+        if pre_revs == post_revs:
+            print("Nothing to upgrade.")
+        else:
+            print("Upgraded to:", ", ".join(post_revs))
 
     def downgrade(self, version: str):
+        pre_revs = self._get_current()
         alembic.command.downgrade(self.config, version)
+        post_revs = self._get_current()
+        if pre_revs == post_revs:
+            print("Nothing to downgrade.")
+        else:
+            print("Downgraded to:", ", ".join(post_revs) if post_revs else "<base>")
 
 
 alembic_migration = AlembicMigration()
