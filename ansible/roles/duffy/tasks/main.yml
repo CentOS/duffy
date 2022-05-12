@@ -178,18 +178,26 @@
         - config
         - files
 
-    - name: Set up Duffy database schema
-      become_user: duffy
-      command: duffy setup-db
-      register: duffy_setup_db_out
-      changed_when: not duffy_setup_db_out.failed
-      failed_when: >-
-        duffy_setup_db_out.failed
-        and "Refusing to change database schema" not in duffy_setup_db_out.stderr
-      environment:
-        PATH: "/home/duffy/bin:{{ ansible_env.PATH }}"
+    - become_user: duffy
       tags:
         - database
+      environment:
+        PATH: "/home/duffy/bin:{{ ansible_env.PATH }}"
+      block:
+        - name: Set up Duffy database schema
+          command: duffy setup-db
+          register: duffy_setup_db_out
+          changed_when: not duffy_setup_db_out.failed
+          failed_when: >-
+            duffy_setup_db_out.failed
+            and "Refusing to change database schema" not in duffy_setup_db_out.stderr
+
+        - name: Apply database schema migrations
+          command: duffy migration upgrade
+          register: duffy_migration_upgrade_out
+          changed_when: >-
+            not duffy_migration_upgrade_out.failed
+            and "Upgraded to" in duffy_migration_upgrade_out.stdout
 
     - tags:
       - services
