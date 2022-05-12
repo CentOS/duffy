@@ -159,24 +159,27 @@ def migration():
 )
 @click.argument("comment", nargs=-1, required=True)
 def migration_create(autogenerate, comment):
-    """Create a new migration."""
+    """Create a new database schema migration."""
     alembic_migration.create(comment=" ".join(comment), autogenerate=autogenerate)
 
 
 @migration.command("db-version")
 def migration_db_version():
+    """Show the current version of the database schema."""
     alembic_migration.db_version()
 
 
 @migration.command("upgrade")
 @click.argument("version", default="head")
 def migration_upgrade(version):
+    """Upgrade the database schema."""
     alembic_migration.upgrade(version)
 
 
 @migration.command("downgrade")
 @click.argument("version", default="-1")
 def migration_downgrade(version):
+    """Downgrade the database schema."""
     alembic_migration.downgrade(version)
 
 
