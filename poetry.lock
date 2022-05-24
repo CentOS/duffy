@@ -61,7 +61,7 @@ ansible-core = ">=2.12.5,<2.13.0"
 
 [[package]]
 name = "ansible-core"
-version = "2.12.5"
+version = "2.12.6"
 description = "Radically simple IT automation"
 category = "dev"
 optional = false
@@ -1866,7 +1866,7 @@ ansible = [
     {file = "ansible-5.8.0.tar.gz", hash = "sha256:fa056476201f40625fb36d95c5041ef463880be18be5c73b998b57b401967863"},
 ]
 ansible-core = [
-    {file = "ansible-core-2.12.5.tar.gz", hash = "sha256:1ccc9944f101331adad1ed40d5ac66a8149133052ae34db0267a74aa73beebb3"},
+    {file = "ansible-core-2.12.6.tar.gz", hash = "sha256:5f366e851159d8f72ce68d32b8c0edda56ee537c01e9f68eca382bd1510af65d"},
 ]
 ansible-runner = [
     {file = "ansible-runner-2.2.0.tar.gz", hash = "sha256:6fafe0bcfdaa51b58bd3ae9c950a382549f4d9c194350ab135421dbbd0184d98"},
