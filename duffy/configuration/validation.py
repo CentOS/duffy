@@ -3,7 +3,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from pydantic import AnyUrl, BaseModel, Field, RedisDsn, conint, stricturl, validator
+from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, RedisDsn, conint, stricturl, validator
 
 from ..misc import ConfigTimeDelta
 
@@ -132,7 +132,7 @@ class LegacyPoolMapModel(ConfigBaseModel):
 class LegacyModel(ConfigBaseModel):
     host: Optional[str]
     port: Optional[conint(gt=0, lt=65536)]
-    dest: Optional[str]
+    dest: Optional[AnyHttpUrl]
     loglevel: Optional[LogLevel]
     logging: Optional[LoggingModel]
     usermap: Dict[str, str]
