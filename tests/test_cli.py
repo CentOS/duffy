@@ -225,7 +225,7 @@ def test_migration_upgrade_downgrade(alembic_migration, subcommand, runner):
 @pytest.mark.duffy_config(example_config=True)
 @mock.patch("duffy.shell.embed_shell")
 @mock.patch("duffy.database.init_model")
-def test_shell(
+def test_dev_shell(
     init_model, embed_shell, runner, duffy_config_files, config_error, shell_type, tmp_path
 ):
     # Ensure it's only one config file.
@@ -240,7 +240,7 @@ def test_shell(
         with config_file.open("w") as fp:
             yaml.dump(modified_config, fp)
 
-    args = [f"--config={config_file.absolute()}", "shell"]
+    args = [f"--config={config_file.absolute()}", "dev-shell"]
 
     if shell_type:
         args.append(f"--shell-type={shell_type}")
@@ -252,7 +252,7 @@ def test_shell(
     # the --shell-type option.
 
     # First, dig out the relevant click.Option object, ...
-    shell_type_option = [o for o in cli.commands["shell"].params if o.name == "shell_type"][0]
+    shell_type_option = [o for o in cli.commands["dev-shell"].params if o.name == "shell_type"][0]
     # ... then temporarily mock its type with a click.Choice of a static list.
     with mock.patch.object(shell_type_option, "type", new=click.Choice(["python", "ipython"])):
         result = runner.invoke(cli, args)

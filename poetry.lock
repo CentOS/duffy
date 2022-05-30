@@ -1835,7 +1835,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 
 [extras]
 all = ["ipython", "psycopg2", "asyncpg", "aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery", "httpx"]
-interactive = ["ipython"]
+devshell = ["ipython"]
 legacy = ["httpx"]
 postgresql = ["psycopg2", "asyncpg"]
 tasks = ["aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery"]
@@ -1843,7 +1843,7 @@ tasks = ["aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "0941071febf878392c507768156bd5642d7a7f438137c6e250bf4c03ff7166ea"
+content-hash = "50256e78921be19f08f15889fb282155478c8a1fa23f23f845e9fae16c117237"
 
 [metadata.files]
 aiodns = [

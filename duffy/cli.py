@@ -183,10 +183,10 @@ def migration_downgrade(version):
     alembic_migration.downgrade(version)
 
 
-# Interactive shell
+# Interactive development/debugging shell
 
 
-@cli.command(name="shell")
+@cli.command(name="dev-shell")
 @click.option(
     "-t",
     "--shell-type",
@@ -194,7 +194,7 @@ def migration_downgrade(version):
     help="Type of interactive shell to use.",
     default=None,
 )
-def run_shell(shell_type: str):
+def dev_shell(shell_type: str):
     """Run an interactive shell."""
     try:
         database.init_model()
