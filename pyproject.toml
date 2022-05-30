@@ -83,7 +83,7 @@ all = [
     "aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery",
     "httpx",
 ]
-interactive = ["ipython"]
+devshell = ["ipython"]
 postgresql = ["psycopg2", "asyncpg"]
 tasks = ["aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery"]
 legacy = ["httpx"]
