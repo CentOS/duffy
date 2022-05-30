@@ -2,13 +2,14 @@ import copy
 import logging
 import sys
 from datetime import timedelta
-from typing import Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import click
 import uvicorn
 import yaml
 
 from . import admin, database, shell
+from .client import DuffyClient, DuffyFormatter
 from .configuration import config, read_configuration
 from .database.migrations.main import alembic_migration
 from .database.setup import setup_db_schema, setup_db_test_data
@@ -62,6 +63,30 @@ class IntervalOrNoneType(click.ParamType):
 
 
 INTERVAL_OR_NONE = IntervalOrNoneType()
+
+
+class NodesSpecType(click.ParamType):
+    name = "nodes_spec"
+
+    def convert(self, value, param, ctx):
+        if value is None:
+            return None
+
+        nodes_spec = {}
+        for item in value.split(","):
+            key, value = item.split("=", 1)
+            if key in nodes_spec:
+                self.fail(f"Duplicate key: {key}")
+
+            nodes_spec[key] = value
+
+        if set(nodes_spec) != {"pool", "quantity"}:
+            self.fail("Both `pool` and `quantity` must be set")
+
+        return nodes_spec
+
+
+NODES_SPEC = NodesSpecType()
 
 
 # Global setup and CLI options
@@ -548,3 +573,70 @@ def tenant_update(
             f" session_lifetime_max={tenant.session_lifetime_max}"
             f" effective_session_lifetime_max={tenant.effective_session_lifetime_max}"
         )
+
+
+@cli.group()
+@click.option("--url", help="The base URL of the Duffy API.")
+@click.option("--auth-name", help="The tenant name to authenticate with the Duffy API.")
+@click.option("--auth-key", help="The tenant key to authenticate with the Duffy API.")
+@click.option(
+    "--format",
+    type=click.Choice(DuffyFormatter._subclasses_for_format.keys(), case_sensitive=False),
+    default="json",
+    help="Format with which to print results.",
+)
+@click.pass_context
+def client(
+    ctx: click.Context,
+    url: Optional[str],
+    auth_name: Optional[str],
+    auth_key: Optional[str],
+    format: str,
+):
+    """Command line client for the Duffy API."""
+    ctx.ensure_object(dict)
+    ctx.obj["client"] = DuffyClient(url=url, auth_name=auth_name, auth_key=auth_key)
+    ctx.obj["formatter"] = DuffyFormatter.new_for_format(format)
+
+
+@client.command("list-sessions")
+@click.pass_obj
+def client_list_sessions(obj):
+    """Query active sessions for this tenant on the Duffy API."""
+    result = obj["client"].list_sessions()
+    formatted_result = obj["formatter"].format(result)
+    if formatted_result:
+        click.echo(formatted_result)
+
+
+@client.command("show-session")
+@click.argument("session_id", type=int)
+@click.pass_obj
+def client_show_session(obj, session_id: int):
+    """Show one session identified by its id on the Duffy API."""
+    result = obj["client"].show_session(session_id)
+    click.echo(obj["formatter"].format(result))
+
+
+@client.command("request-session")
+@click.argument(
+    "nodes_specs",
+    type=NODES_SPEC,
+    nargs=-1,
+    required=True,
+    metavar="pool=<pool>:quantity=<quantity> [...]",
+)
+@click.pass_obj
+def client_request_session(obj: dict, nodes_specs: List[str]):
+    """Request a session with nodes from the Duffy API."""
+    result = obj["client"].request_session(nodes_specs)
+    click.echo(obj["formatter"].format(result))
+
+
+@client.command("retire-session")
+@click.argument("session_id", type=int)
+@click.pass_obj
+def client_retire_session(obj: dict, session_id: int):
+    """Retire an active Duffy session."""
+    result = obj["client"].retire_session(session_id)
+    click.echo(obj["formatter"].format(result))
