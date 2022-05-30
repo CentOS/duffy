@@ -2,6 +2,7 @@ import re
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Union
+from uuid import UUID
 
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, RedisDsn, conint, stricturl, validator
 
@@ -109,6 +110,16 @@ class LoggingModel(ConfigBaseModel):
         extra = "allow"
 
 
+class ClientAuthModel(ConfigBaseModel):
+    name: str
+    key: UUID
+
+
+class ClientModel(ConfigBaseModel):
+    url: AnyHttpUrl
+    auth: ClientAuthModel
+
+
 class AppModel(ConfigBaseModel):
     loglevel: Optional[LogLevel]
     host: Optional[str]
@@ -140,6 +151,7 @@ class LegacyModel(ConfigBaseModel):
 
 
 class ConfigModel(ConfigBaseModel):
+    client: Optional[ClientModel]
     app: Optional[AppModel]
     tasks: Optional[TasksModel]
     database: Optional[DatabaseModel]

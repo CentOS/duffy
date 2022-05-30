@@ -87,6 +87,7 @@ devshell = ["ipython"]
 postgresql = ["psycopg2", "asyncpg"]
 tasks = ["aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery"]
 legacy = ["httpx"]
+client = ["httpx"]
 
 [tool.pytest.ini_options]
 addopts = "--black --cov-config .coveragerc --cov=duffy --cov-report term --cov-report xml --cov-report html --flake8 --isort"

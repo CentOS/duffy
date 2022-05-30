@@ -1,4 +1,10 @@
 ---
+client:
+  url: http://127.0.0.1:8080/api/v1
+  auth:
+    name: tenant
+    key: a8b9899d-b128-59a1-aa86-754920b7f5ed
+
 app:
   loglevel: warning
   host: 0.0.0.0

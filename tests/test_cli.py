@@ -3,10 +3,12 @@ import logging
 from datetime import timedelta
 from tempfile import TemporaryDirectory
 from unittest import mock
+from uuid import uuid4
 
 import click
 import pytest
 import yaml
+from click.exceptions import BadParameter
 from click.testing import CliRunner
 
 import duffy.cli
@@ -75,6 +77,29 @@ class TestIntervalOrNoneType:
 
     def test_convert_valid(self):
         assert duffy.cli.INTERVAL_OR_NONE.convert("5h", None, None) == timedelta(hours=5)
+
+
+class TestNodesSpecType:
+    def test_convert_none(self):
+        assert duffy.cli.NODES_SPEC.convert(None, None, None) is None
+
+    @pytest.mark.parametrize("testcase", ("valid", "duplicate-key", "missing-key"))
+    def test_convert(self, testcase):
+        if testcase == "duplicate-key":
+            value = "pool=test,pool=test2,quantity=1"
+            expectation = pytest.raises(BadParameter)
+        elif testcase == "missing-key":
+            value = "pool=test"
+            expectation = pytest.raises(BadParameter)
+        else:
+            value = "pool=test,quantity=1"
+            expectation = noop_context()
+
+        with expectation:
+            converted = duffy.cli.NODES_SPEC.convert(value, None, None)
+
+        if testcase == "valid":
+            assert converted == {"pool": "test", "quantity": "1"}
 
 
 @pytest.mark.parametrize(
@@ -552,3 +577,148 @@ class TestAdminCLI:
                     "ERROR: Either --ssh-key, --api-key, --node-quota, --session-lifetime or"
                     " --session-lifetime-max must be set."
                 )
+
+
+@duffy.cli.client.command("test")
+def _test_client():
+    pass
+
+
+@pytest.mark.duffy_config(example_config=True)
+@mock.patch("duffy.cli.DuffyFormatter")
+@mock.patch("duffy.cli.DuffyClient")
+class TestClientCLI:
+    @pytest.mark.parametrize("testcase", ("defaults", "format", "options"))
+    def test_client_session(
+        self, DuffyClient, DuffyFormatter, testcase, runner, duffy_config_files
+    ):
+        (config_file,) = duffy_config_files
+
+        url = auth_name = auth_key = None
+        format = "json"
+
+        parameters = [f"--config={config_file.absolute()}", "client"]
+
+        if testcase == "format":
+            format = "flat"
+            parameters.append("--format=flat")
+
+        if testcase == "options":
+            url = "http://localhost:9876"
+            auth_name = "boo"
+            auth_key = str(uuid4())
+            parameters.extend(
+                [f"--url={url}", f"--auth-name={auth_name}", f"--auth-key={auth_key}"]
+            )
+
+        parameters.append("test")
+
+        DuffyClient.return_value = duffy_client_sentinel = object()
+        DuffyFormatter.new_for_format.return_value = duffy_formatter_sentinel = object()
+
+        obj = {}
+        runner.invoke(cli, parameters, obj=obj)
+
+        assert obj["client"] is duffy_client_sentinel
+        assert obj["formatter"] is duffy_formatter_sentinel
+        DuffyClient.assert_called_once_with(url=url, auth_name=auth_name, auth_key=auth_key)
+        DuffyFormatter.new_for_format.assert_called_once_with(format)
+
+    @pytest.mark.parametrize("testcase", ("no-results", "one-result"))
+    @mock.patch.object(duffy.cli.click, "echo")
+    def test_list_sessions(
+        self, click_echo, DuffyClient, DuffyFormatter, testcase, runner, duffy_config_files
+    ):
+        (config_file,) = duffy_config_files
+
+        DuffyClient.return_value = client = mock.MagicMock()
+        client.list_sessions.return_value = sessions_sentinel = object()
+        DuffyFormatter.new_for_format.return_value = formatter = mock.MagicMock()
+
+        if testcase == "no-results":
+            formatter.format.return_value = []
+        else:
+            formatter.format.return_value = results_sentinel = [object()]
+
+        parameters = [f"--config={config_file.absolute()}", "client", "list-sessions"]
+
+        runner.invoke(cli, parameters)
+
+        client.list_sessions.assert_called_once_with()
+        formatter.format.assert_called_once_with(sessions_sentinel)
+
+        if testcase == "no-results":
+            click_echo.assert_not_called()
+        else:
+            click_echo.assert_called_once_with(results_sentinel)
+
+    @mock.patch.object(duffy.cli.click, "echo")
+    def test_show_session(
+        self, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files
+    ):
+        (config_file,) = duffy_config_files
+
+        DuffyClient.return_value = client = mock.MagicMock()
+        client.show_session.return_value = session_sentinel = object()
+        DuffyFormatter.new_for_format.return_value = formatter = mock.MagicMock()
+
+        formatter.format.return_value = result_sentinel = object()
+
+        parameters = [f"--config={config_file.absolute()}", "client", "show-session", "15"]
+
+        runner.invoke(cli, parameters)
+
+        client.show_session.assert_called_once_with(15)
+        formatter.format.assert_called_once_with(session_sentinel)
+
+        click_echo.assert_called_once_with(result_sentinel)
+
+    @mock.patch.object(duffy.cli.click, "echo")
+    def test_request_session(
+        self, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files
+    ):
+        (config_file,) = duffy_config_files
+
+        DuffyClient.return_value = client = mock.MagicMock()
+        client.request_session.return_value = session_sentinel = object()
+        DuffyFormatter.new_for_format.return_value = formatter = mock.MagicMock()
+
+        formatter.format.return_value = result_sentinel = object()
+
+        parameters = [
+            f"--config={config_file.absolute()}",
+            "client",
+            "request-session",
+            "pool=pool,quantity=1",
+            "pool=pool2,quantity=2",
+        ]
+
+        runner.invoke(cli, parameters)
+
+        client.request_session.assert_called_once_with(
+            ({"pool": "pool", "quantity": "1"}, {"pool": "pool2", "quantity": "2"})
+        )
+        formatter.format.assert_called_once_with(session_sentinel)
+
+        click_echo.assert_called_once_with(result_sentinel)
+
+    @mock.patch.object(duffy.cli.click, "echo")
+    def test_retire_session(
+        self, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files
+    ):
+        (config_file,) = duffy_config_files
+
+        DuffyClient.return_value = client = mock.MagicMock()
+        client.retire_session.return_value = session_sentinel = object()
+        DuffyFormatter.new_for_format.return_value = formatter = mock.MagicMock()
+
+        formatter.format.return_value = result_sentinel = object()
+
+        parameters = [f"--config={config_file.absolute()}", "client", "retire-session", "51"]
+
+        runner.invoke(cli, parameters)
+
+        client.retire_session.assert_called_once_with(51)
+        formatter.format.assert_called_once_with(session_sentinel)
+
+        click_echo.assert_called_once_with(result_sentinel)
