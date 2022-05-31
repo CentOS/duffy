@@ -55,6 +55,9 @@ class TestIntOrNoneType:
 
         assert exc.match("'hello' is not a valid integer")
 
+    def test_convert_valid(self):
+        assert duffy.cli.INT_OR_NONE.convert("5", None, None) == 5
+
 
 class TestIntervalOrNoneType:
     def test_convert_verbatim(self):
@@ -69,6 +72,9 @@ class TestIntervalOrNoneType:
             duffy.cli.INTERVAL_OR_NONE.convert("hello", "<param>", None)
 
         assert exc.match("invalid timedelta format")
+
+    def test_convert_valid(self):
+        assert duffy.cli.INTERVAL_OR_NONE.convert("5h", None, None) == timedelta(hours=5)
 
 
 @pytest.mark.parametrize(
