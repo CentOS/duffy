@@ -302,15 +302,23 @@ def test_dev_shell(
 
 
 @pytest.mark.duffy_config(example_config=True)
-@mock.patch("duffy.cli.start_worker")
-def test_worker(start_worker, duffy_config_files, runner):
+@pytest.mark.parametrize("worker_available", (True, False))
+def test_worker(worker_available, duffy_config_files, runner):
     (config_file,) = duffy_config_files
-    result = runner.invoke(
-        cli, [f"--config={config_file.absolute()}", "worker", "a", "-b", "c", "--dee"]
-    )
 
-    assert result.exit_code == 0
-    start_worker.assert_called_once_with(worker_args=("a", "-b", "c", "--dee"))
+    with mock.patch.object(duffy.cli, "start_worker") as start_worker:
+        if not worker_available:
+            duffy.cli.start_worker = None
+        result = runner.invoke(
+            cli, [f"--config={config_file.absolute()}", "worker", "a", "-b", "c", "--dee"]
+        )
+
+    if worker_available:
+        assert result.exit_code == 0
+        start_worker.assert_called_once_with(worker_args=("a", "-b", "c", "--dee"))
+    else:
+        assert result.exit_code != 0
+        assert "Please install the duffy[tasks] extra for this command" in result.output
 
 
 @pytest.mark.duffy_config(example_config=True)
