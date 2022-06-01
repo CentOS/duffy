@@ -15,7 +15,11 @@ from .database.migrations.main import alembic_migration
 from .database.setup import setup_db_schema, setup_db_test_data
 from .exceptions import DuffyConfigurationError
 from .misc import ConfigTimeDelta
-from .tasks import start_worker
+
+try:
+    from .tasks import start_worker
+except ImportError:  # pragma: no cover
+    start_worker = None
 from .util import UNSET, SentinelType
 from .version import __version__
 
@@ -237,7 +241,10 @@ def dev_shell(shell_type: str):
 @click.argument("worker_args", nargs=-1, type=click.UNPROCESSED)
 def worker(worker_args: Tuple[str]):
     """Start a Celery worker to process backend tasks."""
-    start_worker(worker_args=worker_args)
+    if start_worker:
+        start_worker(worker_args=worker_args)
+    else:
+        raise click.ClickException("Please install the duffy[tasks] extra for this command")
 
 
 # Run the web app
