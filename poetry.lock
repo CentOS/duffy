@@ -25,7 +25,7 @@ name = "alembic"
 version = "1.8.0"
 description = "A database migration tool for SQLAlchemy."
 category = "main"
-optional = false
+optional = true
 python-versions = ">=3.7"
 
 [package.dependencies]
@@ -120,7 +120,7 @@ name = "asgiref"
 version = "3.5.2"
 description = "ASGI specs, helper code, and adapters"
 category = "main"
-optional = false
+optional = true
 python-versions = ">=3.7"
 
 [package.extras]
@@ -204,7 +204,7 @@ name = "bcrypt"
 version = "3.2.2"
 description = "Modern password hashing for your software and your servers"
 category = "main"
-optional = false
+optional = true
 python-versions = ">=3.6"
 
 [package.dependencies]
@@ -752,7 +752,7 @@ name = "importlib-resources"
 version = "5.7.1"
 description = "Read resources from Python packages"
 category = "main"
-optional = false
+optional = true
 python-versions = ">=3.7"
 
 [package.dependencies]
@@ -935,7 +935,7 @@ name = "mako"
 version = "1.2.0"
 description = "A super-fast templating language that borrows the best ideas from the existing templating languages."
 category = "main"
-optional = false
+optional = true
 python-versions = ">=3.7"
 
 [package.dependencies]
@@ -1749,7 +1749,7 @@ name = "uvicorn"
 version = "0.17.6"
 description = "The lightning-fast ASGI server."
 category = "main"
-optional = false
+optional = true
 python-versions = ">=3.7"
 
 [package.dependencies]
@@ -1834,17 +1834,18 @@ docs = ["sphinx", "jaraco.packaging (>=9)", "rst.linker (>=1.9)"]
 testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-cov", "pytest-enabler (>=1.0.1)", "jaraco.itertools", "func-timeout", "pytest-black (>=0.3.7)", "pytest-mypy (>=0.9.1)"]
 
 [extras]
-all = ["ipython", "psycopg2", "asyncpg", "aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery", "httpx"]
+all = ["SQLAlchemy", "alembic", "bcrypt", "fastapi", "uvicorn", "aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery", "ipython", "psycopg2", "asyncpg", "httpx"]
+app = ["SQLAlchemy", "alembic", "bcrypt", "fastapi", "uvicorn", "aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery"]
 client = ["httpx"]
 devshell = ["ipython"]
-legacy = ["httpx"]
+legacy = ["httpx", "Jinja2"]
 postgresql = ["psycopg2", "asyncpg"]
 tasks = ["aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery"]
 
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "dd04e853ab17aa408cebfa8824b7dc08274c665ae56fd3e243e446b32935135b"
+content-hash = "6a63f0ac4b81bb65905e145b7537e245cfcbc3be3623a13e170584b18fa3b5c1"
 
 [metadata.files]
 aiodns = [

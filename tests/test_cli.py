@@ -322,32 +322,36 @@ def test_worker(worker_available, duffy_config_files, runner):
 
 
 @pytest.mark.duffy_config(example_config=True)
-@pytest.mark.parametrize("testcase", ("default", "with-options", "missing-logging-config"))
+@pytest.mark.parametrize(
+    "testcase", ("default", "with-options", "missing-logging-config", "missing-modules")
+)
 @mock.patch("duffy.cli.uvicorn.run")
 def test_serve(uvicorn_run, testcase, runner, duffy_config_files, tmp_path):
     (config_file,) = duffy_config_files
 
-    if testcase == "missing-logging-config":
+    if "missing-logging-config" in testcase:
         modified_config = copy.deepcopy(config)
         del modified_config["app"]["logging"]
         config_file = tmp_path / "duffy-broken-config.yaml"
         with config_file.open("w") as fp:
             yaml.dump(modified_config, fp)
 
-    if testcase in ("default", "missing-logging-config"):
-        parameters = (f"--config={config_file.absolute()}", "serve")
-    elif testcase == "with-options":
-        parameters = (
-            f"--config={config_file.absolute()}",
-            "serve",
-            "--host=127.0.0.1",
-            "--port=8080",
-            "--loglevel=info",
-        )
+    if "missing-modules" in testcase:
+        uvicorn_run.side_effect = ImportError()
+
+    parameters = (f"--config={config_file.absolute()}", "serve")
+    if "with-options" in testcase:
+        parameters += ("--host=127.0.0.1", "--port=8080", "--loglevel=info")
 
     result = runner.invoke(cli, parameters)
-    assert result.exit_code == 0
+
     uvicorn_run.assert_called_once()
+    if "missing-modules" not in testcase:
+        assert result.exit_code == 0
+    else:
+        assert result.exit_code != 0
+        assert "Please install the duffy[app]" in result.output
+        assert "extra for this command" in result.output
 
 
 @pytest.mark.duffy_config(example_config=True)
@@ -596,10 +600,8 @@ def _test_client():
 @mock.patch("duffy.cli.DuffyFormatter")
 @mock.patch("duffy.cli.DuffyClient")
 class TestClientCLI:
-    @pytest.mark.parametrize("testcase", ("defaults", "format", "options"))
-    def test_client_session(
-        self, DuffyClient, DuffyFormatter, testcase, runner, duffy_config_files
-    ):
+    @pytest.mark.parametrize("testcase", ("defaults", "format", "options", "missing-modules"))
+    def test_client_group(self, DuffyClient, DuffyFormatter, testcase, runner, duffy_config_files):
         (config_file,) = duffy_config_files
 
         url = auth_name = auth_key = None
@@ -621,16 +623,24 @@ class TestClientCLI:
 
         parameters.append("test")
 
-        DuffyClient.return_value = duffy_client_sentinel = object()
-        DuffyFormatter.new_for_format.return_value = duffy_formatter_sentinel = object()
+        if "missing-modules" in testcase:
+            duffy.cli.DuffyClient = duffy.cli.DuffyFormatter = None
+        else:
+            DuffyClient.return_value = duffy_client_sentinel = object()
+            DuffyFormatter.new_for_format.return_value = duffy_formatter_sentinel = object()
 
         obj = {}
-        runner.invoke(cli, parameters, obj=obj)
+        result = runner.invoke(cli, parameters, obj=obj)
 
-        assert obj["client"] is duffy_client_sentinel
-        assert obj["formatter"] is duffy_formatter_sentinel
-        DuffyClient.assert_called_once_with(url=url, auth_name=auth_name, auth_key=auth_key)
-        DuffyFormatter.new_for_format.assert_called_once_with(format)
+        if "missing-modules" not in testcase:
+            assert result.exit_code == 0
+            assert obj["client"] is duffy_client_sentinel
+            assert obj["formatter"] is duffy_formatter_sentinel
+            DuffyClient.assert_called_once_with(url=url, auth_name=auth_name, auth_key=auth_key)
+            DuffyFormatter.new_for_format.assert_called_once_with(format)
+        else:
+            assert result.exit_code != 0
+            assert "Please install the duffy[client] extra for this command" in result.output
 
     @pytest.mark.parametrize("testcase", ("no-results", "one-result"))
     @mock.patch.object(duffy.cli.click, "echo")
