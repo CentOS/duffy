@@ -388,7 +388,7 @@ def test_serve_legacy(uvicorn_run, testcase, runner, duffy_config_files, tmp_pat
 @mock.patch.object(duffy.cli.admin.AdminContext, "create_for_cli")
 class TestAdminCLI:
     @pytest.mark.parametrize("testcase", ("success", "failure"))
-    def test_tenant_list(self, create_for_cli, testcase, runner, duffy_config_files, caplog):
+    def test_list_tenants(self, create_for_cli, testcase, runner, duffy_config_files, caplog):
         caplog.set_level(logging.DEBUG)
         (config_file,) = duffy_config_files
 
@@ -406,7 +406,7 @@ class TestAdminCLI:
         else:
             admin_ctx.list_tenants.return_value = {"error": {"detail": "BOOM"}}
 
-        parameters = (f"--config={config_file.absolute()}", "tenant", "list")
+        parameters = (f"--config={config_file.absolute()}", "admin", "list-tenants")
 
         result = runner.invoke(cli, parameters)
 
@@ -418,7 +418,7 @@ class TestAdminCLI:
             assert result.stdout.strip() == "ERROR: couldn't list tenants\nERROR DETAIL: BOOM"
 
     @pytest.mark.parametrize("testcase", ("success", "failure"))
-    def test_tenant_show(self, create_for_cli, testcase, runner, duffy_config_files, caplog):
+    def test_show_tenant(self, create_for_cli, testcase, runner, duffy_config_files, caplog):
         caplog.set_level(logging.DEBUG)
         (config_file,) = duffy_config_files
 
@@ -432,7 +432,7 @@ class TestAdminCLI:
         else:
             admin_ctx.show_tenant.return_value = {"error": {"detail": "BAR"}}
 
-        parameters = (f"--config={config_file.absolute()}", "tenant", "show", "tenant-name")
+        parameters = (f"--config={config_file.absolute()}", "admin", "show-tenant", "tenant-name")
 
         result = runner.invoke(cli, parameters)
 
@@ -444,7 +444,7 @@ class TestAdminCLI:
             assert result.stdout.strip() == "ERROR: tenant-name\nERROR DETAIL: BAR"
 
     @pytest.mark.parametrize("testcase", ("success", "failure"))
-    def test_tenant_create(self, create_for_cli, testcase, runner, duffy_config_files, caplog):
+    def test_create_tenant(self, create_for_cli, testcase, runner, duffy_config_files, caplog):
         caplog.set_level(logging.DEBUG)
         (config_file,) = duffy_config_files
 
@@ -459,8 +459,8 @@ class TestAdminCLI:
 
         parameters = (
             f"--config={config_file.absolute()}",
-            "tenant",
-            "create",
+            "admin",
+            "create-tenant",
             "tenant-name",
             "# no SSH key",
         )
@@ -475,7 +475,7 @@ class TestAdminCLI:
             assert result.stdout.strip() == "ERROR: tenant-name\nERROR DETAIL: FOO"
 
     @pytest.mark.parametrize("testcase", ("retire", "unretire", "failure"))
-    def test_tenant_retire_unretire(
+    def test_retire_unretire_tenant(
         self, create_for_cli, testcase, runner, duffy_config_files, caplog
     ):
         caplog.set_level(logging.DEBUG)
@@ -495,8 +495,8 @@ class TestAdminCLI:
 
         parameters = (
             f"--config={config_file.absolute()}",
-            "tenant",
-            "retire",
+            "admin",
+            "retire-tenant",
             "tenant-name",
             "--retire" if retire else "--unretire",
         )
@@ -524,7 +524,7 @@ class TestAdminCLI:
             "missing-arguments",
         ),
     )
-    def test_tenant_update(self, create_for_cli, testcase, runner, duffy_config_files, caplog):
+    def test_update_tenant(self, create_for_cli, testcase, runner, duffy_config_files, caplog):
         caplog.set_level(logging.DEBUG)
         (config_file,) = duffy_config_files
 
@@ -564,7 +564,7 @@ class TestAdminCLI:
 
             admin_ctx.update_tenant.return_value = {"tenant": result_tenant}
 
-        parameters = (f"--config={config_file.absolute()}", "tenant", "update", "tenant-name")
+        parameters = (f"--config={config_file.absolute()}", "admin", "update-tenant", "tenant-name")
 
         if testcase != "missing-arguments":
             parameters += ("--ssh-key", new_ssh_key, "--api-key", new_api_key)
