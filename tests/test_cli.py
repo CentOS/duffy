@@ -190,63 +190,89 @@ def test_config_dump(runner):
 
 
 @pytest.mark.duffy_config(example_config=True)
-@pytest.mark.parametrize("testcase", ("normal", "test-data", "config-error"))
+@pytest.mark.parametrize("testcase", ("normal", "test-data", "config-error", "missing-modules"))
 @mock.patch("duffy.cli.setup_db_test_data")
 @mock.patch("duffy.cli.setup_db_schema")
 def test_setup_db(
     setup_db_schema, setup_db_test_data, testcase, duffy_config_files, runner, caplog
 ):
     (config_file,) = duffy_config_files
-    if testcase == "config-error":
+
+    if "config-error" in testcase:
         setup_db_schema.side_effect = DuffyConfigurationError("database")
+
     args = [f"--config={config_file.absolute()}", "setup-db"]
-    if testcase == "test-data":
+
+    if "test-data" in testcase:
         args.append("--test-data")
+
+    if "missing-modules" in testcase:
+        duffy.cli.setup_db_schema = None
+
     result = runner.invoke(cli, args)
-    setup_db_schema.assert_called_once_with()
-    if testcase != "config-error":
+
+    if "config-error" not in testcase and "missing-modules" not in testcase:
+        setup_db_schema.assert_called_once_with()
         assert result.exit_code == 0
         if testcase == "test-data":
             setup_db_test_data.assert_called_once_with()
     else:
         assert result.exit_code != 0
-        assert "Configuration key missing or wrong: database" in caplog.messages
+        if "config-error" in testcase:
+            setup_db_schema.assert_called_once_with()
+            assert "Configuration key missing or wrong: database" in caplog.messages
+        else:
+            assert "Please install the duffy[database] extra" in result.output
 
 
-@pytest.mark.parametrize("testcase", ("normal", "autogenerate", "missing-comment"))
+@duffy.cli.migration.command("test")
+def _test_migration():
+    pass
+
+
+@pytest.mark.duffy_config(example_config=True)
 @mock.patch("duffy.cli.alembic_migration")
-def test_migration_create(alembic_migration, testcase, runner):
-    comment = "A comment"
-    args = ["migration", "create"]
-    if testcase == "autogenerate":
-        args.append("--autogenerate")
-    if testcase != "missing-comment":
-        args.extend(comment.split())
+class TestMigrationCLI:
+    def test_migration_group_bailout(self, alembic_migration, runner, duffy_config_files):
+        (config_file,) = duffy_config_files
 
-    result = runner.invoke(cli, args)
+        duffy.cli.alembic_migration = None
 
-    if testcase == "missing-comment":
-        assert result.exit_code != 0
-    else:
+        parameters = [f"--config={config_file.absolute()}", "migration", "test"]
+
+        result = runner.invoke(cli, parameters)
+
+        assert "Please install the duffy[database] extra" in result.output
+
+    @pytest.mark.parametrize("testcase", ("normal", "autogenerate", "missing-comment"))
+    def test_migration_create(self, alembic_migration, testcase, runner):
+        comment = "A comment"
+        args = ["migration", "create"]
+        if testcase == "autogenerate":
+            args.append("--autogenerate")
+        if testcase != "missing-comment":
+            args.extend(comment.split())
+
+        result = runner.invoke(cli, args)
+
+        if testcase == "missing-comment":
+            assert result.exit_code != 0
+        else:
+            assert result.exit_code == 0
+            alembic_migration.create.assert_called_once_with(
+                comment=comment, autogenerate=(testcase == "autogenerate")
+            )
+
+    def test_migration_db_version(self, alembic_migration, runner):
+        result = runner.invoke(cli, ["migration", "db-version"])
         assert result.exit_code == 0
-        alembic_migration.create.assert_called_once_with(
-            comment=comment, autogenerate=(testcase == "autogenerate")
-        )
+        alembic_migration.db_version.assert_called_once_with()
 
-
-@mock.patch("duffy.cli.alembic_migration")
-def test_migration_db_version(alembic_migration, runner):
-    result = runner.invoke(cli, ["migration", "db-version"])
-    assert result.exit_code == 0
-    alembic_migration.db_version.assert_called_once_with()
-
-
-@pytest.mark.parametrize("subcommand", ("upgrade", "downgrade"))
-@mock.patch("duffy.cli.alembic_migration")
-def test_migration_upgrade_downgrade(alembic_migration, subcommand, runner):
-    result = runner.invoke(cli, ["migration", subcommand, "BOO"])
-    assert result.exit_code == 0
-    getattr(alembic_migration, subcommand).assert_called_once_with("BOO")
+    @pytest.mark.parametrize("subcommand", ("upgrade", "downgrade"))
+    def test_migration_upgrade_downgrade(self, alembic_migration, subcommand, runner):
+        result = runner.invoke(cli, ["migration", subcommand, "BOO"])
+        assert result.exit_code == 0
+        getattr(alembic_migration, subcommand).assert_called_once_with("BOO")
 
 
 @pytest.mark.parametrize(
@@ -337,56 +363,85 @@ def test_serve(uvicorn_run, testcase, runner, duffy_config_files, tmp_path):
             yaml.dump(modified_config, fp)
 
     if "missing-modules" in testcase:
-        uvicorn_run.side_effect = ImportError()
+        ctxmgr = mock.patch.object(duffy.cli, "uvicorn", None)
+    else:
+        ctxmgr = noop_context()
 
     parameters = (f"--config={config_file.absolute()}", "serve")
+
     if "with-options" in testcase:
         parameters += ("--host=127.0.0.1", "--port=8080", "--loglevel=info")
 
-    result = runner.invoke(cli, parameters)
+    with ctxmgr:
+        result = runner.invoke(cli, parameters)
 
-    uvicorn_run.assert_called_once()
     if "missing-modules" not in testcase:
         assert result.exit_code == 0
+        uvicorn_run.assert_called_once()
     else:
         assert result.exit_code != 0
-        assert "Please install the duffy[app]" in result.output
-        assert "extra for this command" in result.output
+        assert "Please install the duffy[app] extra" in result.output
 
 
 @pytest.mark.duffy_config(example_config=True)
-@pytest.mark.parametrize("testcase", ("default", "with-options", "missing-logging-config"))
+@pytest.mark.parametrize(
+    "testcase", ("default", "with-options", "missing-logging-config", "missing-modules")
+)
 @mock.patch("duffy.cli.uvicorn.run")
 def test_serve_legacy(uvicorn_run, testcase, runner, duffy_config_files, tmp_path):
     (config_file,) = duffy_config_files
 
-    if testcase == "missing-logging-config":
+    if "missing-logging-config" in testcase:
         modified_config = copy.deepcopy(config)
         del modified_config["metaclient"]["logging"]
         config_file = tmp_path / "duffy-broken-config.yaml"
         with config_file.open("w") as fp:
             yaml.dump(modified_config, fp)
 
-    if testcase in ("default", "missing-logging-config"):
-        parameters = (f"--config={config_file.absolute()}", "serve-legacy")
-    elif testcase == "with-options":
-        parameters = (
-            f"--config={config_file.absolute()}",
-            "serve-legacy",
+    if "missing-modules" in testcase:
+        ctxmgr = mock.patch.object(duffy.cli, "uvicorn", None)
+    else:
+        ctxmgr = noop_context()
+
+    parameters = (f"--config={config_file.absolute()}", "serve-legacy")
+
+    if "with-options" in testcase:
+        parameters += (
             "--host=127.0.0.1",
             "--port=9090",
             "--dest=http://127.0.0.1:8080",
             "--loglevel=info",
         )
 
-    result = runner.invoke(cli, parameters)
-    assert result.exit_code == 0
-    uvicorn_run.assert_called_once()
+    with ctxmgr:
+        result = runner.invoke(cli, parameters)
+
+    if "missing-modules" not in testcase:
+        assert result.exit_code == 0
+        uvicorn_run.assert_called_once()
+    else:
+        assert result.exit_code != 0
+        assert "Please install the duffy[legacy] extra for this command" in result.output
+
+
+@duffy.cli.admin_group.command("test")
+def _test_admin():
+    pass
 
 
 @pytest.mark.duffy_config(example_config=True)
 @mock.patch.object(duffy.cli.admin.AdminContext, "create_for_cli")
 class TestAdminCLI:
+    @mock.patch("duffy.cli.admin", None)
+    def test_admin_group_bailout(self, create_for_cli, runner, duffy_config_files):
+        (config_file,) = duffy_config_files
+
+        parameters = [f"--config={config_file.absolute()}", "admin", "test"]
+
+        result = runner.invoke(cli, parameters)
+
+        assert "Please install the duffy[admin] extra" in result.output
+
     @pytest.mark.parametrize("testcase", ("success", "failure"))
     def test_list_tenants(self, create_for_cli, testcase, runner, duffy_config_files, caplog):
         caplog.set_level(logging.DEBUG)

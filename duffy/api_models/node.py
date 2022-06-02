@@ -3,7 +3,10 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, IPvAnyAddress
 
-from ..database.types import NodeState
+try:
+    from ..database.types import NodeState
+except ImportError:  # pragma: no cover
+    NodeState = str
 from .common import APIResult, CreatableMixin, RetirableMixin
 
 # abstract node

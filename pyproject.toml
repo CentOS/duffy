@@ -36,23 +36,25 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.8"
+click = "^8.0.3"
 PyYAML = "^6"
 SQLAlchemy = {version = "^1.4.25", extras=["asyncio"], optional = true}
 alembic = {version = "^1.7.5", optional = true}
 bcrypt = {version = "^3.2", optional = true}
-click = "^8.0.3"
 fastapi = {version = ">=0.70", optional = true}
 uvicorn = {version = ">=0.15", optional = true}
 Jinja2 = {version = "^3.0.3", optional = true}
 ansible-runner = {version = "^2.1.1", optional = true}
 asyncpg = {version = "^0.25", optional = true}
-celery = {version = "^5.2.1", extras = ["redis"]}
+celery = {version = "^5.2.1", extras = ["redis"], optional = true}
 httpx = {version = ">=0.18.2", optional = true}
 ipython = {version = ">=7.29", optional = true}
 jmespath = {version = ">=0.10", optional = true}
 pottery = {version = "^3", optional = true}
 psycopg2 = {version = "^2.9.2", optional = true}
 aiodns = {version = "^3.0.0", optional = true}
+pydantic = ">=1.6.2"
+aiosqlite = {version = ">=0.17.0", optional = true}
 
 [tool.poetry.dev-dependencies]
 Jinja2 = "^3.0.3"
@@ -79,7 +81,7 @@ tox = "^3.24.4"
 # keep this in sync with the real extras
 all = [
     "SQLAlchemy", "alembic", "bcrypt", "fastapi", "uvicorn",
-    "aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery",
+    "aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery", "celery",
     "ipython",
     "psycopg2", "asyncpg",
     "httpx",
@@ -88,14 +90,20 @@ all = [
 # the `serve` command
 app = [
     "SQLAlchemy", "alembic", "bcrypt", "fastapi", "uvicorn",
-    "aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery",
+    "aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery", "celery",
 ]
+# the `admin ...` commands
+admin = ["SQLAlchemy", "bcrypt", "fastapi"]
+# the `setup-db` and `migration` commands
+database = ["SQLAlchemy", "alembic", "bcrypt"]
 # the `dev-shell` command
-devshell = ["ipython"]
-# the `serve`, `worker` and `dev-shell` commands if you use PostgreSQL
+dev-shell = ["ipython", "SQLAlchemy", "alembic", "bcrypt"]
+# the `serve` and `dev-shell` commands, if you use SQLite
+sqlite = ["aiosqlite"]
+# the `serve`, `worker` and `dev-shell` commands, if you use PostgreSQL
 postgresql = ["psycopg2", "asyncpg"]
 # the `worker` command
-tasks = ["aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery"]
+tasks = ["aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery", "celery"]
 # the `serve-legacy` command
 legacy = ["httpx", "Jinja2"]
 # the `client ...` commands
