@@ -9,7 +9,11 @@ import uvicorn
 import yaml
 
 from . import admin, database, shell
-from .client import DuffyClient, DuffyFormatter
+
+try:
+    from .client import DuffyClient, DuffyFormatter
+except ImportError:  # pragma: no cover
+    DuffyClient = DuffyFormatter = None
 from .configuration import config, read_configuration
 from .database.migrations.main import alembic_migration
 from .database.setup import setup_db_schema, setup_db_test_data
@@ -241,10 +245,10 @@ def dev_shell(shell_type: str):
 @click.argument("worker_args", nargs=-1, type=click.UNPROCESSED)
 def worker(worker_args: Tuple[str]):
     """Start a Celery worker to process backend tasks."""
-    if start_worker:
-        start_worker(worker_args=worker_args)
-    else:
+    if not start_worker:
         raise click.ClickException("Please install the duffy[tasks] extra for this command")
+
+    start_worker(worker_args=worker_args)
 
 
 # Run the web app
@@ -300,15 +304,21 @@ def serve(reload, host, port, loglevel):
     if uvicorn_log_config.get("loggers", {}).get("duffy"):
         uvicorn_log_config["loggers"]["duffy"]["level"] = numeric_loglevel
 
-    # Start the show
-    uvicorn.run(
-        "duffy.app.main:app",
-        host=host,
-        port=port,
-        log_level=numeric_loglevel,
-        reload=reload,
-        log_config=uvicorn_log_config,
-    )
+    try:
+        # Start the show
+        uvicorn.run(
+            "duffy.app.main:app",
+            host=host,
+            port=port,
+            log_level=numeric_loglevel,
+            reload=reload,
+            log_config=uvicorn_log_config,
+        )
+    except ImportError:
+        raise click.ClickException(
+            "Please install the duffy[app] and optionally the duffy[postgresql] extra for this"
+            " command"
+        )
 
 
 # Run the web app - Duffy Metaclient for Legacy Support
@@ -588,7 +598,12 @@ def tenant_update(
 @click.option("--auth-key", help="The tenant key to authenticate with the Duffy API.")
 @click.option(
     "--format",
-    type=click.Choice(DuffyFormatter._subclasses_for_format.keys(), case_sensitive=False),
+    type=click.Choice(
+        DuffyFormatter._subclasses_for_format.keys()
+        if DuffyFormatter
+        else ("json", "yaml", "flat"),
+        case_sensitive=False,
+    ),
     default="json",
     help="Format with which to print results.",
 )
@@ -601,6 +616,9 @@ def client(
     format: str,
 ):
     """Command line client for the Duffy API."""
+    if not (DuffyClient and DuffyFormatter):
+        raise click.ClickException("Please install the duffy[client] extra for this command")
+
     ctx.ensure_object(dict)
     ctx.obj["client"] = DuffyClient(url=url, auth_name=auth_name, auth_key=auth_key)
     ctx.obj["formatter"] = DuffyFormatter.new_for_format(format)
