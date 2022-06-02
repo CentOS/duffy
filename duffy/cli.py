@@ -5,18 +5,40 @@ from datetime import timedelta
 from typing import List, Optional, Tuple, Union
 
 import click
-import uvicorn
+
+try:
+    import uvicorn
+except ImportError:  # pragma: no cover
+    uvicorn = None
 import yaml
 
-from . import admin, database, shell
+try:
+    from . import admin
+except ImportError:  # pragma: no cover
+    admin = None
+try:
+    from . import database
+except ImportError:  # pragma: no cover
+    database = None
+try:
+    from . import shell
+except ImportError:  # pragma: no cover
+    shell = None
 
 try:
     from .client import DuffyClient, DuffyFormatter
 except ImportError:  # pragma: no cover
     DuffyClient = DuffyFormatter = None
 from .configuration import config, read_configuration
-from .database.migrations.main import alembic_migration
-from .database.setup import setup_db_schema, setup_db_test_data
+
+try:
+    from .database.migrations.main import alembic_migration
+except ImportError:  # pragma: no cover
+    alembic_migration = None
+try:
+    from .database.setup import setup_db_schema, setup_db_test_data
+except ImportError:  # pragma: no cover
+    setup_db_schema = setup_db_test_data = None
 from .exceptions import DuffyConfigurationError
 from .misc import ConfigTimeDelta
 
@@ -165,6 +187,12 @@ def config_dump():
 )
 def setup_db(test_data):
     """Create tables from the database model."""
+    if not (database and setup_db_schema and setup_db_test_data):
+        raise click.ClickException(
+            "Please install the duffy[database] extra (and optionally duffy[postgresql] or"
+            " duffy[sqlite]) for this command"
+        )
+
     try:
         setup_db_schema()
         if test_data:
@@ -181,7 +209,11 @@ def setup_db(test_data):
 @cli.group()
 def migration():
     """Handle database migrations."""
-    pass
+    if not alembic_migration:
+        raise click.ClickException(
+            "Please install the duffy[database] extra (and optionally duffy[postgresql] or"
+            " duffy[sqlite]) for this command"
+        )
 
 
 @migration.command("create")
@@ -223,7 +255,7 @@ def migration_downgrade(version):
 @click.option(
     "-t",
     "--shell-type",
-    type=click.Choice(shell.get_available_shells(), case_sensitive=False),
+    type=click.Choice(shell.get_available_shells(), case_sensitive=False) if shell else str,
     help="Type of interactive shell to use.",
     default=None,
 )
@@ -270,7 +302,11 @@ def worker(worker_args: Tuple[str]):
     "-l",
     "--loglevel",
     "loglevel",
-    type=click.Choice(list(uvicorn.config.LOG_LEVELS.keys()), case_sensitive=False),
+    type=(
+        click.Choice(list(uvicorn.config.LOG_LEVELS.keys()), case_sensitive=False)
+        if uvicorn
+        else str
+    ),
     help="Set the log level.",
     default=None,
 )
@@ -282,6 +318,12 @@ def serve(reload, host, port, loglevel):
     (physical hardware and virtual machines) that are used to run
     the tests in the CI Cluster.
     """
+    if not uvicorn:
+        raise click.ClickException(
+            "Please install the duffy[app] extra (and optionally duffy[postgresql] or"
+            " duffy[sqlite]) for this command"
+        )
+
     config_app = config.get("app", {})
     if host is None:
         host = config_app.get("host", "127.0.0.1")
@@ -304,21 +346,15 @@ def serve(reload, host, port, loglevel):
     if uvicorn_log_config.get("loggers", {}).get("duffy"):
         uvicorn_log_config["loggers"]["duffy"]["level"] = numeric_loglevel
 
-    try:
-        # Start the show
-        uvicorn.run(
-            "duffy.app.main:app",
-            host=host,
-            port=port,
-            log_level=numeric_loglevel,
-            reload=reload,
-            log_config=uvicorn_log_config,
-        )
-    except ImportError:
-        raise click.ClickException(
-            "Please install the duffy[app] and optionally the duffy[postgresql] extra for this"
-            " command"
-        )
+    # Start the show
+    uvicorn.run(
+        "duffy.app.main:app",
+        host=host,
+        port=port,
+        log_level=numeric_loglevel,
+        reload=reload,
+        log_config=uvicorn_log_config,
+    )
 
 
 # Run the web app - Duffy Metaclient for Legacy Support
@@ -346,7 +382,11 @@ def serve(reload, host, port, loglevel):
     "-l",
     "--loglevel",
     "loglevel",
-    type=click.Choice(list(uvicorn.config.LOG_LEVELS.keys()), case_sensitive=False),
+    type=(
+        click.Choice(list(uvicorn.config.LOG_LEVELS.keys()), case_sensitive=False)
+        if uvicorn
+        else str
+    ),
     help="Set the log level.",
     default=None,
 )
@@ -364,6 +404,9 @@ def serve_legacy(ctx, reload, host, port, dest, loglevel):
     of the Duffy endpoint, until the support for the older endpoints is
     deprecated.
     """
+    if not uvicorn:
+        raise click.ClickException("Please install the duffy[legacy] extra for this command")
+
     config_metaclient = config.get("metaclient", {})
     if host is None:
         host = config_metaclient.get("host", "127.0.0.1")
@@ -412,7 +455,11 @@ class FakeAPITenant:
 @cli.group("admin")
 def admin_group():
     """Administrate Duffy tenants."""
-    pass
+    if not admin:
+        raise click.ClickException(
+            "Please install the duffy[admin] extra (and optionally duffy[postgresql] or"
+            " duffy[sqlite]) for this command"
+        )
 
 
 @admin_group.command("list-tenants")

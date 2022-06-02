@@ -4,7 +4,10 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, conint
 
-from ..database.types import NodeState
+try:
+    from ..database.types import NodeState
+except ImportError:  # pragma: no cover
+    NodeState = str
 from ..misc import APITimeDelta
 from .common import APIResult, CreatableMixin, RetirableMixin
 from .node import NodeBase
