@@ -107,7 +107,7 @@
 
     - name: Install Duffy Python package
       pip:
-        name: "duffy[tasks,postgresql,interactive,legacy,opennebula]"
+        name: "duffy[app,tasks,postgresql,devshell,legacy,opennebula]"
         version: ">={{ duffy_minimum_version }}"
         virtualenv: "{{ duffy_virtualenv }}"
         virtualenv_command: "{{ duffy_python_executable }} -m venv"
