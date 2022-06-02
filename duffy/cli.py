@@ -409,16 +409,16 @@ class FakeAPITenant:
     is_admin = True
 
 
-@cli.group()
-def tenant():
+@cli.group("admin")
+def admin_group():
     """Administrate Duffy tenants."""
     pass
 
 
-@tenant.command("list")
+@admin_group.command("list-tenants")
 @click.option("--quiet/--no-quiet", default=False, help="Show only tenant information.")
 @click.option("--active/--all", default=True, help="Whether to list retired tenants.")
-def tenant_list(quiet, active):
+def admin_list_tenants(quiet, active):
     """List tenants."""
     admin_ctx = admin.AdminContext.create_for_cli()
     result = admin_ctx.list_tenants()
@@ -435,9 +435,9 @@ def tenant_list(quiet, active):
             click.echo(f"{prefix}{tenant.name}")
 
 
-@tenant.command("show")
+@admin_group.command("show-tenant")
 @click.argument("name")
-def tenant_show(name: str):
+def admin_show_tenant(name: str):
     """Show a tenant."""
     admin_ctx = admin.AdminContext.create_for_cli()
     result = admin_ctx.show_tenant(name)
@@ -457,7 +457,7 @@ def tenant_show(name: str):
         )
 
 
-@tenant.command("create")
+@admin_group.command("create-tenant")
 @click.option(
     "--is-admin/--no-is-admin",
     default=False,
@@ -483,7 +483,7 @@ def tenant_show(name: str):
 )
 @click.argument("name")
 @click.argument("ssh_key")
-def tenant_create(
+def admin_create_tenant(
     name: str,
     ssh_key: str,
     is_admin: bool,
@@ -508,10 +508,10 @@ def tenant_create(
         click.echo(f"OK: {name}: {result['tenant'].api_key}")
 
 
-@tenant.command("retire")
+@admin_group.command("retire-tenant")
 @click.option("--retire/--unretire", default=True, help="Whether to retire or unretire a tenant.")
 @click.argument("name")
-def tenant_retire(name: str, retire: bool = True):
+def admin_retire_tenant(name: str, retire: bool = True):
     """Retire or unretire a tenant."""
     admin_ctx = admin.AdminContext.create_for_cli()
     result = admin_ctx.retire_unretire_tenant(name, retire=retire)
@@ -522,7 +522,7 @@ def tenant_retire(name: str, retire: bool = True):
         click.echo(f"OK: {name}: active={result['tenant'].active}")
 
 
-@tenant.command("update")
+@admin_group.command("update-tenant")
 @click.option("--ssh-key", help="New SSH key for the tenant.")
 @click.option(
     "--api-key", help="Either a new API key (UUID) for the tenant or 'reset' to set automatically."
@@ -546,7 +546,7 @@ def tenant_retire(name: str, retire: bool = True):
     help="The maximum session lifetime for this tenant.",
 )
 @click.argument("name")
-def tenant_update(
+def admin_update_tenant(
     name: str,
     node_quota: Optional[Union[int, SentinelType]],
     session_lifetime: Optional[Union[timedelta, SentinelType]],
