@@ -370,7 +370,7 @@ def test_serve(uvicorn_run, testcase, runner, duffy_config_files, tmp_path):
     parameters = (f"--config={config_file.absolute()}", "serve")
 
     if "with-options" in testcase:
-        parameters += ("--host=127.0.0.1", "--port=8080", "--loglevel=info")
+        parameters = ("--loglevel=info",) + parameters + ("--host=127.0.0.1", "--port=8080")
 
     with ctxmgr:
         result = runner.invoke(cli, parameters)
@@ -406,11 +406,10 @@ def test_serve_legacy(uvicorn_run, testcase, runner, duffy_config_files, tmp_pat
     parameters = (f"--config={config_file.absolute()}", "serve-legacy")
 
     if "with-options" in testcase:
-        parameters += (
-            "--host=127.0.0.1",
-            "--port=9090",
-            "--dest=http://127.0.0.1:8080",
-            "--loglevel=info",
+        parameters = (
+            ("--loglevel=info",)
+            + parameters
+            + ("--host=127.0.0.1", "--port=9090", "--dest=http://127.0.0.1:8080")
         )
 
     with ctxmgr:
