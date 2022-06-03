@@ -2,8 +2,10 @@
 
 import csv
 import sys
+from pathlib import Path
 
 import click
+import xdg.BaseDirectory
 import yaml
 from sqlalchemy import select
 
@@ -11,38 +13,33 @@ from duffy.configuration import read_configuration
 from duffy.database import init_sync_model, sync_session_maker
 from duffy.database.model import Tenant
 
-DEFAULT_CONFIG_FILE = "/etc/duffy"
+DEFAULT_CONFIG_LOCATIONS = ("/etc/duffy", f"{xdg.BaseDirectory.xdg_config_home}/duffy")
+DEFAULT_CONFIG_PATHS = tuple(Path(loc) for loc in DEFAULT_CONFIG_LOCATIONS)
 
 
 class dump_dialect(csv.unix_dialect):
     quotechar = "'"
 
 
-def init_config(ctx, param, filename):
-    ctx.ensure_object(dict)
-    try:
-        read_configuration(filename, clear=ctx.obj.get("clear_config", True), validate=False)
-    except FileNotFoundError:
-        if filename is not DEFAULT_CONFIG_FILE:
-            raise
-    ctx.obj["clear_config"] = False
-
-
 @click.group()
 @click.option(
+    "config_paths",
     "--config",
     "-c",
-    type=click.Path(),
-    default=DEFAULT_CONFIG_FILE,
-    callback=init_config,
-    is_eager=True,
-    expose_value=False,
-    help="Read configuration from the specified YAML files or directories.",
-    show_default=True,
+    type=click.Path(exists=True),
+    multiple=True,
+    help=(
+        "Read configuration from the specified YAML files or directories instead of the default"
+        f" paths ({', '.join(DEFAULT_CONFIG_LOCATIONS)})"
+    ),
     metavar="FILE_OR_DIR",
 )
-def cli():
-    read_configuration(clear=False, validate=True)
+def cli(config_paths):
+    if not config_paths:
+        # Ignore non-existent default paths
+        config_paths = tuple(path for path in DEFAULT_CONFIG_PATHS if path.exists())
+
+    read_configuration(*config_paths, clear=True, validate=True)
 
 
 def read_csv_files(users_file, userkeys_file):

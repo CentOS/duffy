@@ -1,7 +1,6 @@
 import copy
 import logging
 from datetime import timedelta
-from tempfile import TemporaryDirectory
 from unittest import mock
 from uuid import uuid4
 
@@ -27,18 +26,10 @@ def runner():
 
 
 @pytest.fixture(autouse=True, scope="module")
-def dont_read_etc_duffy():
-    # Modify the default value for `--config`. For that, find the right parameter object on the
-    # (click-wrapped) cli() function, then mock its default below.
-    for param in cli.params:
-        if param.name == "config":
-            break
-    else:  # Oops, didn't find right param object. This shouldn't happen!
-        raise RuntimeError("Can't find right parameter object for `--config`.")
-
-    with TemporaryDirectory(prefix="dont_read_etc_duffy-") as tmpdir, mock.patch(
-        "duffy.cli.DEFAULT_CONFIG_FILE", new=tmpdir
-    ), mock.patch.object(param, "default", new=tmpdir):
+def dont_read_system_user_config():
+    with mock.patch("duffy.cli.DEFAULT_CONFIG_LOCATIONS", new=()), mock.patch(
+        "duffy.cli.DEFAULT_CONFIG_PATHS", new=()
+    ):
         yield
 
 
@@ -102,38 +93,6 @@ class TestNodesSpecType:
             assert converted == {"pool": "test", "quantity": "1"}
 
 
-@pytest.mark.parametrize(
-    "testcase", ("default", "default-not-found", "other-not-found", "default-plus-one")
-)
-@mock.patch("duffy.cli.read_configuration")
-def test_init_config(read_configuration, testcase):
-    if "not-found" in testcase:
-        read_configuration.side_effect = FileNotFoundError()
-
-    if "default" in testcase:
-        expectation = noop_context()
-        filename = duffy.cli.DEFAULT_CONFIG_FILE
-    else:
-        expectation = pytest.raises(FileNotFoundError)
-        filename = "boop"
-
-    ctx = mock.MagicMock()
-    ctx.obj = {}
-    param = mock.MagicMock()
-
-    with expectation:
-        duffy.cli.init_config(ctx, param, filename)
-
-    read_configuration.assert_called_once_with(filename, clear=True, validate=False)
-
-    if "plus-one" in testcase:
-        read_configuration.reset_mock(return_value=True, side_effect=True)
-
-        duffy.cli.init_config(ctx, param, "foo")
-
-        read_configuration.assert_called_once_with("foo", clear=False, validate=False)
-
-
 def test_cli_version(runner):
     result = runner.invoke(cli, ["--version"])
     assert result.exit_code == 0
@@ -156,8 +115,7 @@ def test_cli_suggestion(runner):
 def test_cli_missing_config(tmp_path, runner):
     missing_config_file = tmp_path / "missing_duffy_config.yaml"
     result = runner.invoke(cli, [f"--config={missing_config_file.absolute()}"])
-    assert result.exit_code == 1
-    assert isinstance(result.exception, FileNotFoundError)
+    assert result.exit_code != 0
 
 
 @pytest.mark.duffy_config(example_config=True)
