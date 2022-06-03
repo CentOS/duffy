@@ -134,6 +134,18 @@ def init_config(ctx, param, filename):
 
 @click.group(name="duffy")
 @click.option(
+    "-l",
+    "--loglevel",
+    "loglevel",
+    type=(
+        click.Choice(list(uvicorn.config.LOG_LEVELS.keys()), case_sensitive=False)
+        if uvicorn
+        else str
+    ),
+    help="Set the log level.",
+    default=None,
+)
+@click.option(
     "-c",
     "--config",
     type=click.Path(),
@@ -146,7 +158,13 @@ def init_config(ctx, param, filename):
     metavar="FILE_OR_DIR",
 )
 @click.version_option(version=__version__, prog_name="Duffy")
-def cli():
+@click.pass_context
+def cli(ctx: click.Context, loglevel: Optional[str]):
+    ctx.ensure_object(dict)
+    ctx.obj["loglevel"] = loglevel
+
+    logging.basicConfig(level=loglevel.upper() if isinstance(loglevel, str) else loglevel)
+
     read_configuration(clear=False, validate=True)
 
 
@@ -298,19 +316,8 @@ def worker(worker_args: Tuple[str]):
     default=None,
     help="Set the port value.",
 )
-@click.option(
-    "-l",
-    "--loglevel",
-    "loglevel",
-    type=(
-        click.Choice(list(uvicorn.config.LOG_LEVELS.keys()), case_sensitive=False)
-        if uvicorn
-        else str
-    ),
-    help="Set the log level.",
-    default=None,
-)
-def serve(reload, host, port, loglevel):
+@click.pass_obj
+def serve(obj, reload, host, port):
     """Run the Duffy web application server.
 
     Duffy is the middle layer running ci.centos.org that manages the
@@ -329,11 +336,10 @@ def serve(reload, host, port, loglevel):
         host = config_app.get("host", "127.0.0.1")
     if port is None:
         port = config_app.get("port", 8080)
+    loglevel = obj["loglevel"]
     if loglevel is None:
         loglevel = config_app.get("loglevel", "info")
-
     numeric_loglevel = uvicorn.config.LOG_LEVELS[loglevel.lower()]
-    logging.basicConfig(level=numeric_loglevel)
 
     # Report for duty
     print(" * Starting Duffy...")
@@ -378,20 +384,8 @@ def serve(reload, host, port, loglevel):
     default=None,
     help="Set the destination address of Duffy deployment.",
 )
-@click.option(
-    "-l",
-    "--loglevel",
-    "loglevel",
-    type=(
-        click.Choice(list(uvicorn.config.LOG_LEVELS.keys()), case_sensitive=False)
-        if uvicorn
-        else str
-    ),
-    help="Set the log level.",
-    default=None,
-)
-@click.pass_context
-def serve_legacy(ctx, reload, host, port, dest, loglevel):
+@click.pass_obj
+def serve_legacy(obj, reload, host, port, dest):
     """Serve the Duffy Metaclient for Legacy Support app.
 
     Duffy is the middle layer running ci.centos.org that manages the
@@ -414,11 +408,10 @@ def serve_legacy(ctx, reload, host, port, dest, loglevel):
         port = config_metaclient.get("port", 9090)
     if dest is None:
         dest = config_metaclient.get("dest", "http://127.0.0.1:8080")
+    loglevel = obj["loglevel"]
     if loglevel is None:
         loglevel = config_metaclient.get("loglevel", "info")
-
     numeric_loglevel = uvicorn.config.LOG_LEVELS[loglevel.lower()]
-    logging.basicConfig(level=numeric_loglevel)
 
     # Report for duty
     print(" * Starting Duffy Metaclient for Legacy Support...")
