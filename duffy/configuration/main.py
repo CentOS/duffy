@@ -1,7 +1,7 @@
 from copy import deepcopy
 from itertools import chain
 from pathlib import Path
-from typing import List, Union
+from typing import List, Sequence, Union
 
 import yaml
 
@@ -26,7 +26,7 @@ def _expand_normalize_config_files(config_files: List[Union[Path, str]]) -> List
 
 
 def read_configuration(
-    *config_files: List[Union[Path, str]], clear: bool = True, validate: bool = True
+    *config_files: Sequence[Union[Path, str]], clear: bool = True, validate: bool = True
 ):
     config_files = _expand_normalize_config_files(config_files)
 

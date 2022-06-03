@@ -2,6 +2,7 @@ import copy
 import logging
 import sys
 from datetime import timedelta
+from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 import click
@@ -10,6 +11,7 @@ try:
     import uvicorn
 except ImportError:  # pragma: no cover
     uvicorn = None
+import xdg.BaseDirectory
 import yaml
 
 try:
@@ -49,7 +51,8 @@ except ImportError:  # pragma: no cover
 from .util import UNSET, SentinelType
 from .version import __version__
 
-DEFAULT_CONFIG_FILE = "/etc/duffy"
+DEFAULT_CONFIG_LOCATIONS = ("/etc/duffy", f"{xdg.BaseDirectory.xdg_config_home}/duffy")
+DEFAULT_CONFIG_PATHS = tuple(Path(loc) for loc in DEFAULT_CONFIG_LOCATIONS)
 
 log = logging.getLogger(__name__)
 
@@ -119,17 +122,7 @@ class NodesSpecType(click.ParamType):
 NODES_SPEC = NodesSpecType()
 
 
-# Global setup and CLI options
-
-
-def init_config(ctx, param, filename):
-    ctx.ensure_object(dict)
-    try:
-        read_configuration(filename, clear=ctx.obj.get("clear_config", True), validate=False)
-    except FileNotFoundError:
-        if filename is not DEFAULT_CONFIG_FILE:
-            raise
-    ctx.obj["clear_config"] = False
+# CLI groups and commands
 
 
 @click.group(name="duffy")
@@ -146,26 +139,32 @@ def init_config(ctx, param, filename):
     default=None,
 )
 @click.option(
+    "config_paths",
     "-c",
     "--config",
-    type=click.Path(),
-    default=DEFAULT_CONFIG_FILE,
-    callback=init_config,
-    is_eager=True,
-    expose_value=False,
-    help="Read configuration from the specified YAML files or directories.",
-    show_default=True,
+    type=click.Path(exists=True),
+    multiple=True,
+    help=(
+        "Read configuration from the specified YAML files or directories instead of the default"
+        f" paths ({', '.join(DEFAULT_CONFIG_LOCATIONS)})"
+    ),
     metavar="FILE_OR_DIR",
 )
 @click.version_option(version=__version__, prog_name="Duffy")
 @click.pass_context
-def cli(ctx: click.Context, loglevel: Optional[str]):
+def cli(ctx: click.Context, loglevel: Optional[str], config_paths: Tuple[Path]):
     ctx.ensure_object(dict)
     ctx.obj["loglevel"] = loglevel
 
     logging.basicConfig(level=loglevel.upper() if isinstance(loglevel, str) else loglevel)
 
-    read_configuration(clear=False, validate=True)
+    if not config_paths:
+        # Ignore non-existent default paths
+        config_paths = tuple(path for path in DEFAULT_CONFIG_PATHS if path.exists())
+
+    log.debug(f"Reading configuration from: {', '.join(str(p) for p in config_paths)}")
+
+    read_configuration(*config_paths, clear=True, validate=True)
 
 
 # Check & dump configuration
