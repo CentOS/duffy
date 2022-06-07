@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 
-from duffy.app.main import app, init_model, init_tasks
+from duffy.app.main import app, init_model, init_tasks, post_process_config
 from duffy.exceptions import DuffyConfigurationError
 
 from ..util import noop_context
@@ -38,6 +38,12 @@ class TestMain:
         response = await client.get("/redoc")
         parser = HTMLParser()
         parser.feed(response.text)
+
+    @mock.patch("duffy.app.main.NodePool")
+    async def test_post_process_config(self, NodePool):
+        await post_process_config()
+
+        NodePool.process_configuration.assert_called_once_with()
 
     @pytest.mark.parametrize("config_error", (False, True))
     @mock.patch("duffy.database.init_async_model")
