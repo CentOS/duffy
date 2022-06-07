@@ -24,7 +24,7 @@ from ...api_models import (
 )
 from ...database.model import Node, Session, SessionNode, Tenant
 from ...database.types import NodeState
-from ...nodes_context import contextualize, decontextualize
+from ...nodes.context import contextualize, decontextualize
 from ...tasks import deprovision_nodes, fill_pools
 from ..auth import req_tenant, req_tenant_optional
 from ..database import req_db_async_session

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Dict, List
 from ...database.model import Node
 
 if TYPE_CHECKING:
-    from ..node_pools import NodePool
+    from ...nodes.pools import NodePool
 
 
 class MechanismFailure(Exception):

@@ -237,7 +237,7 @@ class TestSessionWorkflow:
                     assert len(failed_nodes) == 1
                     assert failed_nodes[0].data["error"]["detail"] == "contextualizing node failed"
 
-    @mock.patch("duffy.nodes_context.run_remote_cmd", new=mock.AsyncMock())
+    @mock.patch("duffy.nodes.context.run_remote_cmd", new=mock.AsyncMock())
     @mock.patch("duffy.app.controllers.session.fill_pools", new=mock.MagicMock())
     @pytest.mark.parametrize(
         "testcase",

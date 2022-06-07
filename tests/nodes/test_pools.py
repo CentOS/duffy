@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 
 from duffy.configuration import config
-from duffy.tasks.node_pools import AbstractNodePool, ConcreteNodePool, NodePool
+from duffy.nodes.pools import AbstractNodePool, ConcreteNodePool, NodePool
 
 
 @mock.patch.dict(NodePool.subcls_per_cls_type, clear=False)

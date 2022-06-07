@@ -7,9 +7,9 @@ import pytest
 from sqlalchemy import func, select
 
 from duffy.database.model import Node
+from duffy.nodes.mechanisms import MechanismFailure
+from duffy.nodes.pools import ConcreteNodePool, NodePool
 from duffy.tasks import deprovision
-from duffy.tasks.mechanisms import MechanismFailure
-from duffy.tasks.node_pools import ConcreteNodePool, NodePool
 
 from ..util import noop_context
 

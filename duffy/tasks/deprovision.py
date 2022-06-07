@@ -8,10 +8,10 @@ from sqlalchemy import select
 from ..database import sync_session_maker
 from ..database.model import Node
 from ..database.types import NodeState
-from ..nodes_context import decontextualize
+from ..nodes.context import decontextualize
+from ..nodes.mechanisms import MechanismFailure
+from ..nodes.pools import ConcreteNodePool, NodePool
 from .base import celery
-from .mechanisms import MechanismFailure
-from .node_pools import ConcreteNodePool, NodePool
 from .provision import fill_pools
 
 log = get_task_logger(__name__)
