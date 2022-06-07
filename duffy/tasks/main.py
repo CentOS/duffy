@@ -5,9 +5,9 @@ from celery import Celery
 from .. import database
 from ..configuration import config
 from ..configuration.validation import PeriodicTaskModel
+from ..nodes.pools import NodePool
 from .base import celery, init_tasks
 from .expire import expire_sessions
-from .node_pools import NodePool
 from .provision import fill_pools
 
 DEFAULT_PERIODIC_INTERVAL = 5 * 60

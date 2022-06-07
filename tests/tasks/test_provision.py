@@ -5,9 +5,9 @@ import pytest
 from sqlalchemy import func, select
 
 from duffy.database.model import Node
+from duffy.nodes.mechanisms import Mechanism, MechanismFailure
+from duffy.nodes.pools import ConcreteNodePool
 from duffy.tasks import provision
-from duffy.tasks.mechanisms import Mechanism, MechanismFailure
-from duffy.tasks.node_pools import ConcreteNodePool
 
 from ..util import noop_context
 
@@ -17,7 +17,7 @@ PLAYBOOK_PATH = HERE / "playbooks"
 
 @pytest.fixture
 def foo_pool(test_mechanism):
-    with mock.patch.dict("duffy.tasks.node_pools.ConcreteNodePool.known_pools", clear=True):
+    with mock.patch.dict("duffy.nodes.pools.ConcreteNodePool.known_pools", clear=True):
         yield ConcreteNodePool(
             name="foo",
             bar="this is a bar",
@@ -410,7 +410,7 @@ def test_fill_single_pool(
 @pytest.mark.usefixtures("test_mechanism")
 @pytest.mark.parametrize("testcase", ("all-pools", "one-pool", "unknown-pool"))
 @mock.patch("duffy.tasks.provision.fill_single_pool")
-@mock.patch.dict("duffy.tasks.node_pools.ConcreteNodePool.known_pools", clear=True)
+@mock.patch.dict("duffy.nodes.pools.ConcreteNodePool.known_pools", clear=True)
 def test_fill_pools(fill_single_pool, testcase):
     all_pool_names = ("foo", "bar")
     for name in all_pool_names:

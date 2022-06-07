@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 
-from duffy import nodes_context
+from duffy.nodes import context
 
 
 @pytest.mark.parametrize("with_stdin", (True, False))
@@ -20,10 +20,10 @@ async def test_run_remote_cmd(create_subprocess_exec, success, with_stdin):
         STDIN_TEXT = "BOOO"
     else:
         STDIN_TEXT = None
-    result = await nodes_context.run_remote_cmd(node=NODE, cmd=CMD, stdin_text=STDIN_TEXT)
+    result = await context.run_remote_cmd(node=NODE, cmd=CMD, stdin_text=STDIN_TEXT)
 
     create_subprocess_exec.assert_awaited_with(
-        *(nodes_context.SSH_CMD_FLAGS + [f"root@{NODE}", CMD]),
+        *(context.SSH_CMD_FLAGS + [f"root@{NODE}", CMD]),
         stdin=PIPE,
         stdout=DEVNULL,
         stderr=DEVNULL,
@@ -44,24 +44,24 @@ async def test_run_remote_cmd(create_subprocess_exec, success, with_stdin):
         assert result is None
 
 
-@mock.patch("duffy.nodes_context.run_remote_cmd")
+@mock.patch("duffy.nodes.context.run_remote_cmd")
 async def test_decontextualize_one(run_remote_cmd):
     run_remote_cmd.return_value = sentinel = object()
     NODE = "node.domain.tld"
 
-    result = await nodes_context.decontextualize_one(node=NODE)
+    result = await context.decontextualize_one(node=NODE)
 
-    run_remote_cmd.assert_awaited_once_with(NODE, nodes_context.SSH_REMOTE_DECONTEXTUALIZE_CMD)
+    run_remote_cmd.assert_awaited_once_with(NODE, context.SSH_REMOTE_DECONTEXTUALIZE_CMD)
 
     assert result == sentinel
 
 
-@mock.patch("duffy.nodes_context.decontextualize_one")
+@mock.patch("duffy.nodes.context.decontextualize_one")
 async def test_decontextualize(decontextualize_one):
     nodes = [f"node{idx}.domain.tld" for idx in range(1, 6)]
     decontextualize_one.side_effect = nodes
 
-    decontextualize_result = await nodes_context.decontextualize(nodes)
+    decontextualize_result = await context.decontextualize(nodes)
 
     assert decontextualize_result == nodes
 
@@ -69,8 +69,8 @@ async def test_decontextualize(decontextualize_one):
 
 
 @pytest.mark.parametrize("decontextualize_fail", (False, True))
-@mock.patch("duffy.nodes_context.run_remote_cmd")
-@mock.patch("duffy.nodes_context.decontextualize_one")
+@mock.patch("duffy.nodes.context.run_remote_cmd")
+@mock.patch("duffy.nodes.context.decontextualize_one")
 async def test_contextualize_one(decontextualize_one, run_remote_cmd, decontextualize_fail):
     SSH_PUBKEY = "BOOP"
     NODE = "node.domain.tld"
@@ -80,15 +80,15 @@ async def test_contextualize_one(decontextualize_one, run_remote_cmd, decontextu
     else:
         run_remote_cmd.return_value = NODE
 
-    result = await nodes_context.contextualize_one(ssh_pubkey=SSH_PUBKEY, node=NODE)
+    result = await context.contextualize_one(ssh_pubkey=SSH_PUBKEY, node=NODE)
 
     decontextualize_one.assert_awaited_once_with(NODE)
 
     if not decontextualize_fail:
         run_remote_cmd.assert_awaited_once()
-        assert run_remote_cmd.call_args.args == (NODE, nodes_context.SSH_REMOTE_CONTEXTUALIZE_CMD)
+        assert run_remote_cmd.call_args.args == (NODE, context.SSH_REMOTE_CONTEXTUALIZE_CMD)
         assert run_remote_cmd.call_args.kwargs == {
-            "stdin_text": f"{nodes_context.TENANT_CRED_SEPARATOR}\n{SSH_PUBKEY}\n"
+            "stdin_text": f"{context.TENANT_CRED_SEPARATOR}\n{SSH_PUBKEY}\n"
         }
         assert result == NODE
     else:
@@ -96,14 +96,14 @@ async def test_contextualize_one(decontextualize_one, run_remote_cmd, decontextu
         assert result is None
 
 
-@mock.patch("duffy.nodes_context.contextualize_one")
+@mock.patch("duffy.nodes.context.contextualize_one")
 async def test_contextualize(contextualize_one):
     nodes = [f"node{idx}.domain.tld" for idx in range(1, 6)]
     contextualize_one.side_effect = nodes
 
     SSH_PUBKEY = "BOOP"
 
-    contextualize_result = await nodes_context.contextualize(nodes, SSH_PUBKEY)
+    contextualize_result = await context.contextualize(nodes, SSH_PUBKEY)
 
     assert contextualize_result == nodes
 

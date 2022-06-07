@@ -2,9 +2,9 @@ from unittest import mock
 
 import pytest
 
-from duffy.tasks.mechanisms.ansible import AnsibleMechanism, PlaybookType
-from duffy.tasks.mechanisms.main import Mechanism, MechanismFailure
-from duffy.tasks.node_pools import ConcreteNodePool, NodePool
+from duffy.nodes.mechanisms.ansible import AnsibleMechanism, PlaybookType
+from duffy.nodes.mechanisms.main import Mechanism, MechanismFailure
+from duffy.nodes.pools import ConcreteNodePool, NodePool
 
 from ..util import noop_context
 
@@ -90,7 +90,7 @@ class TestAnsibleMechanism:
         "error", (False, "no-matching-event", "run-failed", "event_data-missing")
     )
     @pytest.mark.parametrize("add_run_extra_vars", (False, True))
-    @mock.patch("duffy.tasks.mechanisms.ansible.ansible_runner")
+    @mock.patch("duffy.nodes.mechanisms.ansible.ansible_runner")
     def test_run_playbook(self, ansible_runner, add_run_extra_vars, error, extra_vars_loc):
         mech = self.create_mech(extra_vars_loc=extra_vars_loc)
 
