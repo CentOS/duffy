@@ -5,8 +5,9 @@ from fastapi import FastAPI
 
 from .. import database, tasks
 from ..exceptions import DuffyConfigurationError
+from ..nodes.pools import NodePool
 from ..version import __version__
-from .controllers import node, session, tenant
+from .controllers import node, pool, session, tenant
 
 log = logging.getLogger(__name__)
 
@@ -17,9 +18,10 @@ Cluster.
 """
 
 tags_metadata = [
-    {"name": "nodes", "description": "Operations with physical and virtual nodes"},
-    {"name": "sessions", "description": "Operations with sessions"},
-    {"name": "tenants", "description": "Operations with tenants"},
+    {"name": "sessions", "description": "Operations on sessions"},
+    {"name": "pools", "description": "Operations on node pools"},
+    {"name": "nodes", "description": "Operations on physical and virtual nodes"},
+    {"name": "tenants", "description": "Operations on tenants"},
 ]
 
 app = FastAPI(
@@ -35,9 +37,18 @@ app = FastAPI(
 
 PREFIX = "/api/v1"
 
+app.include_router(session.router, prefix=PREFIX)
+app.include_router(pool.router, prefix=PREFIX)
 app.include_router(node.router, prefix=PREFIX)
 app.include_router(tenant.router, prefix=PREFIX)
-app.include_router(session.router, prefix=PREFIX)
+
+
+# Post-process configuration
+
+
+@app.on_event("startup")
+async def post_process_config():
+    NodePool.process_configuration()
 
 
 # DB model initialization
