@@ -6,6 +6,8 @@ import httpx
 from pydantic import BaseModel
 
 from ..api_models import (
+    PoolResult,
+    PoolResultCollection,
     SessionCreateModel,
     SessionResult,
     SessionResultCollection,
@@ -134,4 +136,18 @@ class DuffyClient:
             in_dict={"active": False},
             in_model=SessionUpdateModel,
             out_model=SessionResult,
+        )
+
+    def list_pools(self) -> PoolResultCollection:
+        return self._query_method(
+            _MethodEnum.get,
+            "/pools",
+            out_model=PoolResultCollection,
+        )
+
+    def show_pool(self, pool_name: str) -> PoolResult:
+        return self._query_method(
+            _MethodEnum.get,
+            f"/pools/{pool_name}",
+            out_model=PoolResult,
         )

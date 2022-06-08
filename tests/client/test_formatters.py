@@ -6,6 +6,11 @@ import pytest
 from pydantic import BaseModel
 
 from duffy.api_models import (
+    PoolConciseModel,
+    PoolLevelsModel,
+    PoolResult,
+    PoolResultCollection,
+    PoolVerboseModel,
     SessionModel,
     SessionNodeModel,
     SessionResult,
@@ -98,6 +103,14 @@ class TestDuffyFlatFormatter:
             ),
         ],
     )
+    TEST_POOL_CONCISE = PoolConciseModel(name="pool", **{"fill-level": 15})
+    TEST_POOL_VERBOSE = PoolVerboseModel(
+        name="pool",
+        levels=PoolLevelsModel(
+            provisioning=0, ready=15, contextualizing=0, deployed=5, deprovisioning=0
+        ),
+        **{"fill-level": 15},
+    )
 
     @pytest.mark.parametrize(
         "value, expected",
@@ -118,6 +131,35 @@ class TestDuffyFlatFormatter:
         api_error = DuffyAPIErrorModel(error={"detail": "Hullo."})
         node_line = next(DuffyFlatFormatter().flatten_api_error(api_error=api_error))
         assert node_line == "error='Hullo.'"
+
+    def test_flatten_pool(self):
+        pool_line = next(DuffyFlatFormatter().flatten_pool(pool=self.TEST_POOL_VERBOSE))
+
+        assert pool_line == (
+            "pool_name='pool' fill_level=15 levels_provisioning=0 levels_ready=15"
+            " levels_contextualizing=0 levels_deployed=5 levels_deprovisioning=0"
+        )
+
+    def test_flatten_pool_result(self):
+        pool_line = next(
+            DuffyFlatFormatter().flatten_pool_result(
+                PoolResult(action="get", pool=self.TEST_POOL_VERBOSE)
+            )
+        )
+
+        assert pool_line == (
+            "pool_name='pool' fill_level=15 levels_provisioning=0 levels_ready=15"
+            " levels_contextualizing=0 levels_deployed=5 levels_deprovisioning=0"
+        )
+
+    def test_flatten_pools_result(self):
+        pool_line = next(
+            DuffyFlatFormatter().flatten_pools_result(
+                PoolResultCollection(action="get", pools=[self.TEST_POOL_CONCISE])
+            )
+        )
+
+        assert pool_line == "pool_name='pool' fill_level=15"
 
     def test_flatten_session(self):
         node_line = next(DuffyFlatFormatter().flatten_session(session=self.TEST_SESSION))
@@ -151,10 +193,17 @@ class TestDuffyFlatFormatter:
             " hostname='hostname' ipaddr='127.0.0.1'"
         )
 
-    @pytest.mark.parametrize("result_cls", (SessionResult, SessionResultCollection, dict))
+    @pytest.mark.parametrize(
+        "result_cls",
+        (PoolResult, PoolResultCollection, SessionResult, SessionResultCollection, dict),
+    )
     def test_format(self, result_cls):
         expectation = noop_context()
-        if result_cls == SessionResult:
+        if result_cls == PoolResult:
+            api_result = PoolResult(action="get", pool=self.TEST_POOL_VERBOSE)
+        elif result_cls == PoolResultCollection:
+            api_result = PoolResultCollection(action="get", pools=[self.TEST_POOL_CONCISE])
+        elif result_cls == SessionResult:
             api_result = SessionResult(action="get", session=self.TEST_SESSION)
         elif result_cls == SessionResultCollection:
             api_result = SessionResultCollection(action="get", sessions=[self.TEST_SESSION])
@@ -165,7 +214,14 @@ class TestDuffyFlatFormatter:
         with expectation:
             formatted = DuffyFlatFormatter().format(api_result)
 
-        if result_cls in (SessionResult, SessionResultCollection):
+        if result_cls is PoolResult:
+            assert formatted == (
+                "pool_name='pool' fill_level=15 levels_provisioning=0 levels_ready=15"
+                " levels_contextualizing=0 levels_deployed=5 levels_deprovisioning=0"
+            )
+        elif result_cls is PoolResultCollection:
+            assert formatted == "pool_name='pool' fill_level=15"
+        elif result_cls in (SessionResult, SessionResultCollection):
             assert formatted == (
                 "session_id=17 active=TRUE created_at='2022-05-31 12:00:00' retired_at= pool='pool'"
                 " hostname='hostname' ipaddr='127.0.0.1'"

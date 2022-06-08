@@ -7,6 +7,8 @@ import pytest
 from pydantic import BaseModel
 
 from duffy.api_models import (
+    PoolResult,
+    PoolResultCollection,
     SessionCreateModel,
     SessionResult,
     SessionResultCollection,
@@ -58,6 +60,14 @@ class TestDuffyClient:
                 in_model=SessionUpdateModel,
                 out_model=SessionResult,
             ),
+        ),
+        "list_pools": (
+            mock.call(),
+            mock.call(_MethodEnum.get, "/pools", out_model=PoolResultCollection),
+        ),
+        "show_pool": (
+            mock.call("lagoon"),
+            mock.call(_MethodEnum.get, "/pools/lagoon", out_model=PoolResult),
         ),
     }
 
