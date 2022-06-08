@@ -50,14 +50,14 @@ vine = ">=5.0.0"
 
 [[package]]
 name = "ansible"
-version = "5.8.0"
+version = "5.9.0"
 description = "Radically simple IT automation"
 category = "dev"
 optional = false
 python-versions = ">=3.8"
 
 [package.dependencies]
-ansible-core = ">=2.12.5,<2.13.0"
+ansible-core = ">=2.12.6,<2.13.0"
 
 [[package]]
 name = "ansible-core"
@@ -1876,7 +1876,7 @@ amqp = [
     {file = "amqp-5.1.1.tar.gz", hash = "sha256:2c1b13fecc0893e946c65cbd5f36427861cffa4ea2201d8f6fca22e2a373b5e2"},
 ]
 ansible = [
-    {file = "ansible-5.8.0.tar.gz", hash = "sha256:fa056476201f40625fb36d95c5041ef463880be18be5c73b998b57b401967863"},
+    {file = "ansible-5.9.0.tar.gz", hash = "sha256:6f2f762fca6cff0401a6d2119b8ba3b2f111ea1a93fd203c86df09bc75570f18"},
 ]
 ansible-core = [
     {file = "ansible-core-2.12.6.tar.gz", hash = "sha256:5f366e851159d8f72ce68d32b8c0edda56ee537c01e9f68eca382bd1510af65d"},
