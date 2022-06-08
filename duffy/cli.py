@@ -669,8 +669,8 @@ def client_list_sessions(obj):
     """Query active sessions for this tenant on the Duffy API."""
     result = obj["client"].list_sessions()
     formatted_result = obj["formatter"].format(result)
-    if formatted_result:
-        click.echo(formatted_result)
+    # Only print newline if formatted_result isn't empty.
+    click.echo(formatted_result, nl=formatted_result)
 
 
 @client.command("show-session")

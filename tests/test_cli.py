@@ -654,10 +654,9 @@ class TestClientCLI:
             assert result.exit_code != 0
             assert "Please install the duffy[client] extra for this command" in result.output
 
-    @pytest.mark.parametrize("testcase", ("no-results", "one-result"))
     @mock.patch.object(duffy.cli.click, "echo")
     def test_list_sessions(
-        self, click_echo, DuffyClient, DuffyFormatter, testcase, runner, duffy_config_files
+        self, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files
     ):
         (config_file,) = duffy_config_files
 
@@ -665,10 +664,7 @@ class TestClientCLI:
         client.list_sessions.return_value = sessions_sentinel = object()
         DuffyFormatter.new_for_format.return_value = formatter = mock.MagicMock()
 
-        if testcase == "no-results":
-            formatter.format.return_value = []
-        else:
-            formatter.format.return_value = results_sentinel = [object()]
+        formatter.format.return_value = formatted_result_sentinel = object()
 
         parameters = [f"--config={config_file.absolute()}", "client", "list-sessions"]
 
@@ -677,10 +673,7 @@ class TestClientCLI:
         client.list_sessions.assert_called_once_with()
         formatter.format.assert_called_once_with(sessions_sentinel)
 
-        if testcase == "no-results":
-            click_echo.assert_not_called()
-        else:
-            click_echo.assert_called_once_with(results_sentinel)
+        click.echo.assert_called_once_with(formatted_result_sentinel, nl=formatted_result_sentinel)
 
     @mock.patch.object(duffy.cli.click, "echo")
     def test_show_session(
