@@ -704,3 +704,22 @@ def client_retire_session(obj: dict, session_id: int):
     """Retire an active Duffy session."""
     result = obj["client"].retire_session(session_id)
     click.echo(obj["formatter"].format(result))
+
+
+@client.command("list-pools")
+@click.pass_obj
+def client_list_pools(obj: dict):
+    """List configured Duffy node pools."""
+    result = obj["client"].list_pools()
+    formatted_result = obj["formatter"].format(result)
+    # Only print newline if formatted_result isn't empty.
+    click.echo(formatted_result, nl=formatted_result)
+
+
+@client.command("show-pool")
+@click.argument("name")
+@click.pass_obj
+def client_show_pool(obj: dict, name: str):
+    """Show information about a Duffy node pool."""
+    result = obj["client"].show_pool(name)
+    click.echo(obj["formatter"].format(result))

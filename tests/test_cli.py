@@ -745,3 +745,41 @@ class TestClientCLI:
         formatter.format.assert_called_once_with(session_sentinel)
 
         click_echo.assert_called_once_with(result_sentinel)
+
+    @mock.patch.object(duffy.cli.click, "echo")
+    def test_list_pools(self, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files):
+        (config_file,) = duffy_config_files
+
+        DuffyClient.return_value = client = mock.MagicMock()
+        client.list_pools.return_value = pools_sentinel = object()
+        DuffyFormatter.new_for_format.return_value = formatter = mock.MagicMock()
+
+        formatter.format.return_value = formatted_result_sentinel = object()
+
+        parameters = [f"--config={config_file.absolute()}", "client", "list-pools"]
+
+        runner.invoke(cli, parameters)
+
+        client.list_pools.assert_called_once_with()
+        formatter.format.assert_called_once_with(pools_sentinel)
+
+        click_echo.assert_called_once_with(formatted_result_sentinel, nl=formatted_result_sentinel)
+
+    @mock.patch.object(duffy.cli.click, "echo")
+    def test_show_pool(self, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files):
+        (config_file,) = duffy_config_files
+
+        DuffyClient.return_value = client = mock.MagicMock()
+        client.show_pool.return_value = pool_sentinel = object()
+        DuffyFormatter.new_for_format.return_value = formatter = mock.MagicMock()
+
+        formatter.format.return_value = formatted_result_sentinel = object()
+
+        parameters = [f"--config={config_file.absolute()}", "client", "show-pool", "lagoon"]
+
+        runner.invoke(cli, parameters)
+
+        client.show_pool.assert_called_once_with("lagoon")
+        formatter.format.assert_called_once_with(pool_sentinel)
+
+        click_echo.assert_called_once_with(formatted_result_sentinel)
