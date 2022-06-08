@@ -1692,7 +1692,7 @@ test = ["pre-commit", "pytest"]
 
 [[package]]
 name = "trio"
-version = "0.20.0"
+version = "0.21.0"
 description = "A friendly Python library for async concurrency and I/O"
 category = "dev"
 optional = false
@@ -2901,8 +2901,8 @@ traitlets = [
     {file = "traitlets-5.2.2.post1.tar.gz", hash = "sha256:74803a1baa59af70f023671d86d5c7a834c931186df26d50d362ee6a1ff021fd"},
 ]
 trio = [
-    {file = "trio-0.20.0-py3-none-any.whl", hash = "sha256:fb2d48e4eab0dfb786a472cd514aaadc71e3445b203bc300bad93daa75d77c1a"},
-    {file = "trio-0.20.0.tar.gz", hash = "sha256:670a52d3115d0e879e1ac838a4eb999af32f858163e3a704fe4839de2a676070"},
+    {file = "trio-0.21.0-py3-none-any.whl", hash = "sha256:4dc0bf9d5cc78767fc4516325b6d80cc0968705a31d0eec2ecd7cdda466265b0"},
+    {file = "trio-0.21.0.tar.gz", hash = "sha256:523f39b7b69eef73501cebfe1aafd400a9aad5b03543a0eded52952488ff1c13"},
 ]
 types-orjson = [
     {file = "types-orjson-3.6.2.tar.gz", hash = "sha256:cf9afcc79a86325c7aff251790338109ed6f6b1bab09d2d4262dd18c85a3c638"},
