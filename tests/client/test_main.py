@@ -29,6 +29,38 @@ class OutModel(BaseModel):
 
 @pytest.mark.duffy_config(example_config=True)
 class TestDuffyClient:
+    wrapper_method_test_details = {
+        "list_sessions": (
+            mock.call(),
+            mock.call(_MethodEnum.get, "/sessions", out_model=SessionResultCollection),
+        ),
+        "show_session": (
+            mock.call(15),
+            mock.call(_MethodEnum.get, "/sessions/15", out_model=SessionResult),
+        ),
+        "request_session": (
+            mock.call([{"pool": "pool", "quantity": "31"}]),
+            mock.call(
+                _MethodEnum.post,
+                "/sessions",
+                in_dict={"nodes_specs": [{"pool": "pool", "quantity": "31"}]},
+                in_model=SessionCreateModel,
+                out_model=SessionResult,
+                expected_status=HTTPStatus.CREATED,
+            ),
+        ),
+        "retire_session": (
+            mock.call(53),
+            mock.call(
+                _MethodEnum.put,
+                "/sessions/53",
+                in_dict={"active": False},
+                in_model=SessionUpdateModel,
+                out_model=SessionResult,
+            ),
+        ),
+    }
+
     @pytest.mark.parametrize("testcase", ("params-set", "params-unset"))
     def test___init___and_properties(self, testcase):
         if testcase == "params-set":
@@ -122,43 +154,13 @@ class TestDuffyClient:
         else:
             assert result.out_field == 7
 
-    def test_list_sessions(self):
-        dclient = DuffyClient()
-        with mock.patch.object(dclient, "_query_method") as query_method:
-            dclient.list_sessions()
-        query_method.assert_called_once_with(
-            _MethodEnum.get, "/sessions", out_model=SessionResultCollection
-        )
+    @pytest.mark.parametrize("method_name", list(wrapper_method_test_details))
+    def test_wrapper_methods(self, method_name):
+        method_call_args, expected_wrapped_call_args = self.wrapper_method_test_details[method_name]
 
-    def test_show_session(self):
         dclient = DuffyClient()
         with mock.patch.object(dclient, "_query_method") as query_method:
-            dclient.show_session(15)
+            getattr(dclient, method_name)(*method_call_args.args, **method_call_args.kwargs)
         query_method.assert_called_once_with(
-            _MethodEnum.get, "/sessions/15", out_model=SessionResult
-        )
-
-    def test_request_session(self):
-        dclient = DuffyClient()
-        with mock.patch.object(dclient, "_query_method") as query_method:
-            dclient.request_session([{"pool": "pool", "quantity": "31"}])
-        query_method.assert_called_once_with(
-            _MethodEnum.post,
-            "/sessions",
-            in_dict={"nodes_specs": [{"pool": "pool", "quantity": "31"}]},
-            in_model=SessionCreateModel,
-            out_model=SessionResult,
-            expected_status=HTTPStatus.CREATED,
-        )
-
-    def test_retire_session(self):
-        dclient = DuffyClient()
-        with mock.patch.object(dclient, "_query_method") as query_method:
-            dclient.retire_session(53)
-        query_method.assert_called_once_with(
-            _MethodEnum.put,
-            "/sessions/53",
-            in_dict={"active": False},
-            in_model=SessionUpdateModel,
-            out_model=SessionResult,
+            *expected_wrapped_call_args.args, **expected_wrapped_call_args.kwargs
         )
