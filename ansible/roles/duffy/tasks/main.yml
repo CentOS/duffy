@@ -1,4 +1,6 @@
 ---
+# Main tasks for the duffy role
+
 - tags:
     - duffy
   block:
@@ -10,6 +12,8 @@
       loop:
         - "{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.yml"
         - "{{ ansible_distribution }}.yml"
+      tags:
+        - vars
 
     - name: Install packages needed for Duffy
       package:
@@ -22,88 +26,16 @@
       user:
         name: duffy
         home: /home/duffy
-        system: yes
         generate_ssh_key: yes
         local: yes
       register: duffy_user
       tags:
         - users
 
-    - tags:
+    - name: Perform SELinux-related changes
+      import_tasks: selinux.yml
+      tags:
         - selinux
-      block:
-        - name: Install packages needed to build SELinux modules
-          package:
-            name:
-              - checkpolicy
-              - policycoreutils
-            state: installed
-          tags:
-            - packages
-
-        - name: Install directory for custom SELinux module
-          file:
-            path: "{{ duffy_virtualenv }}/selinux"
-            state: directory
-          tags:
-            - files
-
-        - name: Install SELinux module for Duffy to talk to Redis and PostgreSQL
-          template:
-            src: local-duffy.te.j2
-            dest: "{{ duffy_virtualenv }}/selinux/local-duffy.te"
-          register: local_duffy_te_file
-          tags:
-            - files
-
-        - name: Compile SELinux module for Duffy to talk to Redis and PostgreSQL
-          command:
-            chdir: "{{ duffy_virtualenv }}/selinux"
-            cmd: checkmodule -M -m -o local-duffy.mod local-duffy.te
-          when: local_duffy_te_file.changed
-          register: checkmodule_out
-
-        - name: Create installable SELinux module package for Duffy to talk to Redis and PostgreSQL
-          command:
-            chdir: "{{ duffy_virtualenv }}/selinux"
-            cmd: semodule_package -o local-duffy.pp -m local-duffy.mod
-          when: checkmodule_out.changed
-          register: semodule_package_out
-
-        - name: Install SELinux module package for Duffy to talk to Redis and PostgreSQL
-          command:
-            chdir: "{{ duffy_virtualenv }}/selinux"
-            cmd: semodule -i local-duffy.pp
-          when: semodule_package_out.changed
-
-        - name: Ensure files in virtualenv are executable by systemd
-          sefcontext:
-            target: "{{ duffy_virtualenv }}(/.*)?"
-            setype: "lib_t"
-          tags:
-            - files
-
-        - name: Relabel existing files in virtualenv
-          command: "restorecon -irv {{ duffy_virtualenv }}"
-          tags:
-            - files
-          register: relabel_out
-          changed_when: relabel_out.stdout | length
-          when:
-            - ansible_selinux.status is defined
-            - ansible_selinux.status == "enabled"
-
-        - name: Ensure Duffy processes can mmap files and connect to tcp sockets
-          seboolean:
-            name: "{{ item }}"
-            persistent: yes
-            state: true
-          loop:
-            - domain_can_mmap_files
-            - nis_enabled
-          when:
-            - ansible_selinux.status is defined
-            - ansible_selinux.status == "enabled"
 
     - name: Install Duffy Python package
       pip:
@@ -111,7 +43,6 @@
         version: ">={{ duffy_minimum_version }}"
         virtualenv: "{{ duffy_virtualenv }}"
         virtualenv_command: "{{ duffy_python_executable }} -m venv"
-        virtualenv_python: "{{ duffy_python_executable }}"
       tags:
         - packages
 
@@ -236,3 +167,34 @@
             - duffy-app.service
             - duffy-metaclient.service
             - duffy-tasks.service
+
+    - name: Ensure admin tenant exists and is configured properly
+      become_user: duffy
+      environment:
+        PATH: "/home/duffy/bin:{{ ansible_env.PATH }}"
+      tags:
+        - admin-tenant
+      block:
+        - name: Check if admin tenant exists
+          command: "duffy admin show-tenant {{ duffy_admin_tenant }}"
+          register: admin_tenant_exists
+          failed_when: False
+          changed_when: admin_tenant_exists.rc == 0
+
+        - name: Create admin tenant
+          command:
+            argv:
+              - duffy
+              - admin
+              - create-tenant
+              - --is-admin
+              - "{{ duffy_admin_tenant }}"
+              - "{{ duffy_admin_ssh_key }}"
+          when: admin_tenant_exists.rc != 0
+
+        - name: Set API key of admin tenant
+          command: >-
+            duffy admin update-tenant  {{ duffy_admin_tenant }} --api-key {{ duffy_admin_api_key }}
+          when: >-
+            admin_tenant_exists.rc != 0
+            and duffy_admin_api_key != "please override this in production"

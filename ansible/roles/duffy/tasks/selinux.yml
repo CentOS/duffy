@@ -1,0 +1,75 @@
+---
+# SELinux tasks for the duffy role
+
+- name: Install packages needed to build SELinux modules
+  package:
+    name:
+      - checkpolicy
+      - policycoreutils
+    state: installed
+  tags:
+    - packages
+
+- name: Install directory for custom SELinux module
+  file:
+    path: "{{ duffy_virtualenv }}/selinux"
+    state: directory
+  tags:
+    - files
+
+- name: Install SELinux module for Duffy to talk to Redis and PostgreSQL
+  template:
+    src: local-duffy.te.j2
+    dest: "{{ duffy_virtualenv }}/selinux/local-duffy.te"
+  register: local_duffy_te_file
+  tags:
+    - files
+
+- name: Compile SELinux module for Duffy to talk to Redis and PostgreSQL
+  command:
+    chdir: "{{ duffy_virtualenv }}/selinux"
+    cmd: checkmodule -M -m -o local-duffy.mod local-duffy.te
+  when: local_duffy_te_file.changed
+  register: checkmodule_out
+
+- name: Create installable SELinux module package for Duffy to talk to Redis and PostgreSQL
+  command:
+    chdir: "{{ duffy_virtualenv }}/selinux"
+    cmd: semodule_package -o local-duffy.pp -m local-duffy.mod
+  when: checkmodule_out.changed
+  register: semodule_package_out
+
+- name: Install SELinux module package for Duffy to talk to Redis and PostgreSQL
+  command:
+    chdir: "{{ duffy_virtualenv }}/selinux"
+    cmd: semodule -i local-duffy.pp
+  when: semodule_package_out.changed
+
+- name: Ensure files in virtualenv are executable by systemd
+  sefcontext:
+    target: "{{ duffy_virtualenv }}(/.*)?"
+    setype: "lib_t"
+  tags:
+    - files
+
+- name: Relabel existing files in virtualenv
+  command: "restorecon -irv {{ duffy_virtualenv }}"
+  tags:
+    - files
+  register: relabel_out
+  changed_when: relabel_out.stdout | length
+  when:
+    - ansible_selinux.status is defined
+    - ansible_selinux.status == "enabled"
+
+- name: Ensure Duffy processes can mmap files and connect to tcp sockets
+  seboolean:
+    name: "{{ item }}"
+    persistent: yes
+    state: true
+  loop:
+    - domain_can_mmap_files
+    - nis_enabled
+  when:
+    - ansible_selinux.status is defined
+    - ansible_selinux.status == "enabled"
