@@ -688,7 +688,7 @@ def client_show_session(obj, session_id: int):
     type=NODES_SPEC,
     nargs=-1,
     required=True,
-    metavar="pool=<pool>:quantity=<quantity> [...]",
+    metavar="pool=<pool>,quantity=<quantity> [...]",
 )
 @click.pass_obj
 def client_request_session(obj: dict, nodes_specs: List[str]):
