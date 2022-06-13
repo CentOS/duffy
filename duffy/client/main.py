@@ -50,7 +50,7 @@ class DuffyClient:
 
     @property
     def url(self):
-        return getattr(self, "_url", config["client"]["url"])
+        return getattr(self, "_url", None) or config["client"]["url"]
 
     @url.setter
     def url(self, value):
@@ -58,7 +58,7 @@ class DuffyClient:
 
     @property
     def auth_name(self):
-        return getattr(self, "_auth_name", config["client"]["auth"]["name"])
+        return getattr(self, "_auth_name", None) or config["client"]["auth"]["name"]
 
     @auth_name.setter
     def auth_name(self, value):
@@ -66,14 +66,14 @@ class DuffyClient:
 
     @property
     def auth_key(self):
-        return getattr(self, "_auth_key", config["client"]["auth"]["key"])
+        return getattr(self, "_auth_key", None) or config["client"]["auth"]["key"]
 
     @auth_key.setter
     def auth_key(self, value):
         self._auth_key = value
 
     def client(self):
-        return httpx.Client(auth=(self.auth_name, self.auth_key), base_url=config["client"]["url"])
+        return httpx.Client(auth=(self.auth_name, self.auth_key), base_url=self.url)
 
     def _query_method(
         self,
