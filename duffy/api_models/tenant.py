@@ -1,8 +1,9 @@
 from abc import ABC
 from datetime import timedelta
 from typing import List, Literal, Optional, Union
+from uuid import UUID
 
-from pydantic import UUID4, BaseModel, SecretStr, conint, root_validator
+from pydantic import BaseModel, SecretStr, conint, root_validator
 
 from ..misc import ConfigTimeDelta
 from .common import APIResult, CreatableMixin, RetirableMixin
@@ -32,7 +33,7 @@ class TenantRetireModel(BaseModel):
 
 class TenantUpdateModel(BaseModel):
     ssh_key: Optional[SecretStr]
-    api_key: Optional[Union[UUID4, Literal["reset"]]]
+    api_key: Optional[Union[UUID, Literal["reset"]]]
     node_quota: Optional[conint(gt=0)]
     session_lifetime: Optional[ConfigTimeDelta]
     session_lifetime_max: Optional[ConfigTimeDelta]
@@ -61,11 +62,11 @@ class TenantModel(TenantBase, CreatableMixin, RetirableMixin):
 
 
 class TenantCreateResultModel(TenantModel):
-    api_key: UUID4
+    api_key: UUID
 
 
 class TenantUpdateResultModel(TenantModel):
-    api_key: Optional[Union[UUID4, SecretStr]]
+    api_key: Optional[Union[UUID, SecretStr]]
 
 
 # API results
