@@ -1,4 +1,5 @@
 [tool.poetry]
+
 name = "duffy"
 version = "3.2.0"
 description = "CentOS CI provisioner"
