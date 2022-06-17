@@ -1681,10 +1681,10 @@ testing = ["flaky (>=3.4.0)", "freezegun (>=0.3.11)", "pytest (>=4.0.0)", "pytes
 
 [[package]]
 name = "traitlets"
-version = "5.2.2.post1"
+version = "5.3.0"
 description = ""
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.7"
 
 [package.extras]
@@ -2898,8 +2898,8 @@ tox = [
     {file = "tox-3.25.0.tar.gz", hash = "sha256:37888f3092aa4e9f835fc8cc6dadbaaa0782651c41ef359e3a5743fcb0308160"},
 ]
 traitlets = [
-    {file = "traitlets-5.2.2.post1-py3-none-any.whl", hash = "sha256:1530d04badddc6a73d50b7ee34667d4b96914da352109117b4280cb56523a51b"},
-    {file = "traitlets-5.2.2.post1.tar.gz", hash = "sha256:74803a1baa59af70f023671d86d5c7a834c931186df26d50d362ee6a1ff021fd"},
+    {file = "traitlets-5.3.0-py3-none-any.whl", hash = "sha256:65fa18961659635933100db8ca120ef6220555286949774b9cfc106f941d1c7a"},
+    {file = "traitlets-5.3.0.tar.gz", hash = "sha256:0bb9f1f9f017aa8ec187d8b1b2a7a6626a2a1d877116baba52a129bfa124f8e2"},
 ]
 trio = [
     {file = "trio-0.21.0-py3-none-any.whl", hash = "sha256:4dc0bf9d5cc78767fc4516325b6d80cc0968705a31d0eec2ecd7cdda466265b0"},
