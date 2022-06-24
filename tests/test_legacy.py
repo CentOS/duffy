@@ -154,6 +154,20 @@ class TestMain:
 
         assert pool == expected
 
+    @pytest.mark.parametrize("testcase", ("is_set", "is_unset", "is_none"))
+    @pytest.mark.parametrize("hostname", ("foo", "", None))
+    def test_mangle_hostname(self, hostname, testcase):
+        _hostname = hostname or ""
+
+        if testcase == "is_set":
+            config["metaclient"]["mangle_hostname"] = "{{ hostname }}-bar"
+            expected = f"{_hostname}-bar"
+        elif testcase in ("is_unset", "is_none"):
+            config["metaclient"].pop("mangle_hostname", None)
+            expected = hostname
+
+        assert main.mangle_hostname(hostname) == expected
+
     @mock.patch("duffy.legacy.main.httpx.AsyncClient")
     async def test_request_nodes_physical_auth(self, AsyncClient, client):
         apiv1_client, apiv1_response = self._setup_async_client(AsyncClient, "post")

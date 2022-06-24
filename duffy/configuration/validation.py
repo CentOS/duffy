@@ -148,6 +148,7 @@ class LegacyModel(ConfigBaseModel):
     logging: Optional[LoggingModel]
     usermap: Dict[str, str]
     poolmap: List[LegacyPoolMapModel]
+    mangle_hostname: Optional[str]
 
 
 class ConfigModel(ConfigBaseModel):

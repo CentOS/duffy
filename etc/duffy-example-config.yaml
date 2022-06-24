@@ -65,6 +65,9 @@ metaclient:
     pool: "virtual-centos{{ ver | replace('-', '') }}-{{ arch }}-{{ flavor | default('medium') }}"
   - arch: "x86_64"
     pool: "physical-centos{{ ver | replace('-', '') }}-{{ arch }}"
+  # Optional Jinja2 template to mangle hostnames. The `hostname` variable will be set in the
+  # template when it’s rendered, e.g.:
+  # mangle_hostname: "{{ hostname | replace('.ci.centos.org', '') }}"
   logging:
     version: 1
     disable_existing_loggers: false

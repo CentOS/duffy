@@ -64,6 +64,14 @@ def lookup_pool_from_map(**req_specs: Dict[str, Optional[str]]) -> Optional[str]
     return pool
 
 
+def mangle_hostname(hostname: str):
+    mangle_hostname_template = config["metaclient"].get("mangle_hostname")
+    if not mangle_hostname_template:
+        return hostname
+
+    return jinja2.Template(mangle_hostname_template).render(hostname=hostname or "")
+
+
 @app.get("/Node/get")
 async def request_nodes(
     ver: str = "7",
@@ -87,7 +95,7 @@ async def request_nodes(
         session = response.json()["session"]
         legacy_result = {
             "ssid": session["id"],
-            "hosts": [node["hostname"] for node in session["nodes"]],
+            "hosts": [mangle_hostname(node["hostname"]) for node in session["nodes"]],
         }
         return legacy_result
     else:
@@ -157,7 +165,7 @@ async def get_nodes(cred: Optional[Credentials] = Depends(req_credentials_option
             response = await client.get(f"{dest}/api/v1/sessions", auth=auth)
         if response.status_code == HTTP_200_OK:
             retvals = [
-                [session_node.get("hostname"), session.get("id")]
+                [mangle_hostname(session_node.get("hostname")), session.get("id")]
                 for session in response.json()["sessions"]
                 for session_node in session["nodes"]
             ]
@@ -183,7 +191,7 @@ async def get_nodes(cred: Optional[Credentials] = Depends(req_credentials_option
             retvals = [
                 [
                     session_node.get("id"),  # sch.data['id']
-                    session_node.get("hostname"),  # sch.data['hostname']
+                    mangle_hostname(session_node.get("hostname")),  # sch.data['hostname']
                     session_node.get("ipaddr"),  # sch.data['ip']
                     None,  # sch.data['chassis']
                     0,  # sch.data['used_count']
