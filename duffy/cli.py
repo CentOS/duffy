@@ -348,7 +348,7 @@ def serve(obj, reload, host, port):
     print(f" * Serving API docs on http://{host}:{port}/docs")
 
     uvicorn_log_config = copy.deepcopy(config_app.get("logging", uvicorn.config.LOGGING_CONFIG))
-    if uvicorn_log_config.get("loggers", {}).get("duffy"):
+    if "duffy" in uvicorn_log_config.get("loggers", {}):
         uvicorn_log_config["loggers"]["duffy"]["level"] = numeric_loglevel
 
     # Start the show
@@ -423,7 +423,7 @@ def serve_legacy(obj, reload, host, port, dest):
     uvicorn_log_config = copy.deepcopy(
         config_metaclient.get("logging", uvicorn.config.LOGGING_CONFIG)
     )
-    if uvicorn_log_config.get("loggers", {}).get("duffy"):
+    if "duffy" in uvicorn_log_config.get("loggers", {}):
         uvicorn_log_config["loggers"]["duffy"]["level"] = numeric_loglevel
 
     # Start the show

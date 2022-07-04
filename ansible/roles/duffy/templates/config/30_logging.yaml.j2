@@ -2,81 +2,9 @@
 app:
   logging:
     version: 1
-    disable_existing_loggers: false
-    formatters:
-      default:
-        (): uvicorn.logging.DefaultFormatter
-        fmt: '%(levelprefix)s %(message)s'
-        use_colors: null
-      access:
-        (): uvicorn.logging.AccessFormatter
-        fmt: '%(levelprefix)s %(client_addr)s - "%(request_line)s" %(status_code)s'
-    handlers:
-      default:
-        class: logging.StreamHandler
-        formatter: default
-        stream: ext://sys.stderr
-      access:
-        class: logging.StreamHandler
-        formatter: access
-        stream: ext://sys.stdout
-      syslog:
-        class: logging.handlers.SysLogHandler
-        address: /dev/log
-    loggers:
-      duffy:
-        handlers:
-        - default
-        - syslog
-      uvicorn:
-        handlers:
-        - default
-        level: INFO
-      uvicorn.error:
-        level: INFO
-      uvicorn.access:
-        handlers:
-        - access
-        level: INFO
-        propagate: false
+    # Optional Python standard logging section ...
 
 metaclient:
   logging:
     version: 1
-    disable_existing_loggers: false
-    formatters:
-      default:
-        (): uvicorn.logging.DefaultFormatter
-        fmt: '%(levelprefix)s %(message)s'
-        use_colors: null
-      access:
-        (): uvicorn.logging.AccessFormatter
-        fmt: '%(levelprefix)s %(client_addr)s - "%(request_line)s" %(status_code)s'
-    handlers:
-      default:
-        class: logging.StreamHandler
-        formatter: default
-        stream: ext://sys.stderr
-      access:
-        class: logging.StreamHandler
-        formatter: access
-        stream: ext://sys.stdout
-      syslog:
-        class: logging.handlers.SysLogHandler
-        address: /dev/log
-    loggers:
-      duffy:
-        handlers:
-        - default
-        - syslog
-      uvicorn:
-        handlers:
-        - default
-        level: INFO
-      uvicorn.error:
-        level: INFO
-      uvicorn.access:
-        handlers:
-        - access
-        level: INFO
-        propagate: false
+    # Optional Python standard logging section ...

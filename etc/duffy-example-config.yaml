@@ -9,45 +9,12 @@ app:
   loglevel: warning
   host: 0.0.0.0
   port: 8080
+
+  # The `logging` section is optional and follows the standard logging configuration dictionary
+  # schema, see https://docs.python.org/3/library/logging.config.html#logging-config-dictschema
   logging:
     version: 1
     disable_existing_loggers: false
-    formatters:
-      default:
-        (): uvicorn.logging.DefaultFormatter
-        fmt: '%(levelprefix)s %(message)s'
-        use_colors: null
-      access:
-        (): uvicorn.logging.AccessFormatter
-        fmt: '%(levelprefix)s %(client_addr)s - "%(request_line)s" %(status_code)s'
-    handlers:
-      default:
-        class: logging.StreamHandler
-        formatter: default
-        stream: ext://sys.stderr
-      access:
-        class: logging.StreamHandler
-        formatter: access
-        stream: ext://sys.stdout
-      syslog:
-        class: logging.handlers.SysLogHandler
-        address: /dev/log
-    loggers:
-      duffy:
-        handlers:
-        - default
-        - syslog
-      uvicorn:
-        handlers:
-        - default
-        level: INFO
-      uvicorn.error:
-        level: INFO
-      uvicorn.access:
-        handlers:
-        - access
-        level: INFO
-        propagate: false
 
 metaclient:
   loglevel: warning
@@ -68,45 +35,12 @@ metaclient:
   # Optional Jinja2 template to mangle hostnames. The `hostname` variable will be set in the
   # template when it’s rendered, e.g.:
   # mangle_hostname: "{{ hostname | replace('.ci.centos.org', '') }}"
+
+  # The `logging` section is optional and follows the standard logging configuration dictionary
+  # schema, see https://docs.python.org/3/library/logging.config.html#logging-config-dictschema
   logging:
     version: 1
     disable_existing_loggers: false
-    formatters:
-      default:
-        (): uvicorn.logging.DefaultFormatter
-        fmt: '%(levelprefix)s %(message)s'
-        use_colors: null
-      access:
-        (): uvicorn.logging.AccessFormatter
-        fmt: '%(levelprefix)s %(client_addr)s - "%(request_line)s" %(status_code)s'
-    handlers:
-      default:
-        class: logging.StreamHandler
-        formatter: default
-        stream: ext://sys.stderr
-      access:
-        class: logging.StreamHandler
-        formatter: access
-        stream: ext://sys.stdout
-      syslog:
-        class: logging.handlers.SysLogHandler
-        address: /dev/log
-    loggers:
-      duffy:
-        handlers:
-        - default
-        - syslog
-      uvicorn:
-        handlers:
-        - default
-        level: INFO
-      uvicorn.error:
-        level: INFO
-      uvicorn.access:
-        handlers:
-        - access
-        level: INFO
-        propagate: false
 
 tasks:
   celery:
