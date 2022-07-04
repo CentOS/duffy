@@ -307,16 +307,16 @@ def test_worker(worker_available, duffy_config_files, runner):
 
 @pytest.mark.duffy_config(example_config=True)
 @pytest.mark.parametrize(
-    "testcase", ("default", "with-options", "missing-logging-config", "missing-modules")
+    "testcase", ("default", "with-options", "with-duffy-logger-config", "missing-modules")
 )
 @mock.patch("duffy.cli.uvicorn.run")
 def test_serve(uvicorn_run, testcase, runner, duffy_config_files, tmp_path):
     (config_file,) = duffy_config_files
 
-    if "missing-logging-config" in testcase:
+    if "with-duffy-logger-config" in testcase:
         modified_config = copy.deepcopy(config)
-        del modified_config["app"]["logging"]
-        config_file = tmp_path / "duffy-broken-config.yaml"
+        modified_config["app"]["logging"] = {"version": 1, "loggers": {"duffy": {}}}
+        config_file = tmp_path / "duffy-test-config.yaml"
         with config_file.open("w") as fp:
             yaml.dump(modified_config, fp)
 
@@ -336,6 +336,10 @@ def test_serve(uvicorn_run, testcase, runner, duffy_config_files, tmp_path):
     if "missing-modules" not in testcase:
         assert result.exit_code == 0
         uvicorn_run.assert_called_once()
+        if "with-duffy-logger-config" in testcase:
+            assert isinstance(
+                uvicorn_run.call_args.kwargs["log_config"]["loggers"]["duffy"]["level"], int
+            )
     else:
         assert result.exit_code != 0
         assert "Please install the duffy[app] extra" in result.output
@@ -343,16 +347,16 @@ def test_serve(uvicorn_run, testcase, runner, duffy_config_files, tmp_path):
 
 @pytest.mark.duffy_config(example_config=True)
 @pytest.mark.parametrize(
-    "testcase", ("default", "with-options", "missing-logging-config", "missing-modules")
+    "testcase", ("default", "with-options", "with-duffy-logger-config", "missing-modules")
 )
 @mock.patch("duffy.cli.uvicorn.run")
 def test_serve_legacy(uvicorn_run, testcase, runner, duffy_config_files, tmp_path):
     (config_file,) = duffy_config_files
 
-    if "missing-logging-config" in testcase:
+    if "with-duffy-logger-config" in testcase:
         modified_config = copy.deepcopy(config)
-        del modified_config["metaclient"]["logging"]
-        config_file = tmp_path / "duffy-broken-config.yaml"
+        modified_config["metaclient"]["logging"] = {"version": 1, "loggers": {"duffy": {}}}
+        config_file = tmp_path / "duffy-test-config.yaml"
         with config_file.open("w") as fp:
             yaml.dump(modified_config, fp)
 
@@ -376,6 +380,10 @@ def test_serve_legacy(uvicorn_run, testcase, runner, duffy_config_files, tmp_pat
     if "missing-modules" not in testcase:
         assert result.exit_code == 0
         uvicorn_run.assert_called_once()
+        if "with-duffy-logger-config" in testcase:
+            assert isinstance(
+                uvicorn_run.call_args.kwargs["log_config"]["loggers"]["duffy"]["level"], int
+            )
     else:
         assert result.exit_code != 0
         assert "Please install the duffy[legacy] extra for this command" in result.output
