@@ -554,10 +554,10 @@ idna = ">=2.0.0"
 
 [[package]]
 name = "executing"
-version = "0.8.3"
+version = "0.9.0"
 description = "Get the currently executing AST node of a frame, and other information"
 category = "main"
-optional = true
+optional = false
 python-versions = "*"
 
 [[package]]
@@ -2188,8 +2188,8 @@ email-validator = [
     {file = "email_validator-1.2.1.tar.gz", hash = "sha256:6757aea012d40516357c0ac2b1a4c31219ab2f899d26831334c5d069e8b6c3d8"},
 ]
 executing = [
-    {file = "executing-0.8.3-py2.py3-none-any.whl", hash = "sha256:d1eef132db1b83649a3905ca6dd8897f71ac6f8cac79a7e58a1a09cf137546c9"},
-    {file = "executing-0.8.3.tar.gz", hash = "sha256:c6554e21c6b060590a6d3be4b82fb78f8f0194d809de5ea7df1c093763311501"},
+    {file = "executing-0.9.0-py2.py3-none-any.whl", hash = "sha256:d07e9a46c85dd507055f7c4c208689faef1bf6a671ae81e91787f307808bacfb"},
+    {file = "executing-0.9.0.tar.gz", hash = "sha256:ade7276b4b108df69b8480064264db856335585efe170833601f30bcaaed7bc7"},
 ]
 fastapi = [
     {file = "fastapi-0.79.0-py3-none-any.whl", hash = "sha256:d337563424ceada23857f73d5abe8dae0c28e4cccb53b2af06e78b7bb4a1c7d7"},
