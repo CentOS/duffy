@@ -557,7 +557,7 @@ name = "executing"
 version = "0.9.0"
 description = "Get the currently executing AST node of a frame, and other information"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 
 [[package]]
@@ -741,7 +741,7 @@ name = "importlib-resources"
 version = "5.9.0"
 description = "Read resources from Python packages"
 category = "main"
-optional = false
+optional = true
 python-versions = ">=3.7"
 
 [package.dependencies]
@@ -1766,7 +1766,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "virtualenv"
-version = "20.16.0"
+version = "20.16.1"
 description = "Virtual Python Environment builder"
 category = "dev"
 optional = false
@@ -2985,8 +2985,8 @@ vine = [
     {file = "vine-5.0.0.tar.gz", hash = "sha256:7d3b1624a953da82ef63462013bbd271d3eb75751489f9807598e8f340bd637e"},
 ]
 virtualenv = [
-    {file = "virtualenv-20.16.0-py2.py3-none-any.whl", hash = "sha256:2202dbc33c4f9aaa13289d244d64f2ade8b0169e88d0213b505099b384c5ae04"},
-    {file = "virtualenv-20.16.0.tar.gz", hash = "sha256:6cfedd21e7584124a1d1e8f3b6e74c0bf8aeea44d9884b6d2d7241de5361a73c"},
+    {file = "virtualenv-20.16.1-py2.py3-none-any.whl", hash = "sha256:bde925b831f36053a0fa7a468ca337dee26851c9f0bfc3d72a79d534703102d2"},
+    {file = "virtualenv-20.16.1.tar.gz", hash = "sha256:6cc42cad4d1a15c7ea5ed68e602eb49cc243b52d2eead36e577555cb56bf8705"},
 ]
 wcwidth = [
     {file = "wcwidth-0.2.5-py2.py3-none-any.whl", hash = "sha256:beb4802a9cebb9144e99086eff703a642a13d6a0052920003a230f3294bbe784"},
