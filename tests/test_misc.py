@@ -65,6 +65,7 @@ class TestConfigTimeDelta(_BaseTestTimeDelta):
         "1h": timedelta(hours=1),
         "300": timedelta(minutes=5),
         300: timedelta(minutes=5),
+        600.0: timedelta(minutes=10),
         "-2d": ValueError,
         "": ValueError,
         "+": ValueError,
