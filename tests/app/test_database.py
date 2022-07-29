@@ -5,8 +5,7 @@ from duffy.app.database import req_db_async_session
 
 @mock.patch("duffy.app.database.async_session_maker")
 async def test_req_db_async_session(async_session_maker):
-    mock_session = mock.MagicMock()
-    mock_session.close = mock.AsyncMock()
+    mock_session = mock.AsyncMock()
     async_session_maker.return_value = mock_session
 
     n_iter = 0
