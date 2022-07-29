@@ -104,7 +104,7 @@ async def create_tenant(
         api_key=api_key, **TenantModel.from_orm(created_tenant).dict()
     )
 
-    await db_async_session.commit()
+    await db_async_session.flush()
 
     return {"action": "post", "tenant": api_tenant}
 
@@ -178,6 +178,6 @@ async def update_tenant(
         api_key=api_key, **TenantModel.from_orm(updated_tenant).dict()
     )
 
-    await db_async_session.commit()
+    await db_async_session.flush()
 
     return {"action": "put", "tenant": api_tenant}

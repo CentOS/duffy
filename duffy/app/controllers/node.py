@@ -69,7 +69,7 @@ async def create_node(
     db_async_session.add(node)
 
     try:
-        await db_async_session.commit()
+        await db_async_session.flush()
     except IntegrityError as exc:  # pragma: no cover
         raise HTTPException(HTTP_409_CONFLICT, str(exc))
 

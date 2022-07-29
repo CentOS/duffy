@@ -8,6 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from starlette.responses import JSONResponse
 from starlette.status import (
     HTTP_201_CREATED,
     HTTP_403_FORBIDDEN,
@@ -201,13 +202,18 @@ async def create_session(
                 else:
                     node.state = NodeState.ready
 
-        await db_async_session.commit()
+        await db_async_session.flush()
 
         # Some nodes are out of circulation, fill up pools.
         fill_pools.delay(pool_names=list(pools_to_fill_up)).forget()
 
-        response.headers["Retry-After"] = "0"
-        raise HTTPException(HTTP_503_SERVICE_UNAVAILABLE, "contextualization of nodes failed")
+        # Don't raise an HTTPException here, the transaction should be committed unless something
+        # else fails.
+        return JSONResponse(
+            {"detail": "contextualization of nodes failed"},
+            status_code=HTTP_503_SERVICE_UNAVAILABLE,
+            headers={"Retry-After": "0"},
+        )
     else:  # None not in contextualized_ipaddrs
         for node in nodes_in_transaction:
             node.state = NodeState.deployed
@@ -226,7 +232,7 @@ async def create_session(
     ).scalar_one()
 
     try:
-        await db_async_session.commit()
+        await db_async_session.flush()
     except IntegrityError as exc:  # pragma: no cover
         raise HTTPException(HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
 
@@ -286,6 +292,6 @@ async def update_session(
             node_ids=[session_node.node_id for session_node in session.session_nodes]
         ).forget()
 
-    await db_async_session.commit()
+    await db_async_session.flush()
 
     return {"action": "put", "session": session}
