@@ -465,7 +465,9 @@ class TestMain:
                 for node in result
             )
             if long_form:
-                assert all(self.noderesult_to_dict(node, True)["comment"] == 15 for node in result)
+                assert all(
+                    self.noderesult_to_dict(node, True)["comment"] == "15" for node in result
+                )
         elif "incorrect-auth" in testcase:
             assert response.status_code == HTTP_403_FORBIDDEN
         elif "incorrect-query" in testcase or "apiv1-failure" in testcase:

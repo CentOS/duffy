@@ -197,7 +197,7 @@ async def get_nodes(cred: Optional[Credentials] = Depends(req_credentials_option
                     0,  # sch.data['used_count']
                     session_node.get("state"),  # sch.data['state']
                     # Yes, 'comment' contains the session id. Don't ask.
-                    session.get("id"),  # sch.data['comment']
+                    str(session.get("id")),  # sch.data['comment']
                     None,  # sch.data['distro']
                     None,  # sch.data['rel']
                     None,  # sch.data['ver']
