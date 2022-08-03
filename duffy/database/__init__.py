@@ -70,7 +70,7 @@ def get_sync_engine():
             _key_failed_to_config_key.get(key_not_found, key_not_found)
         ) from exc
     sync_config.pop("async_url", None)
-    sync_config["isolation_level"] = "SERIALIZABLE"
+    sync_config.setdefault("isolation_level", "SERIALIZABLE")
     return create_engine(**sync_config)
 
 
@@ -84,5 +84,5 @@ def get_async_engine():
             _key_failed_to_config_key.get(key_not_found, key_not_found)
         ) from exc
     async_config.pop("sync_url", None)
-    async_config["isolation_level"] = "SERIALIZABLE"
+    async_config.setdefault("isolation_level", "SERIALIZABLE")
     return create_async_engine(**async_config)
