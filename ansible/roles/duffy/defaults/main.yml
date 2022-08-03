@@ -1,5 +1,5 @@
 ---
-duffy_minimum_version: 3.3.1
+duffy_minimum_version: 3.3.2
 duffy_admin_tenant: admin
 # Use e.g. `uuidgen` to generate
 duffy_admin_api_key: "please override this in production"
