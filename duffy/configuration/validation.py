@@ -53,7 +53,9 @@ class TasksModel(ConfigBaseModel):
     periodic: Optional[Dict[str, PeriodicTaskModel]]
 
 
-class SQLAlchemyModel(ConfigBaseModel):
+class SQLAlchemyModel(BaseModel):
+    # This is intentionally not a subclass of ConfigBaseModel, it is passed on to SQLAlchemy's
+    # create_engine()/create_async_engine(), i.e. can contain arbitrarily named fields.
     sync_url: stricturl(tld_required=False, host_required=False)
     async_url: stricturl(tld_required=False, host_required=False)
 
