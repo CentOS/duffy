@@ -38,6 +38,8 @@ def read_configuration(
     for config_file in config_files:
         with config_file.open("r") as fp:
             for config_doc in yaml.safe_load_all(fp):
+                if not config_doc:
+                    continue
                 new_config = merge_dicts(new_config, config_doc)
 
     if validate:
