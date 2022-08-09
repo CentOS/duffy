@@ -11,8 +11,8 @@ from ..util import noop_context
 
 
 class UselessEnum(DeclEnum):
-    enval1 = "Enum value 1"
-    enval2 = "Enum value 2"
+    enval1 = "enval1"
+    enval2 = "enval2"
 
 
 class UselessThing(Base):

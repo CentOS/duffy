@@ -38,19 +38,19 @@ class TestPool:
             "bar": MockPool(name="bar", **{"fill-level": 64}),
         }
 
-        ipaddr_octet = 1
-        for state, quantity in (("ready", 3), ("deployed", 2)):
-            for idx in range(quantity):
-                ipaddr_octet += 1
-                db_async_session.add(
-                    Node(
-                        hostname=f"node-{ipaddr_octet}",
-                        ipaddr=f"192.168.1.{ipaddr_octet}",
-                        pool="bar",
-                        state=state,
+        async with db_async_session.begin():
+            ipaddr_octet = 1
+            for state, quantity in (("ready", 3), ("deployed", 2)):
+                for idx in range(quantity):
+                    ipaddr_octet += 1
+                    db_async_session.add(
+                        Node(
+                            hostname=f"node-{ipaddr_octet}",
+                            ipaddr=f"192.168.1.{ipaddr_octet}",
+                            pool="bar",
+                            state=state,
+                        )
                     )
-                )
-        await db_async_session.flush()
 
         if pool == "bar":
             expected_status = HTTP_200_OK
