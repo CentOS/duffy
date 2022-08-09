@@ -41,9 +41,9 @@ class TestSession(BaseTestController):
             "ssh_key": "<ssh key>",
         }.items():
             kwargs.setdefault(key, value)
-        tenant = Tenant(**kwargs)
-        db_async_session.add(tenant)
-        await db_async_session.flush()
+        async with db_async_session.begin():
+            tenant = Tenant(**kwargs)
+            db_async_session.add(tenant)
         return tenant
 
     async def test_create_other_tenant(self, client, db_async_session, auth_tenant):
@@ -73,9 +73,9 @@ class TestSession(BaseTestController):
     @pytest.mark.client_auth_as("tenant")
     async def test_retrieve_obj_other_tenant(self, client, db_async_session):
         other_tenant = await self._create_tenant(db_async_session)
-        session = Session(tenant=other_tenant)
-        db_async_session.add(session)
-        await db_async_session.flush()
+        async with db_async_session.begin():
+            session = Session(tenant=other_tenant)
+            db_async_session.add(session)
 
         response = await client.get(f"{self.path}/{session.id}")
         assert response.status_code == HTTP_403_FORBIDDEN

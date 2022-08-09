@@ -29,7 +29,7 @@ jobs:
 
       - name: Install RPM dependencies
         run: |
-          dnf install -y libpq-devel
+          dnf install -y libpq-devel postgresql-server
 
       - name: Install base Python dependencies
         run: |

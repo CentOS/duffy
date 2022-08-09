@@ -114,12 +114,12 @@ class utcnow(FunctionElement):
 
 @compiles(utcnow, "postgresql")
 def _postgresql_utcnow(element, compiler, **kwargs):
-    return "(NOW() AT TIME ZONE 'utc')"  # pragma: no cover (unit tests use sqlite)
+    return "(NOW() AT TIME ZONE 'utc')"
 
 
 @compiles(utcnow, "sqlite")
 def _sqlite_utcnow(element, compiler, **kwargs):
-    return "CURRENT_TIMESTAMP"
+    return "CURRENT_TIMESTAMP"  # pragma: no cover (unit tests use postgresql)
 
 
 # Mixins

@@ -2,9 +2,14 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Iterator, List, Union
 
+# This is version 3 (what pytest-postgresql uses). SQLAlchemy uses psycopg2 but we use this to
+# create the DB in the temporary PostgreSQL instance.
+import psycopg
 import pytest
+import pytest_postgresql
 import yaml
 from sqlalchemy import create_engine
+from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from duffy.configuration import read_configuration
@@ -103,18 +108,68 @@ def duffy_config(duffy_config_files):
 
 # Database fixtures
 
+# Like postgresql_proc, but scoped for test functions. This makes testing slower but ensures that
+# tests don't affect each other, especially if conducted in parallel.
+postgresql_function_proc = pytest.fixture(scope="function")(
+    pytest_postgresql.factories.postgresql_proc().__wrapped__
+)
+
 
 @pytest.fixture
-def db_sync_engine():
+def postgresql_instance(postgresql_function_proc) -> URL:
+    url = URL.create(
+        drivername="postgresql",
+        username="postgres",
+        host=postgresql_function_proc.host,
+        port=postgresql_function_proc.port,
+        database="duffy",
+    )
+    return url
+
+
+@pytest.fixture
+def postgresql_db(postgresql_instance):
+    async_url = postgresql_instance.set(drivername="postgresql+asyncpg")
+    admin_url = postgresql_instance.set(database="postgres")
+
+    with psycopg.connect(str(admin_url), autocommit=True) as conn, conn.cursor() as cur:
+        cur.execute('CREATE DATABASE "duffy"')
+        conn.commit()
+
+    return postgresql_instance, async_url
+
+
+@pytest.fixture
+def postgresql_sync_url(postgresql_db):
+    return postgresql_db[0]
+
+
+@pytest.fixture
+def postgresql_async_url(postgresql_db):
+    return postgresql_db[1]
+
+
+@pytest.fixture
+def db_sync_engine(postgresql_sync_url):
     """A fixture which creates a synchronous database engine."""
-    db_engine = create_engine("sqlite:///:memory:", future=True, echo=True)
+    db_engine = create_engine(
+        url=postgresql_sync_url,
+        future=True,
+        echo=True,
+        isolation_level="SERIALIZABLE",
+    )
     return db_engine
 
 
 @pytest.fixture
-def db_async_engine():
+def db_async_engine(postgresql_async_url):
     """A fixture which creates an asynchronous database engine."""
-    async_db_engine = create_async_engine("sqlite+aiosqlite:///:memory:", future=True, echo=True)
+    async_db_engine = create_async_engine(
+        url=postgresql_async_url,
+        future=True,
+        echo=True,
+        isolation_level="SERIALIZABLE",
+    )
     return async_db_engine
 
 
