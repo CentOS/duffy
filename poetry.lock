@@ -480,11 +480,11 @@ aiosqlite = {version = "*", optional = true, markers = "extra == \"sqlite\""}
 sqlalchemy = ">=1.4,<1.5"
 
 [package.extras]
-sqlite = ["aiosqlite"]
-postgresql_aiopg = ["aiopg"]
-postgresql = ["asyncpg"]
-mysql_asyncmy = ["asyncmy"]
 mysql = ["aiomysql"]
+mysql_asyncmy = ["asyncmy"]
+postgresql = ["asyncpg"]
+postgresql_aiopg = ["aiopg"]
+sqlite = ["aiosqlite"]
 
 [[package]]
 name = "decorator"
@@ -867,7 +867,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "keyring"
-version = "23.8.1"
+version = "23.8.2"
 description = "Store and access your passwords safely."
 category = "dev"
 optional = false
@@ -1496,10 +1496,10 @@ optional = false
 python-versions = "*"
 
 [package.extras]
-test = ["pytest", "packaging", "commentjson"]
-release = ["towncrier", "setl"]
-lint = ["flake8", "black"]
-examples = ["requests", "pygraphviz", "packaging", "html5lib"]
+examples = ["html5lib", "packaging", "pygraphviz", "requests"]
+lint = ["black", "flake8"]
+release = ["setl", "towncrier"]
+test = ["commentjson", "packaging", "pytest"]
 
 [[package]]
 name = "rfc3986"
@@ -2327,8 +2327,8 @@ jmespath = [
     {file = "jmespath-1.0.1.tar.gz", hash = "sha256:90261b206d6defd58fdd5e85f478bf633a2901798906be2ad389150c5c60edbe"},
 ]
 keyring = [
-    {file = "keyring-23.8.1-py3-none-any.whl", hash = "sha256:73dec1c13b15a69979fc9952e01c5c69e38c8ba340cc664d0461a947fc90b93c"},
-    {file = "keyring-23.8.1.tar.gz", hash = "sha256:9715c8461f6d9e61066a5883b1fc8aec68f950e81db4ce9f8635cbaa4b9625bb"},
+    {file = "keyring-23.8.2-py3-none-any.whl", hash = "sha256:10d2a8639663fe2090705a00b8c47c687cacdf97598ea9c11456679fa974473a"},
+    {file = "keyring-23.8.2.tar.gz", hash = "sha256:0d9973f8891850f1ade5f26aafd06bb16865fbbae3fc56b0defb6a14a2624003"},
 ]
 kombu = [
     {file = "kombu-5.2.4-py3-none-any.whl", hash = "sha256:8b213b24293d3417bcf0d2f5537b7f756079e3ea232a8386dcc89a59fd2361a4"},
