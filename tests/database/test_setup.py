@@ -1,10 +1,9 @@
+from contextlib import nullcontext
 from unittest import mock
 
 import pytest
 
 from duffy.database import model, setup
-
-from ..util import noop_context
 
 TEST_CONFIG = {
     "database": {
@@ -36,7 +35,7 @@ def test_setup_db_schema(get_sync_engine, inspect, metadata, Config, stamp, db_e
     Config.return_value = cfg
 
     if db_empty:
-        expectation = noop_context()
+        expectation = nullcontext()
     else:
         expectation = pytest.raises(SystemExit)
 

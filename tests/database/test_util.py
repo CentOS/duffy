@@ -1,4 +1,5 @@
 import datetime as dt
+from contextlib import nullcontext
 
 import pytest
 from sqlalchemy import Column, Integer, select
@@ -6,8 +7,6 @@ from sqlalchemy.exc import StatementError
 
 from duffy.database import Base
 from duffy.database.util import CreatableMixin, DeclEnum, RetirableMixin, TZDateTime
-
-from ..util import noop_context
 
 
 class UselessEnum(DeclEnum):
@@ -72,7 +71,7 @@ class TestTZDateTime:
         """Test the process_bind_param() method."""
         obj = TZDateTime()
 
-        expectation = noop_context()
+        expectation = nullcontext()
 
         if testcase == "none":
             now = None

@@ -1,17 +1,16 @@
 import datetime as dt
 import uuid
+from contextlib import nullcontext
 from unittest import mock
 
 from duffy.database.model import Node, Session, SessionNode, Tenant
 from duffy.tasks import expire_sessions
 
-from ..util import noop_context
-
 
 @mock.patch("duffy.tasks.expire.deprovision_nodes")
 @mock.patch("duffy.tasks.expire.Lock")
 def test_expire_sessions(Lock, deprovision_nodes, db_sync_session, caplog):
-    Lock.return_value = noop_context()
+    Lock.return_value = nullcontext()
     deprovision_nodes.delay.return_value = async_result = mock.Mock()
 
     with db_sync_session.begin():

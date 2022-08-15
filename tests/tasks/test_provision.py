@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 from pathlib import Path
 from unittest import mock
 
@@ -8,8 +9,6 @@ from duffy.database.model import Node
 from duffy.nodes.mechanisms import Mechanism, MechanismFailure
 from duffy.nodes.pools import ConcreteNodePool
 from duffy.tasks import provision
-
-from ..util import noop_context
 
 HERE = Path(__file__).parent
 PLAYBOOK_PATH = HERE / "playbooks"
@@ -109,7 +108,7 @@ def test_provision_nodes_into_pool(reuse_nodes, testcase, foo_pool, db_sync_sess
 
     supplied_node_ids = created_node_ids
 
-    expectation = noop_context()
+    expectation = nullcontext()
 
     if "unknown-pool" in testcase:
         pool_name = "bar"
@@ -281,7 +280,7 @@ def test_fill_single_pool(
     Lock, provision_nodes_into_pool, testcase, db_sync_session, foo_pool, caplog
 ):
     """Test the fill_single_pool() task."""
-    Lock.return_value = noop_context()
+    Lock.return_value = nullcontext()
 
     if "run-once" in testcase:
         foo_pool["run-parallel"] = False
@@ -336,7 +335,7 @@ def test_fill_single_pool(
         if "broken-spec" in testcase:
             expectation = pytest.raises(RuntimeError, match=r"\[foo\] Skipping filling up")
         else:
-            expectation = noop_context()
+            expectation = nullcontext()
     else:
         pool_name = "bar"
         expectation = pytest.raises(RuntimeError, match=r"\[bar\] Unknown pool, bailing out")

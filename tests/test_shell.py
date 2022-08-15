@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 from unittest import mock
 
 import pytest
@@ -6,8 +7,6 @@ from sqlalchemy.orm import Session
 
 from duffy import exceptions, shell
 from duffy.database import model
-
-from .util import noop_context
 
 
 @pytest.mark.parametrize("with_ipython", (True, False))
@@ -102,7 +101,7 @@ def test_embed_shell(get_available_shells, embed_python_shell, embed_ipython_she
         get_available_shells.return_value = ["default"]
         expectation = pytest.raises(exceptions.DuffyShellUnavailableError, match="default")
     else:
-        expectation = noop_context()
+        expectation = nullcontext()
 
     with expectation:
         shell.embed_shell(shell_type=shell_type)

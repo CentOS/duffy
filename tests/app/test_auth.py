@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 from unittest import mock
 
 import pytest
@@ -8,8 +9,6 @@ from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN
 from duffy.app.auth import _req_tenant_factory
 from duffy.database.model import Tenant
 from duffy.database.setup import _gen_test_api_key
-
-from ..util import noop_context
 
 
 @pytest.mark.parametrize(
@@ -52,7 +51,7 @@ async def test__req_tenant_factory(testcase, db_async_session, db_async_test_dat
         expectation = pytest.raises(HTTPException)
         exception_args = (HTTP_403_FORBIDDEN,)
     else:
-        expectation = noop_context()
+        expectation = nullcontext()
         exception_args = None
 
     get_req_tenant = _req_tenant_factory(optional="optional" in testcase)

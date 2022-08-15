@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 from html.parser import HTMLParser
 from unittest import mock
 
@@ -5,8 +6,6 @@ import pytest
 
 from duffy.app.main import app, init_model, init_tasks, post_process_config
 from duffy.exceptions import DuffyConfigurationError
-
-from ..util import noop_context
 
 
 @pytest.mark.client_auth_as(None)
@@ -53,7 +52,7 @@ class TestMain:
             init_sync_model.side_effect = DuffyConfigurationError("database")
             expectation = pytest.raises(SystemExit)
         else:
-            expectation = noop_context()
+            expectation = nullcontext()
 
         with expectation as excinfo:
             await init_model()

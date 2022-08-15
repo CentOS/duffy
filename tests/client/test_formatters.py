@@ -1,5 +1,6 @@
 import datetime as dt
 import json
+from contextlib import nullcontext
 from enum import Enum
 
 import pytest
@@ -24,8 +25,6 @@ from duffy.client.formatter import (
     DuffyYAMLFormatter,
 )
 from duffy.client.main import DuffyAPIErrorModel
-
-from ..util import noop_context
 
 
 class _TestEnum(str, Enum):
@@ -198,7 +197,7 @@ class TestDuffyFlatFormatter:
         (PoolResult, PoolResultCollection, SessionResult, SessionResultCollection, dict),
     )
     def test_format(self, result_cls):
-        expectation = noop_context()
+        expectation = nullcontext()
         if result_cls == PoolResult:
             api_result = PoolResult(action="get", pool=self.TEST_POOL_VERBOSE)
         elif result_cls == PoolResultCollection:

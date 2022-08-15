@@ -1,10 +1,9 @@
+from contextlib import nullcontext
 from typing import List, Tuple, Union
 
 import pytest
 
 from duffy.util import camel_case_to_lower_with_underscores, merge_dicts
-
-from .util import noop_context
 
 
 @pytest.mark.parametrize(
@@ -36,7 +35,7 @@ class TestMergeDicts:
         if isinstance(expected, type) and issubclass(expected, Exception):
             expectation = pytest.raises(expected)
         else:
-            expectation = noop_context()
+            expectation = nullcontext()
 
         with expectation:
             result = merge_dicts(*input_dicts)

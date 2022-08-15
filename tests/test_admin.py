@@ -1,4 +1,5 @@
 import uuid
+from contextlib import nullcontext
 from unittest import mock
 
 import pytest
@@ -10,8 +11,6 @@ from duffy.admin import AdminContext
 from duffy.app import controllers
 from duffy.database.model import Tenant
 from duffy.exceptions import DuffyConfigurationError
-
-from .util import noop_context
 
 
 @pytest.fixture
@@ -37,7 +36,7 @@ class TestAdminContext:
     @mock.patch.object(AdminContext, "__new__")
     def test_create_for_cli(self, admin_ctx_new, testcase, caplog):
         if testcase == "success":
-            expectation = noop_context()
+            expectation = nullcontext()
             admin_ctx_new.return_value = sentinel = object()
         elif testcase == "config-error":
             admin_ctx_new.side_effect = DuffyConfigurationError("BOO")
