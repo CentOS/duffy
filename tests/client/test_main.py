@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 from http import HTTPStatus
 from json import JSONDecodeError
 from unittest import mock
@@ -17,8 +18,6 @@ from duffy.api_models import (
 from duffy.client import DuffyClient
 from duffy.client.main import _MethodEnum
 from duffy.configuration import config
-
-from ..util import noop_context
 
 
 class InModel(BaseModel):
@@ -124,7 +123,7 @@ class TestDuffyClient:
         Client.return_value = ctxmgr = mock.MagicMock()
         ctxmgr.__enter__.return_value = apiv1_client = mock.MagicMock()
 
-        expectation = noop_context()
+        expectation = nullcontext()
 
         getattr(apiv1_client, http_method).return_value = apiv1_response = mock.MagicMock()
         apiv1_response.status_code = actual_status

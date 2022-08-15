@@ -1,5 +1,6 @@
 import copy
 import logging
+from contextlib import nullcontext
 from datetime import timedelta
 from unittest import mock
 from uuid import uuid4
@@ -16,8 +17,6 @@ from duffy.configuration import config
 from duffy.exceptions import DuffyConfigurationError
 from duffy.util import UNSET
 from duffy.version import __version__
-
-from .util import noop_context
 
 
 @pytest.fixture
@@ -84,7 +83,7 @@ class TestNodesSpecType:
             expectation = pytest.raises(BadParameter)
         else:
             value = "pool=test,quantity=1"
-            expectation = noop_context()
+            expectation = nullcontext()
 
         with expectation:
             converted = duffy.cli.NODES_SPEC.convert(value, None, None)
@@ -323,7 +322,7 @@ def test_serve(uvicorn_run, testcase, runner, duffy_config_files, tmp_path):
     if "missing-modules" in testcase:
         ctxmgr = mock.patch.object(duffy.cli, "uvicorn", None)
     else:
-        ctxmgr = noop_context()
+        ctxmgr = nullcontext()
 
     parameters = (f"--config={config_file.absolute()}", "serve")
 
@@ -363,7 +362,7 @@ def test_serve_legacy(uvicorn_run, testcase, runner, duffy_config_files, tmp_pat
     if "missing-modules" in testcase:
         ctxmgr = mock.patch.object(duffy.cli, "uvicorn", None)
     else:
-        ctxmgr = noop_context()
+        ctxmgr = nullcontext()
 
     parameters = (f"--config={config_file.absolute()}", "serve-legacy")
 

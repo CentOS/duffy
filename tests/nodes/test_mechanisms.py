@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 from unittest import mock
 
 import pytest
@@ -5,8 +6,6 @@ import pytest
 from duffy.nodes.mechanisms.ansible import AnsibleMechanism, PlaybookType
 from duffy.nodes.mechanisms.main import Mechanism, MechanismFailure
 from duffy.nodes.pools import ConcreteNodePool, NodePool
-
-from ..util import noop_context
 
 
 @mock.patch.dict(Mechanism.known_mechanisms, clear=True)
@@ -151,7 +150,7 @@ class TestAnsibleMechanism:
                 del run.events[-2]["event_data"]
                 expectation = pytest.raises(MechanismFailure)
             else:
-                expectation = noop_context()
+                expectation = nullcontext()
 
         with expectation:
             args = (PlaybookType.provision, "bloop")

@@ -1,5 +1,6 @@
 import logging
 from collections import defaultdict
+from contextlib import nullcontext
 from pathlib import Path
 from unittest import mock
 
@@ -10,8 +11,6 @@ from duffy.database.model import Node
 from duffy.nodes.mechanisms import MechanismFailure
 from duffy.nodes.pools import ConcreteNodePool, NodePool
 from duffy.tasks import deprovision
-
-from ..util import noop_context
 
 HERE = Path(__file__).parent
 PLAYBOOK_PATH = HERE / "playbooks"
@@ -35,7 +34,7 @@ PLAYBOOK_PATH = HERE / "playbooks"
     ),
 )
 def test_deprovision_pool_nodes(testcase, test_mechanism, db_sync_session, caplog):
-    expectation = noop_context()
+    expectation = nullcontext()
     real_playbook = "real-playbook" in testcase
 
     if "unknown-pool" in testcase:

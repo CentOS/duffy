@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 from typing import Iterator
 from unittest import mock
 
@@ -17,8 +18,6 @@ from duffy.configuration import config
 from duffy.legacy import main
 from duffy.legacy.api_models import Credentials
 from duffy.legacy.auth import _req_credentials_factory
-
-from .util import noop_context
 
 TEST_CRED = Credentials(
     username="hahahahahatheystoppedlegacysupporthahahahaha",
@@ -62,7 +61,7 @@ class TestAuth:
             expectation = pytest.raises(HTTPException)
             exception_args = (HTTP_403_FORBIDDEN,)
         else:
-            expectation = noop_context()
+            expectation = nullcontext()
             exception_args = None
 
         get_req_credentials = _req_credentials_factory(optional="optional" in testcase)
