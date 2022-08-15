@@ -1,7 +1,8 @@
 from copy import deepcopy
+from functools import lru_cache
 from itertools import chain
 from pathlib import Path
-from typing import List, Sequence, Union
+from typing import Any, List, Sequence, Union
 
 import yaml
 
@@ -48,3 +49,20 @@ def read_configuration(
 
     config.clear()
     config.update(new_config)
+
+
+@lru_cache
+def config_get(*keys, default: Any = None):
+    """Retrieve a configuration value from multiple alternative places."""
+    for key in keys:
+        item = config
+        elems = key.split(".")
+        try:
+            for elem in elems:
+                item = item[elem]
+        except KeyError:
+            continue
+        else:
+            return item
+
+    return default

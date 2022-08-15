@@ -66,3 +66,16 @@ class TestConfiguration:
         main.read_configuration(partial_config_file, clear=True, validate=False)
         main.read_configuration(*duffy_config_files, clear=False, validate=False)
         main.read_configuration(clear=False, validate=True)
+
+
+@pytest.mark.duffy_config(EXAMPLE_CONFIG, clear=True)
+@pytest.mark.parametrize(
+    "keys,result",
+    (
+        (("app.host",), "127.0.0.1"),
+        (("defaults.port", "app.port"), 8080),
+        (("foo",), "test-default"),
+    ),
+)
+def test_config_get(keys, result):
+    assert main.config_get(*keys, default="test-default") == result
