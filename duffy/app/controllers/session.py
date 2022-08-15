@@ -29,6 +29,7 @@ from ...nodes.context import contextualize, decontextualize
 from ...tasks import deprovision_nodes, fill_pools
 from ..auth import req_tenant, req_tenant_optional
 from ..database import req_db_async_session
+from ..util import SerializationErrorRetryContext
 
 log = logging.getLogger(__name__)
 
@@ -128,46 +129,63 @@ async def create_session(
                 f" > {tenant.effective_node_quota}",
             )
 
-    session = Session(
-        tenant=tenant,
-        data={"nodes_specs": [spec.dict() for spec in data.nodes_specs]},
-        expires_at=(
-            dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc) + tenant.effective_session_lifetime
-        ),
-    )
-    db_async_session.add(session)
+    # Save tenant id to enable reloading it on retries
+    tenant_id = tenant.id
 
-    nodes_in_transaction = []
-    session_nodes = []
-    pools_to_fill_up = set()
-    for nodes_spec in data.nodes_specs:
-        pools_to_fill_up.add(nodes_spec.pool)
-        nodes_spec_dict = nodes_spec.dict()
-        quantity = nodes_spec_dict.pop("quantity")
+    async with SerializationErrorRetryContext() as retry:
+        async for attempt in retry.attempts:
+            try:
+                if attempt > 1:
+                    tenant = (
+                        await db_async_session.execute(select(Tenant).filter_by(id=tenant_id))
+                    ).scalar_one()
+                session = Session(
+                    tenant=tenant,
+                    data={"nodes_specs": [spec.dict() for spec in data.nodes_specs]},
+                    expires_at=(
+                        dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc)
+                        + tenant.effective_session_lifetime
+                    ),
+                )
+                db_async_session.add(session)
 
-        query = (
-            select(Node)
-            .filter_by(active=True, state=NodeState.ready, **nodes_spec_dict)
-            .limit(quantity)
-            .with_for_update()
-        )
+                nodes_in_transaction = []
+                session_nodes = []
+                pools_to_fill_up = set()
+                for nodes_spec in data.nodes_specs:
+                    pools_to_fill_up.add(nodes_spec.pool)
+                    nodes_spec_dict = nodes_spec.dict()
+                    quantity = nodes_spec_dict.pop("quantity")
 
-        nodes_to_reserve = (await db_async_session.execute(query)).scalars().all()
-        nodes_in_transaction.extend(nodes_to_reserve)
+                    query = (
+                        select(Node)
+                        .filter_by(active=True, state=NodeState.ready, **nodes_spec_dict)
+                        .limit(quantity)
+                        .with_for_update()
+                    )
 
-        if len(nodes_to_reserve) < quantity:
-            raise HTTPException(HTTP_422_UNPROCESSABLE_ENTITY, f"can't reserve nodes: {nodes_spec}")
+                    nodes_to_reserve = (await db_async_session.execute(query)).scalars().all()
 
-        # take the nodes out of circulation and update data
-        for node in nodes_to_reserve:
-            # record why this node was allocated for this session
-            node.data["nodes_spec"] = nodes_spec.dict()
-            node.state = NodeState.contextualizing
-            session_node = SessionNode(
-                session=session, node=node, pool=nodes_spec.pool, data=node.data
-            )
-            session_nodes.append(session_node)
-            db_async_session.add(session_node)
+                    nodes_in_transaction.extend(nodes_to_reserve)
+
+                    if len(nodes_to_reserve) < quantity:
+                        raise HTTPException(
+                            HTTP_422_UNPROCESSABLE_ENTITY, f"can't reserve nodes: {nodes_spec}"
+                        )
+
+                    # take the nodes out of circulation and update data
+                    for node in nodes_to_reserve:
+                        # record why this node was allocated for this session
+                        node.data["nodes_spec"] = nodes_spec.dict()
+                        node.state = NodeState.contextualizing
+                        session_node = SessionNode(
+                            session=session, node=node, pool=nodes_spec.pool, data=node.data
+                        )
+                        session_nodes.append(session_node)
+                        db_async_session.add(session_node)
+            except retry.exceptions as exc:
+                retry.process_exception(exc)
+                await db_async_session.rollback()
 
     contextualized_ipaddrs = await contextualize(
         nodes=[node.ipaddr for node in nodes_in_transaction], ssh_pubkey=tenant.ssh_key

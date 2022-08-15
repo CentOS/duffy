@@ -4,7 +4,17 @@ from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Union
 from uuid import UUID
 
-from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, RedisDsn, conint, stricturl, validator
+from pydantic import (
+    AnyHttpUrl,
+    AnyUrl,
+    BaseModel,
+    Field,
+    RedisDsn,
+    confloat,
+    conint,
+    stricturl,
+    validator,
+)
 
 from ..misc import ConfigTimeDelta
 
@@ -64,10 +74,21 @@ class DatabaseModel(ConfigBaseModel):
     sqlalchemy: SQLAlchemyModel
 
 
+class RetriesModel(ConfigBaseModel):
+    no_attempts: Optional[conint(ge=1)] = Field(alias="no-attempts")
+    delay_min: Optional[Union[conint(ge=0), confloat(ge=0)]] = Field(alias="delay-min")
+    delay_max: Optional[Union[conint(ge=0), confloat(ge=0)]] = Field(alias="delay-max")
+    delay_backoff_factor: Optional[Union[conint(ge=1), confloat(ge=1)]] = Field(
+        alias="delay-backoff-factor"
+    )
+    delay_add_fuzz: Optional[Union[conint(ge=0), confloat(ge=0)]] = Field(alias="delay-add-fuzz")
+
+
 class DefaultsModel(ConfigBaseModel):
     session_lifetime: ConfigTimeDelta = Field(alias="session-lifetime")
     session_lifetime_max: ConfigTimeDelta = Field(alias="session-lifetime-max")
     node_quota: conint(gt=0) = Field(alias="node-quota")
+    retries: Optional[RetriesModel]
 
 
 class AnsibleMechanismPlaybookModel(ConfigBaseModel):
@@ -127,6 +148,7 @@ class AppModel(ConfigBaseModel):
     host: Optional[str]
     port: Optional[conint(gt=0, lt=65536)]
     logging: Optional[LoggingModel]
+    retries: Optional[RetriesModel]
 
 
 class LegacyPoolMapModel(ConfigBaseModel):

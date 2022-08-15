@@ -1,10 +1,15 @@
+import asyncio
 import datetime as dt
+import functools
+import logging
 import re
 import uuid
+from contextlib import nullcontext
 from unittest import mock
 
 import pytest
 from sqlalchemy import func, select
+from sqlalchemy.exc import DBAPIError
 from starlette.status import (
     HTTP_200_OK,
     HTTP_201_CREATED,
@@ -14,6 +19,7 @@ from starlette.status import (
     HTTP_503_SERVICE_UNAVAILABLE,
 )
 
+from duffy.app.controllers import session as session_module
 from duffy.database.model import Node, Session, Tenant
 from duffy.database.setup import _gen_test_api_key
 
@@ -236,6 +242,80 @@ class TestSessionWorkflow:
                 else:
                     assert len(failed_nodes) == 1
                     assert failed_nodes[0].data["error"]["detail"] == "contextualizing node failed"
+
+    @pytest.mark.parametrize(
+        "testcase", ("success", "success-exact-attempts", "fail-exceed-attempts")
+    )
+    @mock.patch("duffy.app.controllers.session.decontextualize")
+    @mock.patch("duffy.app.controllers.session.contextualize")
+    @mock.patch("duffy.app.controllers.session.fill_pools")
+    async def test_request_session_concurrently(
+        self,
+        fill_pools,
+        contextualize,
+        decontextualize,
+        testcase,
+        client,
+        db_async_session,
+        auth_tenant,
+        caplog,
+    ):
+        for node in (await db_async_session.execute(select(Node))).scalars():
+            node.pool = "physical-centos8stream-x86_64"
+        await db_async_session.commit()
+
+        if "success" in testcase:
+            expectation = nullcontext()
+        else:
+            expectation = pytest.raises(DBAPIError)
+
+        if "exceed-attempts" in testcase or "exact-attempts" in testcase:
+            fuzz_context_wrapper = mock.patch.object(
+                session_module,
+                "SerializationErrorRetryContext",
+                functools.partial(session_module.SerializationErrorRetryContext, no_attempts=1),
+            )
+        else:
+            fuzz_context_wrapper = nullcontext()
+
+        if "exact-attempts" in testcase:
+            no_attempts = no_concurrency = 1
+        else:
+            no_concurrency = 4
+            no_attempts = 5
+
+        with caplog.at_level(logging.DEBUG), fuzz_context_wrapper, expectation:
+            responses = await asyncio.gather(
+                *(
+                    client.post(
+                        self.path,
+                        json={
+                            "nodes_specs": [
+                                {"pool": "physical-centos8stream-x86_64", "quantity": 1},
+                            ],
+                        },
+                    )
+                    for idx in range(no_concurrency)
+                ),
+            )
+
+        if "success" in testcase:
+            results = [response.json() for response in responses]
+
+            assert len({res["session"]["id"] for res in results}) == no_concurrency
+            assert all(len(res["session"]["nodes"]) == 1 for res in results)
+            assert len({res["session"]["nodes"][0]["id"] for res in results}) == no_concurrency
+            assert all(
+                res["session"]["nodes"][0]["pool"] == "physical-centos8stream-x86_64"
+                for res in results
+            )
+        else:
+            assert "Number of attempts (1) exhausted, re-raising." in caplog.text
+
+        if "exceed-attempts" in testcase or "exact-attempts" in testcase:
+            assert f"Attempt 2 of {no_attempts}" not in caplog.text
+        else:
+            assert f"Attempt 2 of {no_attempts}" in caplog.text
 
     @mock.patch("duffy.nodes.context.run_remote_cmd", new=mock.AsyncMock())
     @mock.patch("duffy.app.controllers.session.fill_pools", new=mock.MagicMock())
