@@ -1,4 +1,5 @@
 from enum import Enum, auto
+from tempfile import TemporaryDirectory
 from typing import Any, Dict, List, Optional
 
 import ansible_runner
@@ -40,38 +41,44 @@ class AnsibleMechanism(Mechanism, mech_type="ansible"):
 
         run_extra_vars = self.nodepool.render_templates_in_obj(run_extra_vars, overrides=overrides)
 
-        log.debug(
-            "ansible_runner.run(project_dir=%r, playbook=%r, json_mode=True, extravars=%r",
-            self["topdir"],
-            self[playbook_type.name]["playbook"],
-            run_extra_vars,
-        )
-        run = ansible_runner.run(
-            project_dir=self["topdir"],
-            playbook=self[playbook_type.name]["playbook"],
-            json_mode=True,
-            extravars=run_extra_vars,
-        )
+        with TemporaryDirectory() as tmpdir:
+            log.debug(
+                (
+                    "ansible_runner.run(project_dir=%r, playbook=%r, json_mode=True, extravars=%r"
+                    + ", private_data_dir=%r)"
+                ),
+                self["topdir"],
+                self[playbook_type.name]["playbook"],
+                run_extra_vars,
+                tmpdir,
+            )
+            run = ansible_runner.run(
+                project_dir=self["topdir"],
+                playbook=self[playbook_type.name]["playbook"],
+                json_mode=True,
+                extravars=run_extra_vars,
+                private_data_dir=tmpdir,
+            )
 
-        if run.status != "successful":
-            raise MechanismFailure(failure_msg)
+            if run.status != "successful":
+                raise MechanismFailure(failure_msg)
 
-        for event in reversed(list(run.events)):
-            try:
-                event_type = event["event"]
-                event_data = event["event_data"]
-            except KeyError as exc:
-                raise MechanismFailure(f"Key error in Ansible event: {event!r}") from exc
-            event_res = event_data.get("res")
+            for event in reversed(list(run.events)):
+                try:
+                    event_type = event["event"]
+                    event_data = event["event_data"]
+                except KeyError as exc:
+                    raise MechanismFailure(f"Key error in Ansible event: {event!r}") from exc
+                event_res = event_data.get("res")
 
-            if (
-                event_type == "runner_on_ok"
-                and event_data.get("task_action") == "set_fact"
-                and "duffy_out" in event_res.get("ansible_facts", {})
-            ):
-                return event_res["ansible_facts"]["duffy_out"]
-        else:
-            raise MechanismFailure(failure_msg)
+                if (
+                    event_type == "runner_on_ok"
+                    and event_data.get("task_action") == "set_fact"
+                    and "duffy_out" in event_res.get("ansible_facts", {})
+                ):
+                    return event_res["ansible_facts"]["duffy_out"]
+            else:
+                raise MechanismFailure(failure_msg)
 
     def provision(self, nodes: List[Node]) -> Dict[str, Any]:
         playbook_input = {
