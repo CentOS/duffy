@@ -1,4 +1,6 @@
+import os.path
 from contextlib import nullcontext
+from tempfile import TemporaryDirectory
 from unittest import mock
 
 import pytest
@@ -152,7 +154,10 @@ class TestAnsibleMechanism:
             else:
                 expectation = nullcontext()
 
-        with expectation:
+        with expectation, TemporaryDirectory() as private_data_dir, mock.patch(
+            "duffy.nodes.mechanisms.ansible.TemporaryDirectory"
+        ) as mocked_TemporaryDirectory:
+            mocked_TemporaryDirectory.return_value.__enter__.return_value = private_data_dir
             args = (PlaybookType.provision, "bloop")
             if add_run_extra_vars:
                 args += ({"more-extra-vars": "!!!"},)
@@ -164,10 +169,13 @@ class TestAnsibleMechanism:
         assert kwargs["project_dir"] == "/foo"
         assert kwargs["playbook"] == "provision.yaml"
         assert kwargs["json_mode"] is True
+        assert kwargs["private_data_dir"] == private_data_dir
         expected_extravars = {"nodepool": "virtual-boop", "template_name": "duffy-boop"}
         if add_run_extra_vars:
             expected_extravars["more-extra-vars"] = "!!!"
         assert kwargs["extravars"] == expected_extravars
+
+        assert not os.path.exists(private_data_dir)
 
         if not error:
             assert result == duffy_result
