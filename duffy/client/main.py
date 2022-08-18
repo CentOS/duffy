@@ -73,7 +73,7 @@ class DuffyClient:
         self._auth_key = value
 
     def client(self):
-        return httpx.Client(auth=(self.auth_name, self.auth_key), base_url=self.url)
+        return httpx.Client(auth=(self.auth_name, self.auth_key), base_url=self.url, timeout=None)
 
     def _query_method(
         self,
