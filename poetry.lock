@@ -1104,7 +1104,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "peewee"
-version = "3.15.1"
+version = "3.15.2"
 description = "a little orm"
 category = "dev"
 optional = false
@@ -2773,7 +2773,7 @@ pathspec = [
     {file = "pathspec-0.10.0.tar.gz", hash = "sha256:01eecd304ba0e6eeed188ae5fa568e99ef10265af7fd9ab737d6412b4ee0ab85"},
 ]
 peewee = [
-    {file = "peewee-3.15.1.tar.gz", hash = "sha256:6d5db3babc33819ac326f1550e5a39677f4584094c567a7b88cc6bf7bcdcb687"},
+    {file = "peewee-3.15.2.tar.gz", hash = "sha256:94d8eb7fc2b8d97d6216382bf5961239645dc9e2473b0e732eb6c79c920c4768"},
 ]
 pexpect = [
     {file = "pexpect-4.8.0-py2.py3-none-any.whl", hash = "sha256:0b48a55dcb3c05f3329815901ea4fc1537514d6ba867a152b581d69ae3710937"},
