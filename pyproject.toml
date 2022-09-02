@@ -41,21 +41,21 @@ PyYAML = "^6"
 SQLAlchemy = {version = "^1.4.25", extras=["asyncio"], optional = true}
 alembic = {version = "^1.7.5", optional = true}
 bcrypt = {version = "^3.2", optional = true}
-fastapi = {version = ">=0.70", optional = true}
-uvicorn = {version = ">=0.15", optional = true}
+fastapi = {version = ">=0.70, <2", optional = true}
+uvicorn = {version = ">=0.15, <2", optional = true}
 Jinja2 = {version = "^3.0.3", optional = true}
 ansible-runner = {version = "^2.1.1", optional = true}
-asyncpg = {version = "^0.25", optional = true}
+asyncpg = {version = ">=0.25, <2", optional = true}
 celery = {version = "^5.2.1", extras = ["redis"], optional = true}
-httpx = {version = ">=0.18.2", optional = true}
+httpx = {version = ">=0.18.2, <2", optional = true}
 ipython = {version = ">=7.29", optional = true}
-jmespath = {version = ">=0.10", optional = true}
+jmespath = {version = ">=0.10, <2", optional = true}
 pottery = {version = "^3", optional = true}
 psycopg2 = {version = "^2.9.2", optional = true}
 aiodns = {version = "^3.0.0", optional = true}
 pydantic = ">=1.6.2"
-aiosqlite = {version = ">=0.17.0", optional = true}
-pyxdg = ">=0.27"
+aiosqlite = {version = ">=0.17.0, <2", optional = true}
+pyxdg = ">=0.27, <2"
 
 [tool.poetry.dev-dependencies]
 Jinja2 = "^3.0.3"
@@ -63,16 +63,16 @@ ansible = "^5.2 || ^6"
 ansible-core = "^2.12.1"
 ansible-runner = "^2.1.1"
 black = ">=21.9b0"
-fastapi = {version = ">=0.70", extras = ["test"]}
+fastapi = {version = ">=0.70, <2", extras = ["test"]}
 flake8 = ">=3.9.2"
-httpx = ">=0.18.2"
+httpx = ">=0.18.2, <2"
 isort = "^5.9.3"
-jmespath = ">=0.10"
+jmespath = ">=0.10, <2"
 poetry = "^1.1.13"
 pottery = "^3"
 pytest = ">=6.2.5"
-pytest-asyncio = ">=0.17"
-pytest-black = "^0.3.12"
+pytest-asyncio = ">=0.17, <2"
+pytest-black = ">=0.3.12, <2"
 pytest-cov = "^3"
 pytest-flake8 = "^1.0.7"
 pytest-isort = ">=2"
