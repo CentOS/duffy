@@ -68,7 +68,7 @@ flake8 = ">=3.9.2"
 httpx = ">=0.18.2, <2"
 isort = "^5.9.3"
 jmespath = ">=0.10, <2"
-poetry = "^1.1.13"
+poetry = "^1.2.0"
 pottery = "^3"
 pytest = ">=6.2.5"
 pytest-asyncio = ">=0.17, <2"
@@ -81,15 +81,6 @@ psycopg = "^3.0.16"
 pytest-postgresql = "^4.1.1"
 
 [tool.poetry.extras]
-# keep this in sync with the real extras
-all = [
-    "SQLAlchemy", "alembic", "bcrypt", "fastapi", "uvicorn",
-    "aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery", "celery",
-    "ipython",
-    "psycopg2", "asyncpg",
-    "httpx",
-]
-
 # the `serve` command
 app = [
     "SQLAlchemy", "alembic", "bcrypt", "fastapi", "uvicorn",
