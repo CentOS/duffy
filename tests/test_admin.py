@@ -55,6 +55,9 @@ class TestAdminContext:
     async def test_proxy_controller_function_async(self, async_session_maker, testcase, admin_ctx):
         async_session_maker.return_value = ctx_mgr = mock.AsyncMock()
         ctx_mgr.__aenter__.return_value = db_async_session = mock.AsyncMock()
+        db_async_session.begin = mock.MagicMock()
+        db_async_session.begin.return_value = mock.AsyncMock()
+
         controller_function = mock.AsyncMock()
         if testcase == "success":
             controller_function.return_value = sentinel = object()
@@ -71,8 +74,10 @@ class TestAdminContext:
 
         if testcase == "success":
             assert result is sentinel
+            db_async_session.rollback.assert_not_awaited()
         else:
             assert result["error"]["detail"] == "BOO"
+            db_async_session.rollback.assert_awaited_once_with()
 
     def test_proxy_controller_function(self, admin_ctx):
         proxy_controller_function_async = mock.AsyncMock()

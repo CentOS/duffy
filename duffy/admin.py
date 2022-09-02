@@ -38,12 +38,13 @@ class AdminContext:
             return admin_ctx
 
     async def proxy_controller_function_async(self, controller_function, **kwargs):
-        async with async_session_maker() as db_async_session:
+        async with async_session_maker() as db_async_session, db_async_session.begin():
             try:
                 return await controller_function(
                     tenant=self.fake_api_tenant, db_async_session=db_async_session, **kwargs
                 )
             except HTTPException as exc:
+                await db_async_session.rollback()
                 return {"error": {"detail": exc.detail}}
 
     def proxy_controller_function(self, controller_function, **kwargs):
