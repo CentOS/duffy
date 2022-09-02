@@ -31,11 +31,6 @@ jobs:
         run: |
           dnf install -y libpq-devel postgresql-server
 
-      - name: Install base Python dependencies
-        run: |
-          python3 -m pip install --upgrade poetry
-          python3 -m pip install --upgrade tox
-
       - name: Set up testrunner user
         run: |
           useradd testrunner
