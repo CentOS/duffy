@@ -2026,7 +2026,6 @@ testing = ["func-timeout", "jaraco.itertools", "pytest (>=6)", "pytest-black (>=
 
 [extras]
 admin = ["SQLAlchemy", "bcrypt", "fastapi"]
-all = ["SQLAlchemy", "alembic", "bcrypt", "fastapi", "uvicorn", "aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery", "celery", "ipython", "psycopg2", "asyncpg", "httpx"]
 app = ["SQLAlchemy", "alembic", "bcrypt", "fastapi", "uvicorn", "aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery", "celery"]
 client = ["httpx"]
 database = ["SQLAlchemy", "alembic", "bcrypt"]
@@ -2039,7 +2038,7 @@ tasks = ["aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery", "celery"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "da6e9493c743bcc3491758722ba2d30bb2ff6365db68303c5bf983b7b89bfbd8"
+content-hash = "541f15acddc5d1b5aff47c0475a3d6f13567b64edbb85520f12b42bcfc100bb9"
 
 [metadata.files]
 aiodns = [
