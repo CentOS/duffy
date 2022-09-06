@@ -9,27 +9,15 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 from ..configuration import config
 from ..exceptions import DuffyConfigurationError
 
-
 # use custom metadata to specify naming convention
-def constraint_column_names(constraint, table):
-    return "_".join(c.name for c in constraint.columns)
-
-
-def constraint_column_labels(constraint, table):  # pragma: no cover
-    return "_".join(c._label for c in constraint.columns)
-
-
 naming_convention = {
-    "column_names": constraint_column_names,
-    "column_labels": constraint_column_labels,
-    "ix": "%(column_labels)s_index",
-    "uq": "%(table_name)s_%(column_names)s_key",
+    "ix": "%(column_0_N_label)s_index",
+    "uq": "%(table_name)s_%(column_0_N_name)s_key",
     "ck": "%(table_name)s_%(constraint_name)s_check",
-    "fk": "%(table_name)s_%(column_names)s_%(referred_table_name)s_fkey",
+    "fk": "%(table_name)s_%(column_0_N_name)s_%(referred_table_name)s_fkey",
     "pk": "%(table_name)s_pkey",
 }
 metadata = MetaData(naming_convention=naming_convention)
-
 Base = declarative_base(metadata=metadata)
 
 async_session_maker = sessionmaker(class_=AsyncSession, expire_on_commit=False, future=True)
