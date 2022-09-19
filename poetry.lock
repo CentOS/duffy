@@ -1194,7 +1194,7 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "poetry"
-version = "1.2.0"
+version = "1.2.1"
 description = "Python dependency management and packaging made easy."
 category = "dev"
 optional = false
@@ -1205,7 +1205,7 @@ cachecontrol = {version = ">=0.12.9,<0.13.0", extras = ["filecache"]}
 cachy = ">=0.3.0,<0.4.0"
 cleo = ">=1.0.0a5,<2.0.0"
 crashtest = ">=0.3.0,<0.4.0"
-dulwich = ">=0.20.44,<0.21.0"
+dulwich = ">=0.20.46,<0.21.0"
 html5lib = ">=1.0,<2.0"
 importlib-metadata = {version = ">=4.4,<5.0", markers = "python_version < \"3.10\""}
 jsonschema = ">=4.10.0,<5.0.0"
@@ -1214,19 +1214,19 @@ packaging = ">=20.4"
 pexpect = ">=4.7.0,<5.0.0"
 pkginfo = ">=1.5,<2.0"
 platformdirs = ">=2.5.2,<3.0.0"
-poetry-core = "1.1.0"
-poetry-plugin-export = ">=1.0.6,<2.0.0"
+poetry-core = "1.2.0"
+poetry-plugin-export = ">=1.0.7,<2.0.0"
 requests = ">=2.18,<3.0"
 requests-toolbelt = ">=0.9.1,<0.10.0"
 shellingham = ">=1.5,<2.0"
 tomlkit = ">=0.11.1,<0.11.2 || >0.11.2,<0.11.3 || >0.11.3,<1.0.0"
 urllib3 = ">=1.26.0,<2.0.0"
-virtualenv = "*"
+virtualenv = ">=20.4.3,<20.4.5 || >20.4.5,<20.4.6 || >20.4.6"
 xattr = {version = ">=0.9.7,<0.10.0", markers = "sys_platform == \"darwin\""}
 
 [[package]]
 name = "poetry-core"
-version = "1.1.0"
+version = "1.2.0"
 description = "Poetry PEP 517 Build Backend"
 category = "dev"
 optional = false
@@ -1234,15 +1234,15 @@ python-versions = ">=3.7,<4.0"
 
 [[package]]
 name = "poetry-plugin-export"
-version = "1.0.6"
+version = "1.0.7"
 description = "Poetry plugin to export the dependencies to various formats"
 category = "dev"
 optional = false
 python-versions = ">=3.7,<4.0"
 
 [package.dependencies]
-poetry = ">=1.2.0b3,<2.0.0"
-poetry-core = ">=1.1.0b3,<2.0.0"
+poetry = ">=1.2.0,<2.0.0"
+poetry-core = ">=1.1.0,<2.0.0"
 
 [[package]]
 name = "port-for"
@@ -2859,16 +2859,16 @@ pluggy = [
     {file = "pluggy-1.0.0.tar.gz", hash = "sha256:4224373bacce55f955a878bf9cfa763c1e360858e330072059e10bad68531159"},
 ]
 poetry = [
-    {file = "poetry-1.2.0-py3-none-any.whl", hash = "sha256:af99cad115cb0fbad8c41eb31c5a5dee25a9f6c74fc1d4d6dad8e51a69ebe348"},
-    {file = "poetry-1.2.0.tar.gz", hash = "sha256:17c527d5d5505a5a7c5c14348d87f077d643cf1f186321530cde68e530bba59f"},
+    {file = "poetry-1.2.1-py3-none-any.whl", hash = "sha256:43be0a7b0fdc3efa661324e288e9630ad00c54dcf17e2a054740a160d7f25d63"},
+    {file = "poetry-1.2.1.tar.gz", hash = "sha256:2750bb2b636ef435d8beac51dde0b13d06199017a1d9b96cba899863d1e81024"},
 ]
 poetry-core = [
-    {file = "poetry-core-1.1.0.tar.gz", hash = "sha256:d145ae121cf79118a8901b60f2c951c4edcc16f55eb8aaefc156aa33aa921f07"},
-    {file = "poetry_core-1.1.0-py3-none-any.whl", hash = "sha256:da16a12054bf3f1ff8656d4c289f99c3d6b7704d272fb174004c4dc82e045954"},
+    {file = "poetry-core-1.2.0.tar.gz", hash = "sha256:ceccec95487e46c63a41761fbac5211b809bca22658e25a049f4c7da96269f71"},
+    {file = "poetry_core-1.2.0-py3-none-any.whl", hash = "sha256:e248d36c1314dd60fbc66390791923ad8b58c629d3e587080b7c1537a1c0d30f"},
 ]
 poetry-plugin-export = [
-    {file = "poetry-plugin-export-1.0.6.tar.gz", hash = "sha256:af870afceb38e583afa57bcfadfa5cd35ebd74e35aacadcb802bb3a073c13adb"},
-    {file = "poetry_plugin_export-1.0.6-py3-none-any.whl", hash = "sha256:55ae87d4560a6a3f96e04eba63c78cadbd0410e9652dee0ee1cde93281e9cb48"},
+    {file = "poetry-plugin-export-1.0.7.tar.gz", hash = "sha256:f6ac707ae227b06b2481249ed2678ff6b810b3487cac0fbb66eb0dc2bfd6ecf1"},
+    {file = "poetry_plugin_export-1.0.7-py3-none-any.whl", hash = "sha256:dd9d4552e7113a86c97908c13b9a439cb46830f247c7e4969e46a0d8d70e4d3f"},
 ]
 port-for = [
     {file = "port-for-0.6.2.tar.gz", hash = "sha256:9d4e73523d98f2f9f270308bbf415926c698b5439db8909384a79f152328b4d2"},
