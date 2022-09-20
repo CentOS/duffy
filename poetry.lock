@@ -1295,7 +1295,7 @@ test = ["enum34", "ipaddress", "mock", "pywin32", "wmi"]
 
 [[package]]
 name = "psycopg"
-version = "3.1.1"
+version = "3.1.2"
 description = "PostgreSQL database adapter for Python"
 category = "dev"
 optional = false
@@ -1307,8 +1307,8 @@ typing-extensions = {version = ">=4.1", markers = "python_version < \"3.11\""}
 tzdata = {version = "*", markers = "sys_platform == \"win32\""}
 
 [package.extras]
-binary = ["psycopg-binary (==3.1.1)"]
-c = ["psycopg-c (==3.1.1)"]
+binary = ["psycopg-binary (==3.1.2)"]
+c = ["psycopg-c (==3.1.2)"]
 dev = ["black (>=22.3.0)", "dnspython (>=2.1)", "flake8 (>=4.0)", "mypy (>=0.940)", "types-setuptools (>=57.4)", "wheel (>=0.37)"]
 docs = ["Sphinx (>=5.0)", "furo (==2022.6.21)", "sphinx-autobuild (>=2021.3.14)", "sphinx-autodoc-typehints (>=1.12)"]
 pool = ["psycopg-pool"]
@@ -2920,8 +2920,8 @@ psutil = [
     {file = "psutil-5.9.2.tar.gz", hash = "sha256:feb861a10b6c3bb00701063b37e4afc754f8217f0f09c42280586bd6ac712b5c"},
 ]
 psycopg = [
-    {file = "psycopg-3.1.1-py3-none-any.whl", hash = "sha256:ff590faff820e928934699228743b1483a561ded064b5dbf1333358c3a9e9e50"},
-    {file = "psycopg-3.1.1.tar.gz", hash = "sha256:3ee0af9cf944d9579441c15702835a949788b5a57894823f0a916c2598c96f40"},
+    {file = "psycopg-3.1.2-py3-none-any.whl", hash = "sha256:a61d8841352b2e5c83c0677b8b856bafbf57568e5687ace8872738b29acfd5c9"},
+    {file = "psycopg-3.1.2.tar.gz", hash = "sha256:57b356b1dc86a45f0a6388ca6fde77360639eb24c9aae033ee8fbbed713dce79"},
 ]
 psycopg2 = [
     {file = "psycopg2-2.9.3-cp310-cp310-win32.whl", hash = "sha256:083707a696e5e1c330af2508d8fab36f9700b26621ccbcb538abe22e15485362"},
