@@ -120,7 +120,7 @@ name = "asttokens"
 version = "2.0.8"
 description = "Annotate AST trees with source code positions"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 
 [package.dependencies]
@@ -570,7 +570,7 @@ name = "executing"
 version = "1.1.0"
 description = "Get the currently executing AST node of a frame, and other information"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 
 [package.extras]
@@ -974,7 +974,7 @@ name = "Mako"
 version = "1.2.3"
 description = "A super-fast templating language that borrows the best ideas from the existing templating languages."
 category = "main"
-optional = false
+optional = true
 python-versions = ">=3.7"
 
 [package.dependencies]
@@ -1237,7 +1237,7 @@ python-versions = ">=3.7,<4.0"
 
 [[package]]
 name = "poetry-plugin-export"
-version = "1.0.7"
+version = "1.1.1"
 description = "Poetry plugin to export the dependencies to various formats"
 category = "dev"
 optional = false
@@ -1335,7 +1335,7 @@ name = "pure-eval"
 version = "0.2.2"
 description = "Safely evaluate AST nodes without side effects"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 
 [package.extras]
@@ -1771,7 +1771,7 @@ name = "stack-data"
 version = "0.5.1"
 description = "Extract data from python stack frames and tracebacks for informative displays"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 
 [package.dependencies]
@@ -1848,7 +1848,7 @@ name = "traitlets"
 version = "5.4.0"
 description = ""
 category = "main"
-optional = false
+optional = true
 python-versions = ">=3.7"
 
 [package.extras]
@@ -2870,8 +2870,8 @@ poetry-core = [
     {file = "poetry_core-1.2.0-py3-none-any.whl", hash = "sha256:e248d36c1314dd60fbc66390791923ad8b58c629d3e587080b7c1537a1c0d30f"},
 ]
 poetry-plugin-export = [
-    {file = "poetry-plugin-export-1.0.7.tar.gz", hash = "sha256:f6ac707ae227b06b2481249ed2678ff6b810b3487cac0fbb66eb0dc2bfd6ecf1"},
-    {file = "poetry_plugin_export-1.0.7-py3-none-any.whl", hash = "sha256:dd9d4552e7113a86c97908c13b9a439cb46830f247c7e4969e46a0d8d70e4d3f"},
+    {file = "poetry-plugin-export-1.1.1.tar.gz", hash = "sha256:23e3e512a609b54ef5ac441339fc9e68fd41e61d15bd924eb0094b4fda1e30d0"},
+    {file = "poetry_plugin_export-1.1.1-py3-none-any.whl", hash = "sha256:170fa367794d2385975d75298fe5509f772d35216ee36b8fa50c0350a064b761"},
 ]
 port-for = [
     {file = "port-for-0.6.2.tar.gz", hash = "sha256:9d4e73523d98f2f9f270308bbf415926c698b5439db8909384a79f152328b4d2"},
