@@ -1248,7 +1248,7 @@ python-versions = ">=3.7,<4.0"
 
 [[package]]
 name = "poetry-plugin-export"
-version = "1.1.1"
+version = "1.1.2"
 description = "Poetry plugin to export the dependencies to various formats"
 category = "dev"
 optional = false
@@ -2895,8 +2895,8 @@ poetry-core = [
     {file = "poetry_core-1.2.0-py3-none-any.whl", hash = "sha256:e248d36c1314dd60fbc66390791923ad8b58c629d3e587080b7c1537a1c0d30f"},
 ]
 poetry-plugin-export = [
-    {file = "poetry-plugin-export-1.1.1.tar.gz", hash = "sha256:23e3e512a609b54ef5ac441339fc9e68fd41e61d15bd924eb0094b4fda1e30d0"},
-    {file = "poetry_plugin_export-1.1.1-py3-none-any.whl", hash = "sha256:170fa367794d2385975d75298fe5509f772d35216ee36b8fa50c0350a064b761"},
+    {file = "poetry-plugin-export-1.1.2.tar.gz", hash = "sha256:5e92525dd63f38ce74a51ed68ea91d753523f21ce5f9ef8d3b793e2a4b2222ef"},
+    {file = "poetry_plugin_export-1.1.2-py3-none-any.whl", hash = "sha256:946e3313b3d00c18fb9a50522e9d5e6a7e111beaba8d6ae33297662fc2070ac1"},
 ]
 port-for = [
     {file = "port-for-0.6.2.tar.gz", hash = "sha256:9d4e73523d98f2f9f270308bbf415926c698b5439db8909384a79f152328b4d2"},
