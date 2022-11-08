@@ -76,7 +76,7 @@ resolvelib = ">=0.5.3,<0.9.0"
 
 [[package]]
 name = "ansible-runner"
-version = "2.2.1"
+version = "2.3.0"
 description = "\"Consistent Ansible Python API and CLI with container and process isolation runtime capabilities\""
 category = "main"
 optional = false
@@ -120,7 +120,7 @@ name = "asttokens"
 version = "2.1.0"
 description = "Annotate AST trees with source code positions"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 
 [package.dependencies]
@@ -591,7 +591,7 @@ name = "executing"
 version = "1.2.0"
 description = "Get the currently executing AST node of a frame, and other information"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 
 [package.extras]
@@ -1382,7 +1382,7 @@ name = "pure-eval"
 version = "0.2.2"
 description = "Safely evaluate AST nodes without side effects"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 
 [package.extras]
@@ -1856,7 +1856,7 @@ name = "stack-data"
 version = "0.6.0"
 description = "Extract data from python stack frames and tracebacks for informative displays"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 
 [package.dependencies]
@@ -2153,8 +2153,8 @@ ansible-core = [
     {file = "ansible_core-2.13.5-py3-none-any.whl", hash = "sha256:3d2503ede324e0e73051b14e77f732a3cb0aed2437f94608af53929d2d1d54c8"},
 ]
 ansible-runner = [
-    {file = "ansible-runner-2.2.1.tar.gz", hash = "sha256:cd9b6cb1174011b4e2e0a5993d4d04d928cde5fe22a8993aed4438493387c182"},
-    {file = "ansible_runner-2.2.1-py3-none-any.whl", hash = "sha256:bc3348580b0cbb8b5831039dadad6cce115e155b91c7ad0f66d751d54a0586a0"},
+    {file = "ansible-runner-2.3.0.tar.gz", hash = "sha256:99c4dfbbeade446397bd1a9e0bf050873d8a06b5926d55d24085b295ddbf11cb"},
+    {file = "ansible_runner-2.3.0-py3-none-any.whl", hash = "sha256:884ebadeeb217fc67d68a1c6ce5541b7b020a33d03342b8291ec77e454c61f2f"},
 ]
 anyio = [
     {file = "anyio-3.6.2-py3-none-any.whl", hash = "sha256:fbbe32bd270d2a2ef3ed1c5d45041250284e31fc0a4df4a5a6071842051a51e3"},
