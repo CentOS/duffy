@@ -927,7 +927,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "jsonschema"
-version = "4.16.0"
+version = "4.17.0"
 description = "An implementation of JSON Schema validation for Python"
 category = "dev"
 optional = false
@@ -1650,7 +1650,7 @@ name = "pytz"
 version = "2022.6"
 description = "World timezone definitions, modern and historical"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 
 [[package]]
@@ -2731,8 +2731,8 @@ jmespath = [
     {file = "jmespath-1.0.1.tar.gz", hash = "sha256:90261b206d6defd58fdd5e85f478bf633a2901798906be2ad389150c5c60edbe"},
 ]
 jsonschema = [
-    {file = "jsonschema-4.16.0-py3-none-any.whl", hash = "sha256:9e74b8f9738d6a946d70705dc692b74b5429cd0960d58e79ffecfc43b2221eb9"},
-    {file = "jsonschema-4.16.0.tar.gz", hash = "sha256:165059f076eff6971bae5b742fc029a7b4ef3f9bcf04c14e4776a7605de14b23"},
+    {file = "jsonschema-4.17.0-py3-none-any.whl", hash = "sha256:f660066c3966db7d6daeaea8a75e0b68237a48e51cf49882087757bb59916248"},
+    {file = "jsonschema-4.17.0.tar.gz", hash = "sha256:5bfcf2bca16a087ade17e02b282d34af7ccd749ef76241e7f9bd7c0cb8a9424d"},
 ]
 keyring = [
     {file = "keyring-23.11.0-py3-none-any.whl", hash = "sha256:3dd30011d555f1345dec2c262f0153f2f0ca6bca041fb1dc4588349bb4c0ac1e"},
