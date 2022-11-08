@@ -61,7 +61,7 @@ ansible-core = ">=2.13.5,<2.14.0"
 
 [[package]]
 name = "ansible-core"
-version = "2.13.5"
+version = "2.13.6"
 description = "Radically simple IT automation"
 category = "dev"
 optional = false
@@ -120,7 +120,7 @@ name = "asttokens"
 version = "2.1.0"
 description = "Annotate AST trees with source code positions"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 
 [package.dependencies]
@@ -591,7 +591,7 @@ name = "executing"
 version = "1.2.0"
 description = "Get the currently executing AST node of a frame, and other information"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 
 [package.extras]
@@ -1382,7 +1382,7 @@ name = "pure-eval"
 version = "0.2.2"
 description = "Safely evaluate AST nodes without side effects"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 
 [package.extras]
@@ -1856,7 +1856,7 @@ name = "stack-data"
 version = "0.6.0"
 description = "Extract data from python stack frames and tracebacks for informative displays"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 
 [package.dependencies]
@@ -2149,8 +2149,8 @@ ansible = [
     {file = "ansible-6.5.0.tar.gz", hash = "sha256:7c0cdcd1121a5f12ab2da4bdd2e14c2c153e01214bfc6a6bc156b61bd7401c5b"},
 ]
 ansible-core = [
-    {file = "ansible-core-2.13.5.tar.gz", hash = "sha256:26dcd9218d5544cc15144f60bb5b634f2276e476c89f481b3f619c4f9def1588"},
-    {file = "ansible_core-2.13.5-py3-none-any.whl", hash = "sha256:3d2503ede324e0e73051b14e77f732a3cb0aed2437f94608af53929d2d1d54c8"},
+    {file = "ansible-core-2.13.6.tar.gz", hash = "sha256:31fe322b63290674a8f7386110df501f0044aa44890be3ab313a6e225b9a29cf"},
+    {file = "ansible_core-2.13.6-py3-none-any.whl", hash = "sha256:e31fd550a5ea9423f1fc1391de6b41bb0d264a83bbfc9c7edfef0f78b7624fd3"},
 ]
 ansible-runner = [
     {file = "ansible-runner-2.2.1.tar.gz", hash = "sha256:cd9b6cb1174011b4e2e0a5993d4d04d928cde5fe22a8993aed4438493387c182"},
