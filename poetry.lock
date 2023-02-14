@@ -3333,14 +3333,14 @@ sortedcontainers = "*"
 
 [[package]]
 name = "trove-classifiers"
-version = "2022.12.1"
+version = "2023.2.8"
 description = "Canonical source for classifiers on PyPI (pypi.org)."
 category = "dev"
 optional = false
 python-versions = "*"
 files = [
-    {file = "trove-classifiers-2022.12.1.tar.gz", hash = "sha256:8eccd9c075038ef2ec73276e2422d0dbf4d632f9133f029632d0df35374caf77"},
-    {file = "trove_classifiers-2022.12.1-py3-none-any.whl", hash = "sha256:20ce6feeadd5793718b2106f0c832f821f29838aec792143e620b0a0a0a810b8"},
+    {file = "trove-classifiers-2023.2.8.tar.gz", hash = "sha256:3b6960fb96c1d4cc9988bdc1b90bcd65fcf5d9843d884dfc86bd674ff81a4dea"},
+    {file = "trove_classifiers-2023.2.8-py3-none-any.whl", hash = "sha256:3aff899dd9792c4d095740980a5967eb98094ff881faf0b29afc775b75aaaac6"},
 ]
 
 [[package]]
