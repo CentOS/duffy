@@ -3,7 +3,7 @@
   "extends": [
     "config:base",
     "group:allNonMajor",
-    "schedule:weekdays",
+    "schedule:nonOfficeHours",
     ":maintainLockFilesWeekly",
     ":separateMultipleMajorReleases",
     ":automergeMinor",
