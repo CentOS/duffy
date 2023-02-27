@@ -63,7 +63,6 @@ ansible = "^5.2 || ^6 || ^7.0.0"
 ansible-core = "^2.12.1"
 ansible-runner = "^2.1.1"
 black = ">=21.9b0"
-fastapi = {version = ">=0.70, <2", extras = ["test"]}
 flake8 = ">=3.9.2"
 httpx = ">=0.18.2, <2"
 isort = "^5.9.3"
