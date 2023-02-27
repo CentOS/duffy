@@ -52,7 +52,7 @@ class Tenant(Base, CreatableMixin, RetirableMixin):
     @effective_node_quota.expression
     def effective_node_quota(cls):
         return case(
-            [(cls.node_quota != None, cls.node_quota)],  # noqa: E711
+            (cls.node_quota != None, cls.node_quota),  # noqa: E711
             else_=_defaults_config().node_quota,
         )
 
@@ -66,7 +66,7 @@ class Tenant(Base, CreatableMixin, RetirableMixin):
     @effective_session_lifetime.expression
     def effective_session_lifetime(cls):
         return case(
-            [(cls.session_lifetime != None, cls.session_lifetime)],  # noqa: E711
+            (cls.session_lifetime != None, cls.session_lifetime),  # noqa: E711
             else_=_defaults_config().session_lifetime,
         )
 
@@ -80,6 +80,6 @@ class Tenant(Base, CreatableMixin, RetirableMixin):
     @effective_session_lifetime_max.expression
     def effective_session_lifetime_max(cls):
         return case(
-            [(cls.session_lifetime_max != None, cls.session_lifetime_max)],  # noqa: E711
+            (cls.session_lifetime_max != None, cls.session_lifetime_max),  # noqa: E711
             else_=_defaults_config().session_lifetime_max,
         )
