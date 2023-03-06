@@ -4,14 +4,15 @@
     "config:base",
     "group:allNonMajor",
     "schedule:nonOfficeHours",
-    ":maintainLockFilesWeekly",
     ":separateMultipleMajorReleases",
     ":automergeMinor",
     ":gitSignOff"
   ],
   "lockFileMaintenance": {
+    "enabled": true,
     "extends": [
-      "group:allNonMajor"
+      "group:allNonMajor",
+      "schedule:daily"
     ],
     "commitMessageAction": "Update"
   },
