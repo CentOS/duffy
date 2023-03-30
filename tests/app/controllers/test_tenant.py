@@ -19,7 +19,6 @@ from . import BaseTestController
 
 @pytest.mark.duffy_config(example_config=True, clear=True)
 class TestTenant(BaseTestController):
-
     name = "tenant"
     path = "/api/v1/tenants"
     attrs = {

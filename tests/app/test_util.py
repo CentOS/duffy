@@ -25,7 +25,6 @@ def mock_config_get(key, *args, **kwargs):
 @pytest.mark.parametrize("with_param", (False, True))
 @mock.patch("duffy.app.util.config_get", mock_config_get)
 async def test_config_retry_context(with_param):
-
     if with_param:
         retry = ConfigRetryContext(no_attempts=4)
     else:

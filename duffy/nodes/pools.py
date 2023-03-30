@@ -9,7 +9,6 @@ from .mechanisms import Mechanism
 
 
 class NodePool(dict):
-
     subcls_per_cls_type: Dict[str, type] = {}
     known_pools: Dict[str, "NodePool"] = {}
 

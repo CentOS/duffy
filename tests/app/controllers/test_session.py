@@ -30,7 +30,6 @@ from . import BaseTestController
 @pytest.mark.duffy_config(example_config=True)
 @mock.patch("duffy.app.controllers.session.fill_pools", new=mock.MagicMock())
 class TestSession(BaseTestController):
-
     name = "session"
     path = "/api/v1/sessions"
     attrs = {
@@ -108,7 +107,6 @@ class TestSession(BaseTestController):
 @pytest.mark.duffy_config(example_config=True)
 @pytest.mark.usefixtures("db_async_test_data", "db_async_model_initialized")
 class TestSessionWorkflow:
-
     path = "/api/v1/sessions"
 
     nodes_specs = [

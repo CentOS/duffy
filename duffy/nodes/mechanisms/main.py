@@ -11,7 +11,6 @@ class MechanismFailure(Exception):
 
 
 class Mechanism(dict):
-
     known_mechanisms: Dict[str, "Mechanism"] = {}
 
     def __init_subclass__(cls, mech_type: str, **kwargs):

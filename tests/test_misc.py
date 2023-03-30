@@ -35,7 +35,6 @@ class _BaseTestTimeDelta:
 
 
 class TestAPITimeDelta(_BaseTestTimeDelta):
-
     cls_to_test = APITimeDelta
 
     input_to_expected = {
@@ -56,7 +55,6 @@ class TestAPITimeDelta(_BaseTestTimeDelta):
 
 
 class TestConfigTimeDelta(_BaseTestTimeDelta):
-
     cls_to_test = ConfigTimeDelta
 
     input_to_expected = {

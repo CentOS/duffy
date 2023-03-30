@@ -5,7 +5,6 @@ from . import BaseTestController
 
 
 class TestNode(BaseTestController):
-
     name = "node"
     path = "/api/v1/nodes"
     attrs = {
