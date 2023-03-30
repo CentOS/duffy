@@ -3,6 +3,8 @@ branch = True
 source = duffy
 omit =
 concurrency = greenlet
+plugins =
+  coverage_conditional_plugin
 
 [report]
 precision = 2
@@ -12,3 +14,8 @@ exclude_lines =
     def __repr__
     if TYPE_CHECKING:
 show_missing = True
+
+[coverage_conditional_plugin]
+rules =
+    "'PYTEST_XDIST_WORKER' in os_environ": with-xdist
+    "'PYTEST_XDIST_WORKER' not in os_environ": without-xdist

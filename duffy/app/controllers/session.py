@@ -135,7 +135,7 @@ async def create_session(
     async with SerializationErrorRetryContext() as retry:
         async for attempt in retry.attempts:
             try:
-                if attempt > 1:
+                if attempt > 1:  # pragma: without-xdist
                     tenant = (
                         await db_async_session.execute(select(Tenant).filter_by(id=tenant_id))
                     ).scalar_one()
@@ -183,7 +183,7 @@ async def create_session(
                         )
                         session_nodes.append(session_node)
                         db_async_session.add(session_node)
-            except retry.exceptions as exc:
+            except retry.exceptions as exc:  # pragma: without-xdist
                 retry.process_exception(exc)
                 await db_async_session.rollback()
 

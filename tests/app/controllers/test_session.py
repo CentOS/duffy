@@ -2,6 +2,7 @@ import asyncio
 import datetime as dt
 import functools
 import logging
+import os
 import re
 import uuid
 from contextlib import nullcontext
@@ -243,6 +244,9 @@ class TestSessionWorkflow:
                     assert len(failed_nodes) == 1
                     assert failed_nodes[0].data["error"]["detail"] == "contextualizing node failed"
 
+    @pytest.mark.skipif(
+        "PYTEST_XDIST_WORKER" in os.environ, reason="Doesn’t work reliably with xdist"
+    )
     @pytest.mark.parametrize(
         "testcase", ("success", "success-exact-attempts", "fail-exceed-attempts")
     )
