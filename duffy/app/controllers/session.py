@@ -183,9 +183,13 @@ async def create_session(
                         )
                         session_nodes.append(session_node)
                         db_async_session.add(session_node)
+                await db_async_session.commit()
             except retry.exceptions as exc:  # pragma: without-xdist
                 retry.process_exception(exc)
                 await db_async_session.rollback()
+
+    # Sort the nodes so this one and dependent lists can be reloaded in one go.
+    nodes_in_transaction = sorted(nodes_in_transaction, key=lambda node: node.id)
 
     contextualized_ipaddrs = await contextualize(
         nodes=[node.ipaddr for node in nodes_in_transaction], ssh_pubkey=tenant.ssh_key
@@ -201,7 +205,12 @@ async def create_session(
         nodes_to_decontextualize = []
         for node, ipaddr in zip(nodes_in_transaction, contextualized_ipaddrs):
             if not ipaddr:
-                log.error("    id: %s hostname: %s ipaddr: %s", node.id, node.hostname, node.ipaddr)
+                log.error(
+                    "    id: %s hostname: %s ipaddr: %s",
+                    node.id,
+                    node.hostname,
+                    node.ipaddr,
+                )
                 node.fail("contextualizing node failed")
             else:
                 nodes_to_decontextualize.append(node)
@@ -210,18 +219,36 @@ async def create_session(
             nodes=[node.ipaddr for node in nodes_to_decontextualize]
         )
 
-        if None in decontextualized_ipaddrs:
-            log.error("One or more nodes couldn't be decontextualized:")
-            for node, ipaddr in zip(nodes_to_decontextualize, decontextualized_ipaddrs):
-                if not ipaddr:
-                    log.error(
-                        "    id: %s hostname: %s ipaddr: %s", node.id, node.hostname, node.ipaddr
+        async with SerializationErrorRetryContext() as retry:
+            async for attempt in retry.attempts:
+                if attempt > 1:  # pragma: without-xdist
+                    nodes_to_decontextualize = (
+                        (
+                            await db_async_session.execute(
+                                select(Node)
+                                .filter(Node.id.in_(node.id for node in nodes_to_decontextualize))
+                                .order_by(Node.id.asc())
+                            )
+                        )
+                        .scalars()
+                        .all()
                     )
-                    node.fail("decontextualizing node failed")
-                else:
-                    node.state = NodeState.ready
 
-        await db_async_session.flush()
+                if None in decontextualized_ipaddrs:
+                    log.error("One or more nodes couldn't be decontextualized:")
+                    for node, ipaddr in zip(nodes_to_decontextualize, decontextualized_ipaddrs):
+                        if not ipaddr:
+                            log.error(
+                                "    id: %s hostname: %s ipaddr: %s",
+                                node.id,
+                                node.hostname,
+                                node.ipaddr,
+                            )
+                            node.fail("decontextualizing node failed")
+                        else:
+                            node.state = NodeState.ready
+
+                await db_async_session.flush()
 
         # Some nodes are out of circulation, fill up pools.
         fill_pools.delay(pool_names=list(pools_to_fill_up)).forget()
@@ -233,27 +260,32 @@ async def create_session(
             status_code=HTTP_503_SERVICE_UNAVAILABLE,
             headers={"Retry-After": "0"},
         )
-    else:  # None not in contextualized_ipaddrs
-        for node in nodes_in_transaction:
-            node.state = NodeState.deployed
 
-    # Meh. Reload the session instance to ensure all related objects are present in the session.
-    await db_async_session.flush()
-    session = (
-        await db_async_session.execute(
-            select(Session)
-            .filter_by(id=session.id)
-            .options(
-                selectinload(Session.tenant),
-                selectinload(Session.session_nodes).selectinload(SessionNode.node),
-            )
-        )
-    ).scalar_one()
+    # None not in contextualized_ipaddrs -> carry on
+    async with SerializationErrorRetryContext() as retry:
+        async for attempt in retry.attempts:
+            for node in nodes_in_transaction:
+                node.state = NodeState.deployed
 
-    try:
-        await db_async_session.flush()
-    except IntegrityError as exc:  # pragma: no cover
-        raise HTTPException(HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
+            # Meh. Reload the session instance to ensure all related objects are present in the
+            # session.
+            await db_async_session.flush()
+
+            session = (
+                await db_async_session.execute(
+                    select(Session)
+                    .filter_by(id=session.id)
+                    .options(
+                        selectinload(Session.tenant),
+                        selectinload(Session.session_nodes).selectinload(SessionNode.node),
+                    )
+                )
+            ).scalar_one()
+
+            try:
+                await db_async_session.commit()
+            except IntegrityError as exc:  # pragma: no cover
+                raise HTTPException(HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
 
     # Tell backend worker to fill up pools from which nodes were taken.
     fill_pools.delay(pool_names=list(pools_to_fill_up)).forget()
