@@ -76,7 +76,7 @@ pytest-cov = "^3 || ^4"
 pytest-isort = ">=2"
 tox = "^3.24.4 || ^4.0.0"
 psycopg = "^3.0.16"
-pytest-postgresql = "^4.1.1"
+pytest-postgresql = "^4.1.1 || ^5.0.0"
 coverage-conditional-plugin = "^0.8.0"
 
 [tool.poetry.extras]
