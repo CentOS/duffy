@@ -2558,24 +2558,22 @@ pytest = ">=5.0"
 
 [[package]]
 name = "pytest-postgresql"
-version = "4.1.1"
+version = "5.0.0"
 description = "Postgresql fixtures and fixture factories for Pytest."
 category = "dev"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "pytest-postgresql-4.1.1.tar.gz", hash = "sha256:144d6af4000641decb1f0e8025d9bfdd4a0572f418c5fec7ef409b51b991295d"},
-    {file = "pytest_postgresql-4.1.1-py3-none-any.whl", hash = "sha256:e4fca93189ce7e4f306ed5974cd5fdbb988f6b18ea51d12465dd301fcace933f"},
+    {file = "pytest-postgresql-5.0.0.tar.gz", hash = "sha256:22edcbafab8995ee85b8d948ddfaad4f70c2c7462303d7477ecd2f77fc9d15bd"},
+    {file = "pytest_postgresql-5.0.0-py3-none-any.whl", hash = "sha256:6e8f0773b57c9b8975b6392c241b7b81b7018f32079a533f368f2fbda732ecd3"},
 ]
 
 [package.dependencies]
-mirakuru = ">=2.3.0"
-port-for = "*"
-pytest = ">=6.2.0"
+mirakuru = "*"
+port-for = ">=0.6.0"
+psycopg = ">=3.0.0"
+pytest = ">=6.2"
 setuptools = "*"
-
-[package.extras]
-tests = ["pytest-cov", "pytest-xdist"]
 
 [[package]]
 name = "python-daemon"
@@ -3373,4 +3371,4 @@ tasks = ["Jinja2", "aiodns", "ansible-runner", "celery", "jmespath", "pottery"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "8e90acb82ac34e2c043acf8ccd7fe0742852ab4c0c7f4ef610e03ae15d1c625b"
+content-hash = "bfe40a721f208781ebe3b7ec15c72e8c573621f26cf13b95828e2989430d5e53"
