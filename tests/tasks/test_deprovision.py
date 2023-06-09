@@ -101,7 +101,7 @@ def test_deprovision_pool_nodes(testcase, test_mechanism, db_sync_session, caplo
     ) as fill_pools, mock.patch(
         "duffy.tasks.deprovision.decontextualize"
     ) as decontextualize, caplog.at_level(
-        "DEBUG"
+        "DEBUG", "duffy"
     ):
         if "mechanism-failure" not in testcase:
             if not real_playbook:

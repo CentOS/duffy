@@ -1,4 +1,3 @@
-import logging
 from contextlib import nullcontext
 from typing import List, Tuple, Union
 from unittest import mock
@@ -66,7 +65,7 @@ class TestRetryContext:
     @pytest.mark.parametrize("testcase", ("success", "exhausted"))
     @mock.patch("duffy.util.time.sleep")
     def test_sync(self, sleep, testcase, caplog):
-        caplog.set_level(logging.DEBUG)
+        caplog.set_level("DEBUG", "duffy")
         if testcase == "success":
             limit = 3
             expectation = nullcontext()

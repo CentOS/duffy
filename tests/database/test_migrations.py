@@ -44,7 +44,7 @@ class TestAlembicMigration:
     def test_create(self, _get_current, alembic_command, autogenerate, caplog):
         comment = "BOOP"
 
-        with caplog.at_level("DEBUG"):
+        with caplog.at_level("DEBUG", "duffy"):
             alembic_migration.create(comment, autogenerate)
 
         alembic_command.revision.assert_called_once_with(
