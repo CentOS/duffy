@@ -1,7 +1,6 @@
 import asyncio
 import datetime as dt
 import functools
-import logging
 import os
 import re
 import uuid
@@ -286,7 +285,7 @@ class TestSessionWorkflow:
             no_concurrency = 4
             no_attempts = 5
 
-        with caplog.at_level(logging.DEBUG), fuzz_context_wrapper, expectation:
+        with caplog.at_level("DEBUG", "duffy"), fuzz_context_wrapper, expectation:
             responses = await asyncio.gather(
                 *(
                     client.post(

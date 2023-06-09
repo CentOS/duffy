@@ -153,7 +153,7 @@ def test_provision_nodes_into_pool(reuse_nodes, testcase, foo_pool, db_sync_sess
     ) as pool_mech_provision, mock.patch.object(
         provision, "_node_lookup_hostname_from_ipaddr", wraps=_fake_lookup
     ) as _node_lookup_hostname_from_ipaddr, caplog.at_level(
-        "DEBUG"
+        "DEBUG", "duffy"
     ), expectation:
         if "mechanism-failure" in testcase:
             pool_provision.side_effect = MechanismFailure()
@@ -344,7 +344,7 @@ def test_fill_single_pool(
 
     with mock.patch(
         "duffy.tasks.provision.provision_nodes_into_pool"
-    ) as provision_nodes_into_pool, caplog.at_level("DEBUG"), expectation:
+    ) as provision_nodes_into_pool, caplog.at_level("DEBUG", "duffy"), expectation:
         provision.fill_single_pool(pool_name)
 
     if testcase == "unknown-pool":
