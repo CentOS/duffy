@@ -38,7 +38,7 @@ classifiers = [
 python = "^3.8"
 click = "^8.0.3"
 PyYAML = "^6"
-SQLAlchemy = {version = "^1.4.25 || ^2.0.5", extras=["asyncio"], optional = true}
+SQLAlchemy = {version = "^2.0.5", extras=["asyncio"], optional = true}
 alembic = {version = "^1.7.5", optional = true}
 bcrypt = {version = "^3.2 || ^4", optional = true}
 fastapi = {version = ">=0.70, <2", optional = true}
