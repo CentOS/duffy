@@ -53,7 +53,7 @@ jmespath = {version = ">=0.10, <2", optional = true}
 pottery = {version = "^3", optional = true}
 psycopg2 = {version = "^2.9.2", optional = true}
 aiodns = {version = "^3.0.0", optional = true}
-pydantic = ">=1.6.2"
+pydantic = ">=1.6.2, <2"
 aiosqlite = {version = ">=0.17.0, <2", optional = true}
 pyxdg = ">=0.27, <2"
 
