@@ -10,10 +10,10 @@ from ..types import NodeState
 from ..util import CreatableMixin, RetirableMixin
 from .session import Session
 
-
 INDEX_UNIQUENESS_CLAUSE = and_(
     Column("retired_at") == None,  # noqa: E711
     Column("state") != "provisioning",
+    Column("state") != "failed",
 )
 
 
