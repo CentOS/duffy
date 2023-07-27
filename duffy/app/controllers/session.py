@@ -265,6 +265,10 @@ async def create_session(
     async with SerializationErrorRetryContext() as retry:
         async for attempt in retry.attempts:
             for node in nodes_in_transaction:
+                # reload the node object to be on the safe side
+                node = (
+                    await db_async_session.execute(select(Node).filter_by(id=node.id))
+                ).scalar_one()
                 node.state = NodeState.deployed
 
             # Meh. Reload the session instance to ensure all related objects are present in the
@@ -285,6 +289,10 @@ async def create_session(
             try:
                 await db_async_session.commit()
             except IntegrityError as exc:  # pragma: no cover
+                if attempt < retry.no_attempts:
+                    # re-raise to retry
+                    raise
+
                 raise HTTPException(HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
 
     # Tell backend worker to fill up pools from which nodes were taken.
