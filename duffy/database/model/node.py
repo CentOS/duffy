@@ -11,27 +11,28 @@ from ..util import CreatableMixin, RetirableMixin
 from .session import Session
 
 
-class Node(Base, CreatableMixin, RetirableMixin):
-    index_uniqueness_clause = and_(
-        Column("retired_at") == None,  # noqa: E711
-        Column("state") != "provisioning",
-    )
+INDEX_UNIQUENESS_CLAUSE = and_(
+    Column("retired_at") == None,  # noqa: E711
+    Column("state") != "provisioning",
+)
 
+
+class Node(Base, CreatableMixin, RetirableMixin):
     __tablename__ = "nodes"
     __table_args__ = (
         Index(
             "active_hostname_index",
             "hostname",
             unique=True,
-            sqlite_where=index_uniqueness_clause,
-            postgresql_where=index_uniqueness_clause,
+            sqlite_where=INDEX_UNIQUENESS_CLAUSE,
+            postgresql_where=INDEX_UNIQUENESS_CLAUSE,
         ),
         Index(
             "active_ipaddr_index",
             "ipaddr",
             unique=True,
-            sqlite_where=index_uniqueness_clause,
-            postgresql_where=index_uniqueness_clause,
+            sqlite_where=INDEX_UNIQUENESS_CLAUSE,
+            postgresql_where=INDEX_UNIQUENESS_CLAUSE,
         ),
     )
 
