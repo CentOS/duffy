@@ -31,13 +31,13 @@ docs = ["sphinx (==6.1.3)", "sphinx-mdinclude (==0.5.3)"]
 
 [[package]]
 name = "alembic"
-version = "1.11.1"
+version = "1.11.2"
 description = "A database migration tool for SQLAlchemy."
 optional = true
 python-versions = ">=3.7"
 files = [
-    {file = "alembic-1.11.1-py3-none-any.whl", hash = "sha256:dc871798a601fab38332e38d6ddb38d5e734f60034baeb8e2db5b642fccd8ab8"},
-    {file = "alembic-1.11.1.tar.gz", hash = "sha256:6a810a6b012c88b33458fceb869aef09ac75d6ace5291915ba7fae44de372c01"},
+    {file = "alembic-1.11.2-py3-none-any.whl", hash = "sha256:7981ab0c4fad4fe1be0cf183aae17689fe394ff874fd2464adb774396faf0796"},
+    {file = "alembic-1.11.2.tar.gz", hash = "sha256:678f662130dc540dac12de0ea73de9f89caea9dbea138f60ef6263149bf84657"},
 ]
 
 [package.dependencies]
@@ -2698,13 +2698,13 @@ ocsp = ["cryptography (>=36.0.1)", "pyopenssl (==20.0.1)", "requests (>=2.26.0)"
 
 [[package]]
 name = "referencing"
-version = "0.30.0"
+version = "0.30.1"
 description = "JSON Referencing + Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "referencing-0.30.0-py3-none-any.whl", hash = "sha256:c257b08a399b6c2f5a3510a50d28ab5dbc7bbde049bcaf954d43c446f83ab548"},
-    {file = "referencing-0.30.0.tar.gz", hash = "sha256:47237742e990457f7512c7d27486394a9aadaf876cbfaa4be65b27b4f4d47c6b"},
+    {file = "referencing-0.30.1-py3-none-any.whl", hash = "sha256:185d4a29f001c6e8ae4dad3861e61282a81cb01b9f0ef70a15450c45c6513a0d"},
+    {file = "referencing-0.30.1.tar.gz", hash = "sha256:9370c77ceefd39510d70948bbe7375ce2d0125b9c11fd380671d4de959a8e3ce"},
 ]
 
 [package.dependencies]
