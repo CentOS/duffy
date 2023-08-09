@@ -229,17 +229,23 @@ def test_deprovision_nodes(
     known_ids = []
     unknown_ids = []
     with db_sync_session.begin():
-        # create some node objects for testing
+        # Create some node objects for testing, mark some of them "contextualizing" to check that
+        # they get caught, too.
         nodes = [
-            Node(id=id, state="deployed", pool="odd" if id % 2 else "even") for id in range(1, 6)
+            Node(
+                id=id,
+                state="deployed" if id < 4 else "contextualizing",
+                pool="odd" if id % 2 else "even"
+            )
+            for id in range(1, 6)
         ]
         if "unknown-ids" in testcase:
-            # ensure one isn't deployed
-            nodes[2].state = "ready"
+            # ensure one can’t be deprovisioned
+            nodes[2].state = "failed"
         if "unknown-pool" in testcase:
             nodes[1].pool = "barf"
         for node in nodes:
-            if node.state == "deployed":
+            if node.state not in ("deprovisioning", "failed", "done"):
                 known_ids.append(node.id)
             else:
                 unknown_ids.append(node.id)
@@ -286,7 +292,7 @@ def test_deprovision_nodes(
     assert node_ids_by_pool.keys() == found_pool_names
 
     if "unknown-ids" in testcase:
-        assert f"Didn't find deployed nodes with ids: {unknown_ids}" in caplog.messages
+        assert f"Didn't find nodes to deprovision with ids: {unknown_ids}" in caplog.messages
     else:
         assert all("Didn't find deployed nodes with ids:" not in m for m in caplog.messages)
 
