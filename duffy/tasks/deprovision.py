@@ -41,8 +41,13 @@ def deprovision_pool_nodes(self, pool_name: str, node_ids: List[int]):
             nodes = (
                 db_sync_session.execute(
                     select(Node)
-                    .filter_by(active=True, pool=pool_name, state=NodeState.deployed)
-                    .filter(Node.id.in_(node_ids))
+                    .filter_by(active=True, pool=pool_name)
+                    .filter(
+                        Node.id.in_(node_ids),
+                        Node.state.not_in(
+                            (NodeState.deprovisioning, NodeState.failed, NodeState.done)
+                        ),
+                    ),
                 )
                 .scalars()
                 .all()
@@ -61,7 +66,7 @@ def deprovision_pool_nodes(self, pool_name: str, node_ids: List[int]):
 
         if not_found_node_ids:
             log.warning(
-                "[%s] Didn't find deployed nodes with ids: %s", pool_name, not_found_node_ids
+                "[%s] Didn't find nodes to deprovision with ids: %s", pool_name, not_found_node_ids
             )
 
         log.debug("[%s] Attempting to deprovision nodes: %r", pool_name, found_node_ids)
@@ -145,14 +150,16 @@ def deprovision_nodes(node_ids: List[int]):
     pools_node_ids = defaultdict(list)
 
     with sync_session_maker() as db_sync_session, db_sync_session.begin():
-        # First, find the -- active, deployed -- nodes with the supplied ids, sort them by their
-        # pools and change their state to 'deprovisioning', then kick off sub tasks which
-        # deprovision all nodes that belong to the same pool.
+        # First, find the active nodes with the supplied ids and sort them by their pools, then kick
+        # off sub tasks which deprovision all nodes that belong to the same pool.
         nodes = (
             db_sync_session.execute(
                 select(Node)
-                .filter_by(active=True, state=NodeState.deployed)
-                .filter(Node.id.in_(node_ids))
+                .filter_by(active=True)
+                .filter(
+                    Node.id.in_(node_ids),
+                    Node.state.not_in((NodeState.deprovisioning, NodeState.failed, NodeState.done)),
+                ),
             )
             .scalars()
             .all()
@@ -162,7 +169,7 @@ def deprovision_nodes(node_ids: List[int]):
         not_found_node_ids = sorted(set(node_ids) - found_node_ids)
 
         if not_found_node_ids:
-            log.warning("Didn't find deployed nodes with ids: %s", not_found_node_ids)
+            log.warning("Didn't find nodes to deprovision with ids: %s", not_found_node_ids)
 
         for node in nodes:
             try:
