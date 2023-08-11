@@ -2,12 +2,14 @@ import logging
 import sys
 
 from fastapi import FastAPI
+from fastapi.middleware import Middleware
 
 from .. import database, tasks
 from ..exceptions import DuffyConfigurationError
 from ..nodes.pools import NodePool
 from ..version import __version__
 from .controllers import node, pool, session, tenant
+from .middleware import RequestIdMiddleware
 
 log = logging.getLogger(__name__)
 
@@ -30,6 +32,7 @@ app = FastAPI(
     version=__version__,
     contact={"name": "CentOS CI", "email": "ci-sysadmin@centos.org"},
     openapi_tags=tags_metadata,
+    middleware=[Middleware(RequestIdMiddleware)],
 )
 
 

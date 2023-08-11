@@ -1,3 +1,4 @@
+import uuid
 from contextlib import nullcontext
 from typing import Iterator
 from unittest import mock
@@ -481,3 +482,14 @@ class TestMain:
             auth = TEST_CRED.username, TEST_CRED.password
 
         apiv1_client.get.assert_awaited_with(f"{dest}/api/v1/sessions", auth=auth)
+
+    async def test_request_id(self, client):
+        response1 = await client.get("/")
+        uuid1 = uuid.UUID(response1.headers["X-Request-Id"])
+        assert uuid1.version == 4
+
+        response2 = await client.get("/")
+        uuid2 = uuid.UUID(response2.headers["X-Request-Id"])
+        assert uuid2.version == 4
+
+        assert uuid1 != uuid2
