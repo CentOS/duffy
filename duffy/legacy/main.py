@@ -4,6 +4,7 @@ from typing import Dict, Optional
 import httpx
 import jinja2
 from fastapi import Depends, FastAPI
+from fastapi.middleware import Middleware
 from fastapi.responses import JSONResponse
 from starlette.status import (
     HTTP_200_OK,
@@ -12,6 +13,7 @@ from starlette.status import (
     HTTP_403_FORBIDDEN,
 )
 
+from ..app.middleware import RequestIdMiddleware
 from ..configuration import config
 from ..configuration.validation import LegacyPoolMapModel
 from ..version import __version__
@@ -32,6 +34,7 @@ app = FastAPI(
     description=description,
     version=__version__,
     contact={"name": "CentOS CI", "email": "ci-sysadmin@centos.org"},
+    middleware=[Middleware(RequestIdMiddleware)],
 )
 
 
