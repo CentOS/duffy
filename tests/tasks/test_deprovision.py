@@ -235,7 +235,7 @@ def test_deprovision_nodes(
             Node(
                 id=id,
                 state="deployed" if id < 4 else "contextualizing",
-                pool="odd" if id % 2 else "even"
+                pool="odd" if id % 2 else "even",
             )
             for id in range(1, 6)
         ]
