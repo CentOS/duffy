@@ -61,6 +61,7 @@ class TestRetryContext:
             assert retry.delay_max == 3
             assert retry.delay_backoff_factor == 4
             assert retry.delay_add_fuzz == 5
+            assert retry.exception_wrapper is None
 
             assert repr(retry) == (
                 f"RetryContext(exceptions={retry.exceptions}, no_attempts={retry.no_attempts})"
@@ -161,3 +162,31 @@ class TestRetryContext:
         else:
             assert result is None
             assert sleep.call_count == 0
+
+    @pytest.mark.parametrize("testcase", ("wrap", "nowrap"))
+    def test_wrapping_exception(self, testcase):
+        kwargs = {
+            "exceptions": RuntimeError,
+            "no_attempts": 1,
+            "delay_min": 0,
+            "delay_max": 0,
+            "delay_backoff_factor": 1,
+            "delay_add_fuzz": 0,
+        }
+
+        if testcase == "nowrap":
+            expected_exception = RuntimeError
+        else:
+            expected_exception = ValueError
+            kwargs["exception_wrapper"] = lambda exc: ValueError(str(exc))
+
+        with pytest.raises(expected_exception) as excinfo:
+            with RetryContext(**kwargs) as retry:
+                for attempt in retry.attempts:
+                    try:
+                        raise RuntimeError("Boo!")
+                    except retry.exceptions as exc:
+                        retry.process_exception(exc)
+
+        assert type(excinfo.value) is expected_exception
+        assert str(excinfo.value) == "Boo!"
