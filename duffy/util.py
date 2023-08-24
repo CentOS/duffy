@@ -131,6 +131,15 @@ class RetryContext:
         if delay_add_fuzz is not None:
             self.delay_add_fuzz = delay_add_fuzz
 
+    def __repr__(self):
+        pieces = [
+            f"{name}={value!r}"
+            for name in ("exceptions", "no_attempts")
+            for value in (getattr(self, name),)
+            if value is not None
+        ]
+        return f"{type(self).__name__}({', '.join(pieces)})"
+
     def __enter__(self):
         self._is_async = False
         self._exc = None
