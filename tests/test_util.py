@@ -62,6 +62,10 @@ class TestRetryContext:
             assert retry.delay_backoff_factor == 4
             assert retry.delay_add_fuzz == 5
 
+            assert repr(retry) == (
+                f"RetryContext(exceptions={retry.exceptions}, no_attempts={retry.no_attempts})"
+            )
+
     @pytest.mark.parametrize("testcase", ("success", "exhausted"))
     @mock.patch("duffy.util.time.sleep")
     def test_sync(self, sleep, testcase, caplog):
