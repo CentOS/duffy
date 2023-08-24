@@ -1,15 +1,14 @@
 import asyncio
 import datetime as dt
-import functools
 import os
 import re
 import uuid
+from collections import defaultdict
 from contextlib import nullcontext
 from unittest import mock
 
 import pytest
 from sqlalchemy import func, select
-from sqlalchemy.exc import DBAPIError
 from starlette.status import (
     HTTP_200_OK,
     HTTP_201_CREATED,
@@ -124,6 +123,7 @@ class TestSessionWorkflow:
             "wrong tenant",
             "contextualizing failure",
             "decontextualizing failure",
+            "decontextualizing exception",
             "quota exceeded",
         ),
     )
@@ -148,10 +148,13 @@ class TestSessionWorkflow:
         contextualize_retval = ["BOOP"] * 20
         decontextualize_retval = ["BOOP"] * 20
 
-        if testcase in ("contextualizing failure", "decontextualizing failure"):
+        if "contextualizing failure" in testcase or "decontextualizing" in testcase:
             contextualize_retval.insert(0, None)
-            if testcase == "decontextualizing failure":
-                decontextualize_retval.insert(1, None)
+            if "decontextualizing" in testcase:
+                if "failure" in testcase:
+                    decontextualize_retval.insert(1, None)
+                elif "exception" in testcase:
+                    decontextualize.side_effect = Exception("BOOP")
 
         contextualize.return_value = contextualize_retval
         decontextualize.return_value = decontextualize_retval
@@ -169,7 +172,7 @@ class TestSessionWorkflow:
 
         # fill_pools should never be called directly, just through .delay()
         fill_pools.assert_not_called()
-        if testcase in ("normal", "contextualizing failure", "decontextualizing failure"):
+        if testcase == "normal" or "failure" in testcase:
             fill_pools.delay.assert_called_once()
             args, kwargs = fill_pools.delay.call_args
             assert args == ()
@@ -219,15 +222,25 @@ class TestSessionWorkflow:
             elif testcase == "quota exceeded":
                 assert response.status_code == HTTP_403_FORBIDDEN
                 assert result["detail"].startswith("quota exceeded:")
-            else:  # testcase in ("contextualizing failure", "decontextualizing failure")
+            else:
+                # testcase in (
+                #     "contextualizing failure",
+                #     "decontextualizing failure",
+                #     "decontextualizing exception",
+                # )
                 assert response.status_code == HTTP_503_SERVICE_UNAVAILABLE
-                assert result["detail"] == "contextualization of nodes failed"
+                if "exception" in testcase:
+                    assert result["detail"] == (
+                        "decontextualizing nodes failed after contextualization failure"
+                    )
+                else:
+                    assert result["detail"] == "contextualization of nodes failed"
                 failed_nodes = (
                     (await db_async_session.execute(select(Node).filter_by(state="failed")))
                     .scalars()
                     .all()
                 )
-                if testcase == "decontextualizing failure":
+                if "decontextualizing failure" in testcase:
                     assert len(failed_nodes) == 2
                     assert any(
                         node.data["error"]["detail"] == "contextualizing node failed"
@@ -237,7 +250,7 @@ class TestSessionWorkflow:
                         node.data["error"]["detail"] == "decontextualizing node failed"
                         for node in failed_nodes
                     )
-                else:
+                else:  # testcase in ("contextualizing failure", "decontextualization exception")
                     assert len(failed_nodes) == 1
                     assert failed_nodes[0].data["error"]["detail"] == "contextualizing node failed"
 
@@ -261,23 +274,25 @@ class TestSessionWorkflow:
         auth_tenant,
         caplog,
     ):
+        node_ids = []
         for node in (await db_async_session.execute(select(Node))).scalars():
             node.pool = "physical-centos8stream-x86_64"
+            node_ids.append(str(node.id))
         await db_async_session.commit()
 
-        if "success" in testcase:
-            expectation = nullcontext()
-        else:
-            expectation = pytest.raises(DBAPIError)
+        SerializationErrorRetryContext = session_module.SerializationErrorRetryContext
 
         if "exceed-attempts" in testcase or "exact-attempts" in testcase:
-            fuzz_context_wrapper = mock.patch.object(
-                session_module,
-                "SerializationErrorRetryContext",
-                functools.partial(session_module.SerializationErrorRetryContext, no_attempts=1),
+            retry_ctx_mock = mock.patch(
+                "duffy.app.controllers.session.SerializationErrorRetryContext"
             )
+
+            def retry_ctx_factory(*args, **kwargs):
+                return SerializationErrorRetryContext(*args, **dict(kwargs, no_attempts=1))
+
         else:
-            fuzz_context_wrapper = nullcontext()
+            retry_ctx_mock = nullcontext()
+            retry_ctx_factory = None
 
         if "exact-attempts" in testcase:
             no_attempts = no_concurrency = 1
@@ -285,7 +300,12 @@ class TestSessionWorkflow:
             no_concurrency = 4
             no_attempts = 5
 
-        with caplog.at_level("DEBUG", "duffy"), fuzz_context_wrapper, expectation:
+        with caplog.at_level("DEBUG", "duffy"), caplog.at_level(
+            "DEBUG", "sqlalchemy"
+        ), retry_ctx_mock as retry_ctx:
+            if retry_ctx_factory:
+                retry_ctx.side_effect = retry_ctx_factory
+
             responses = await asyncio.gather(
                 *(
                     client.post(
@@ -312,6 +332,11 @@ class TestSessionWorkflow:
             )
         else:
             assert "Number of attempts (1) exhausted, re-raising." in caplog.text
+            responses_per_code = defaultdict(set)
+            for response in responses:
+                responses_per_code[response.status_code].add(response)
+            assert len(responses_per_code[HTTP_201_CREATED]) == 1
+            assert len(responses_per_code[HTTP_422_UNPROCESSABLE_ENTITY]) == len(responses) - 1
 
         if "exceed-attempts" in testcase or "exact-attempts" in testcase:
             assert f"Attempt 2 of {no_attempts}" not in caplog.text
