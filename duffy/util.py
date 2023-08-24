@@ -3,7 +3,7 @@ import enum
 import logging
 import time
 from random import random
-from typing import AsyncIterator, Iterator, Tuple, Union
+from typing import AsyncIterator, Callable, Iterator, Optional, Tuple, Union
 
 log = logging.getLogger(__name__)
 
@@ -100,6 +100,7 @@ class RetryContext:
     delay_max: IntOrFloat = 1.6
     delay_backoff_factor: IntOrFloat = 2
     delay_add_fuzz: IntOrFloat = 0.3
+    exception_wrapper: Optional[Callable[[Exception], Exception]] = None
 
     def __init__(
         self,
@@ -110,6 +111,7 @@ class RetryContext:
         delay_max: IntOrFloat = None,
         delay_backoff_factor: IntOrFloat = None,
         delay_add_fuzz: IntOrFloat = None,
+        exception_wrapper: Optional[Callable[[Exception], Exception]] = None,
     ):
         self._is_async = None
 
@@ -130,6 +132,9 @@ class RetryContext:
 
         if delay_add_fuzz is not None:
             self.delay_add_fuzz = delay_add_fuzz
+
+        if exception_wrapper is not None:
+            self.exception_wrapper = exception_wrapper
 
     def __repr__(self):
         pieces = [
@@ -156,6 +161,11 @@ class RetryContext:
     async def __aexit__(self, exc_type, exc_value, traceback):
         pass
 
+    def wrap_exception(self, exc: Exception) -> Exception:
+        if self.exception_wrapper:
+            exc = self.exception_wrapper(exc)
+        return exc
+
     async def _async_attempts(self) -> AsyncIterator[int]:
         delay = self.delay_min
 
@@ -179,7 +189,7 @@ class RetryContext:
             log.warning(
                 "[%r] Number of attempts (%d) exhausted, re-raising.", self, self.no_attempts
             )
-            raise self._exc
+            raise self.wrap_exception(self._exc)
 
     def _sync_attempts(self) -> Iterator[int]:
         # This is the same as _async_attempts, only synchronous
@@ -205,7 +215,7 @@ class RetryContext:
             log.warning(
                 "[%r] Number of attempts (%d) exhausted, re-raising.", self, self.no_attempts
             )
-            raise self._exc
+            raise self.wrap_exception(self._exc)
 
     @property
     def attempts(self) -> Union[AsyncIterator[int], Iterator[int]]:
