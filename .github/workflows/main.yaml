@@ -15,7 +15,7 @@ jobs:
 
       - name: Execute tox
         run: |
-          tox -e black,flake8,isort
+          tox -e black,flake8,isort,poetry
 
   ci-unittests:
     strategy:
