@@ -1,4 +1,7 @@
+from itertools import count
 from typing import Iterator
+from unittest import mock
+from uuid import UUID
 
 import pytest
 from httpx import AsyncClient
@@ -109,3 +112,15 @@ async def client(
 
     async with AsyncClient(app=app, base_url="http://duffy-test.example.com", auth=auth) as client:
         yield client
+
+
+def _gen_fake_uuid():
+    for value in count():
+        yield UUID(f"{value:032}")
+
+
+@pytest.fixture(autouse=True)
+def fake_request_ids(request):
+    with mock.patch("duffy.app.middleware.uuid4") as uuid4:
+        uuid4.side_effect = _gen_fake_uuid()
+        yield

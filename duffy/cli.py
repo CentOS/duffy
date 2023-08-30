@@ -1,5 +1,5 @@
-import copy
 import logging
+import logging.config
 import sys
 from datetime import timedelta
 from pathlib import Path
@@ -27,6 +27,8 @@ try:
 except ImportError:  # pragma: no cover
     shell = None
 
+from .app.logging import RequestIdFilter
+
 try:
     from .client import DuffyClient, DuffyFormatter
 except ImportError:  # pragma: no cover
@@ -53,6 +55,7 @@ from .version import __version__
 
 DEFAULT_CONFIG_LOCATIONS = ("/etc/duffy", f"{xdg.BaseDirectory.xdg_config_home}/duffy")
 DEFAULT_CONFIG_PATHS = tuple(Path(loc) for loc in DEFAULT_CONFIG_LOCATIONS)
+LOGGING_FORMAT = "[%(request_id)s] %(levelname)s %(message)s"
 
 log = logging.getLogger(__name__)
 
@@ -340,16 +343,25 @@ def serve(obj, reload, host, port):
         loglevel = config_app.get("loglevel", "info")
     numeric_loglevel = uvicorn.config.LOG_LEVELS[loglevel.lower()]
 
+    handler = logging.StreamHandler()
+    handler.addFilter(RequestIdFilter())
+    logging.basicConfig(
+        force=True,
+        level=numeric_loglevel,
+        format=LOGGING_FORMAT,
+        handlers=[handler],
+    )
+
+    config_logging = config_app.get("logging")
+    if config_logging:
+        logging.config.dictConfig(config_logging)
+
     # Report for duty
     print(" * Starting Duffy...")
     print(f" * Host address : {host}")
     print(f" * Port number  : {port}")
     print(f" * Log level    : {loglevel}")
     print(f" * Serving API docs on http://{host}:{port}/docs")
-
-    uvicorn_log_config = copy.deepcopy(config_app.get("logging", uvicorn.config.LOGGING_CONFIG))
-    if "duffy" in uvicorn_log_config.get("loggers", {}):
-        uvicorn_log_config["loggers"]["duffy"]["level"] = numeric_loglevel
 
     # Start the show
     uvicorn.run(
@@ -358,7 +370,7 @@ def serve(obj, reload, host, port):
         port=port,
         log_level=numeric_loglevel,
         reload=reload,
-        log_config=uvicorn_log_config,
+        log_config=None,
     )
 
 
@@ -412,6 +424,19 @@ def serve_legacy(obj, reload, host, port, dest):
         loglevel = config_metaclient.get("loglevel", "info")
     numeric_loglevel = uvicorn.config.LOG_LEVELS[loglevel.lower()]
 
+    handler = logging.StreamHandler()
+    handler.addFilter(RequestIdFilter())
+    logging.basicConfig(
+        force=True,
+        level=numeric_loglevel,
+        format=LOGGING_FORMAT,
+        handlers=[handler],
+    )
+
+    config_logging = config_metaclient.get("logging")
+    if config_logging:
+        logging.config.dictConfig(config_logging)
+
     # Report for duty
     print(" * Starting Duffy Metaclient for Legacy Support...")
     print(f" * Host address        : {host}")
@@ -420,12 +445,6 @@ def serve_legacy(obj, reload, host, port, dest):
     print(f" * Log level           : {loglevel}")
     print(f" * Serving API docs on http://{host}:{port}/docs")
 
-    uvicorn_log_config = copy.deepcopy(
-        config_metaclient.get("logging", uvicorn.config.LOGGING_CONFIG)
-    )
-    if "duffy" in uvicorn_log_config.get("loggers", {}):
-        uvicorn_log_config["loggers"]["duffy"]["level"] = numeric_loglevel
-
     # Start the show
     uvicorn.run(
         "duffy.legacy.main:app",
@@ -433,7 +452,7 @@ def serve_legacy(obj, reload, host, port, dest):
         port=port,
         log_level=numeric_loglevel,
         reload=reload,
-        log_config=uvicorn_log_config,
+        log_config=None,
     )
 
 
