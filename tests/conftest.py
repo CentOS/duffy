@@ -12,6 +12,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.asyncio import create_async_engine
 
+from duffy.app.logging import RequestIdFilter
 from duffy.configuration import read_configuration
 from duffy.database import (
     Base,
@@ -293,3 +294,8 @@ def test_mechanism():
         pass
 
     return TestMechanism
+
+
+@pytest.fixture(autouse=True)
+def install_logging_request_id_filter(caplog):
+    caplog.handler.addFilter(RequestIdFilter())
