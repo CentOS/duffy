@@ -64,3 +64,21 @@ class TestRequestIdFilter:
             assert record.short_request_id is None
             assert record.request_id_optional == ""
             assert record.short_request_id_optional == ""
+
+
+@pytest.mark.parametrize("id_set", (True, False), ids=["id-set", "id-unset"])
+def test_request_id_logged_in_tests(id_set, caplog):
+    if id_set:
+        expected = uuid.uuid4()
+        token = request_id_ctxvar.set(expected)
+    else:
+        expected = None
+
+    with caplog.at_level("DEBUG"):
+        logging.debug("BOO")
+
+    if id_set:
+        assert f" [{str(expected)[-12:]}] (" in caplog.text
+        request_id_ctxvar.reset(token)
+    else:
+        assert "[None]" not in caplog.text
