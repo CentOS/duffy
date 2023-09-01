@@ -31,13 +31,13 @@ docs = ["sphinx (==6.1.3)", "sphinx-mdinclude (==0.5.3)"]
 
 [[package]]
 name = "alembic"
-version = "1.11.3"
+version = "1.12.0"
 description = "A database migration tool for SQLAlchemy."
 optional = true
 python-versions = ">=3.7"
 files = [
-    {file = "alembic-1.11.3-py3-none-any.whl", hash = "sha256:d6c96c2482740592777c400550a523bc7a9aada4e210cae2e733354ddae6f6f8"},
-    {file = "alembic-1.11.3.tar.gz", hash = "sha256:3db4ce81a9072e1b5aa44c2d202add24553182672a12daf21608d6f62a8f9cf9"},
+    {file = "alembic-1.12.0-py3-none-any.whl", hash = "sha256:03226222f1cf943deee6c85d9464261a6c710cd19b4fe867a3ad1f25afda610f"},
+    {file = "alembic-1.12.0.tar.gz", hash = "sha256:8e7645c32e4f200675e69f0745415335eb59a3663f5feb487abfa0b30c45888b"},
 ]
 
 [package.dependencies]
@@ -436,13 +436,13 @@ files = [
 
 [[package]]
 name = "celery"
-version = "5.3.1"
+version = "5.3.3"
 description = "Distributed Task Queue."
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "celery-5.3.1-py3-none-any.whl", hash = "sha256:27f8f3f3b58de6e0ab4f174791383bbd7445aff0471a43e99cfd77727940753f"},
-    {file = "celery-5.3.1.tar.gz", hash = "sha256:f84d1c21a1520c116c2b7d26593926581191435a03aa74b77c941b93ca1c6210"},
+    {file = "celery-5.3.3-py3-none-any.whl", hash = "sha256:d65c0be70d0949fcda8893876a071a7cfd9f248f9ad92e1919845e5cbc268db7"},
+    {file = "celery-5.3.3.tar.gz", hash = "sha256:bac90ef99b70b9b5b5d4cfcebf6f1ab5168b86c6120bc7c5814cd8234dfd9381"},
 ]
 
 [package.dependencies]
@@ -452,15 +452,15 @@ click = ">=8.1.2,<9.0"
 click-didyoumean = ">=0.3.0"
 click-plugins = ">=1.1.1"
 click-repl = ">=0.2.0"
-kombu = ">=5.3.1,<6.0"
+kombu = ">=5.3.2,<6.0"
 python-dateutil = ">=2.8.2"
-redis = {version = ">=4.5.2,<4.5.5 || >4.5.5", optional = true, markers = "extra == \"redis\""}
+redis = {version = ">=4.5.2,<4.5.5 || >4.5.5,<5.0.0", optional = true, markers = "extra == \"redis\""}
 tzdata = ">=2022.7"
 vine = ">=5.0.0,<6.0"
 
 [package.extras]
-arangodb = ["pyArango (>=2.0.1)"]
-auth = ["cryptography (==41.0.1)"]
+arangodb = ["pyArango (>=2.0.2)"]
+auth = ["cryptography (==41.0.3)"]
 azureblockblob = ["azure-storage-blob (>=12.15.0)"]
 brotli = ["brotli (>=1.0.0)", "brotlipy (>=0.7.0)"]
 cassandra = ["cassandra-driver (>=3.25.0,<4)"]
@@ -480,7 +480,7 @@ msgpack = ["msgpack (==1.0.5)"]
 pymemcache = ["python-memcached (==1.59)"]
 pyro = ["pyro4 (==4.82)"]
 pytest = ["pytest-celery (==0.0.0)"]
-redis = ["redis (>=4.5.2,!=4.5.5)"]
+redis = ["redis (>=4.5.2,!=4.5.5,<5.0.0)"]
 s3 = ["boto3 (>=1.26.143)"]
 slmq = ["softlayer-messaging (>=1.0.3)"]
 solar = ["ephem (==4.1.4)"]
@@ -1474,13 +1474,13 @@ testing = ["pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)",
 
 [[package]]
 name = "kombu"
-version = "5.3.1"
+version = "5.3.2"
 description = "Messaging library for Python."
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "kombu-5.3.1-py3-none-any.whl", hash = "sha256:48ee589e8833126fd01ceaa08f8a2041334e9f5894e5763c8486a550454551e9"},
-    {file = "kombu-5.3.1.tar.gz", hash = "sha256:fbd7572d92c0bf71c112a6b45163153dea5a7b6a701ec16b568c27d0fd2370f2"},
+    {file = "kombu-5.3.2-py3-none-any.whl", hash = "sha256:b753c9cfc9b1e976e637a7cbc1a65d446a22e45546cd996ea28f932082b7dc9e"},
+    {file = "kombu-5.3.2.tar.gz", hash = "sha256:0ba213f630a2cb2772728aef56ac6883dc3a2f13435e10048f6e97d48506dbbd"},
 ]
 
 [package.dependencies]
