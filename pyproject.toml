@@ -53,9 +53,10 @@ jmespath = {version = ">=0.10,<1 || ^1", optional = true}
 pottery = {version = "^3", optional = true}
 psycopg2 = {version = "^2.9.2", optional = true}
 aiodns = {version = "^3.0.0", optional = true}
-pydantic = "^1.6.2"
+pydantic = "^2.0.3"
 aiosqlite = {version = "^0.17 || ^0.18 || ^0.19", optional = true}
 pyxdg = "^0.27 || ^0.28"
+typing-extensions = "^4.6.1"
 
 [tool.poetry.dev-dependencies]
 Jinja2 = "^3.0.3"

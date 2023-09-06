@@ -8,13 +8,13 @@ from pydantic import (
     AnyHttpUrl,
     AnyUrl,
     BaseModel,
+    ConfigDict,
     Field,
     RedisDsn,
-    confloat,
-    conint,
-    stricturl,
-    validator,
+    UrlConstraints,
+    field_validator,
 )
+from typing_extensions import Annotated
 
 from ..misc import ConfigTimeDelta
 
@@ -38,8 +38,7 @@ class MechanismType(str, Enum):
 
 
 class ConfigBaseModel(BaseModel):
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")
 
 
 class CeleryModel(BaseModel):
@@ -60,14 +59,14 @@ class PeriodicTaskModel(ConfigBaseModel):
 class TasksModel(ConfigBaseModel):
     celery: CeleryModel
     locking: LockingModel
-    periodic: Optional[Dict[str, PeriodicTaskModel]]
+    periodic: Optional[Dict[str, PeriodicTaskModel]] = None
 
 
 class SQLAlchemyModel(BaseModel):
     # This is intentionally not a subclass of ConfigBaseModel, it is passed on to SQLAlchemy's
     # create_engine()/create_async_engine(), i.e. can contain arbitrarily named fields.
-    sync_url: stricturl(tld_required=False, host_required=False)
-    async_url: stricturl(tld_required=False, host_required=False)
+    sync_url: Annotated[AnyUrl, UrlConstraints(host_required=False)]
+    async_url: Annotated[AnyUrl, UrlConstraints(host_required=False)]
 
 
 class DatabaseModel(ConfigBaseModel):
@@ -75,62 +74,64 @@ class DatabaseModel(ConfigBaseModel):
 
 
 class RetriesModel(ConfigBaseModel):
-    no_attempts: Optional[conint(ge=1)] = Field(alias="no-attempts")
-    delay_min: Optional[Union[conint(ge=0), confloat(ge=0)]] = Field(alias="delay-min")
-    delay_max: Optional[Union[conint(ge=0), confloat(ge=0)]] = Field(alias="delay-max")
-    delay_backoff_factor: Optional[Union[conint(ge=1), confloat(ge=1)]] = Field(
-        alias="delay-backoff-factor"
+    no_attempts: Optional[Annotated[int, Field(ge=1)]] = Field(alias="no-attempts", default=None)
+    delay_min: Optional[Union[Annotated[int, Field(ge=0)], Annotated[float, Field(ge=0)]]] = Field(
+        alias="delay-min", default=None
     )
-    delay_add_fuzz: Optional[Union[conint(ge=0), confloat(ge=0)]] = Field(alias="delay-add-fuzz")
+    delay_max: Optional[Union[Annotated[int, Field(ge=0)], Annotated[float, Field(ge=0)]]] = Field(
+        alias="delay-max", default=None
+    )
+    delay_backoff_factor: Optional[
+        Union[Annotated[int, Field(ge=1)], Annotated[float, Field(ge=1)]]
+    ] = Field(alias="delay-backoff-factor", default=None)
+    delay_add_fuzz: Optional[
+        Union[Annotated[int, Field(ge=0)], Annotated[float, Field(ge=0)]]
+    ] = Field(alias="delay-add-fuzz", default=None)
 
 
 class DefaultsModel(ConfigBaseModel):
     session_lifetime: ConfigTimeDelta = Field(alias="session-lifetime")
     session_lifetime_max: ConfigTimeDelta = Field(alias="session-lifetime-max")
-    node_quota: conint(gt=0) = Field(alias="node-quota")
-    retries: Optional[RetriesModel]
+    node_quota: Annotated[int, Field(gt=0)] = Field(alias="node-quota")
+    retries: Optional[RetriesModel] = None
 
 
 class AnsibleMechanismPlaybookModel(ConfigBaseModel):
-    extra_vars: Optional[Dict[str, Any]] = Field(alias="extra-vars")
+    extra_vars: Optional[Dict[str, Any]] = Field(alias="extra-vars", default=None)
     playbook: Path
 
 
 class AnsibleMechanismModel(ConfigBaseModel):
-    topdir: Optional[Path]
-    extra_vars: Optional[Dict[str, Any]] = Field(alias="extra-vars")
-    provision: Optional[AnsibleMechanismPlaybookModel]
-    deprovision: Optional[AnsibleMechanismPlaybookModel]
+    topdir: Optional[Path] = None
+    extra_vars: Optional[Dict[str, Any]] = Field(alias="extra-vars", default=None)
+    provision: Optional[AnsibleMechanismPlaybookModel] = None
+    deprovision: Optional[AnsibleMechanismPlaybookModel] = None
 
 
 class MechanismModel(ConfigBaseModel):
-    type_: Optional[MechanismType] = Field(alias="type")
-    ansible: Optional[AnsibleMechanismModel]
+    type_: Optional[MechanismType] = Field(alias="type", default=None)
+    ansible: Optional[AnsibleMechanismModel] = None
 
 
 class NodePoolsModel(ConfigBaseModel):
-    extends: Optional[str]
-    mechanism: Optional[MechanismModel]
-    fill_level: Optional[conint(gt=0)] = Field(alias="fill-level")
+    extends: Optional[str] = None
+    mechanism: Optional[MechanismModel] = None
+    fill_level: Optional[Annotated[int, Field(gt=0)]] = Field(alias="fill-level", default=None)
     reuse_nodes: Optional[Union[Dict[str, Union[int, str]], Literal[False]]] = Field(
-        alias="reuse-nodes"
+        alias="reuse-nodes", default=None
     )
-    run_parallel: Optional[bool] = Field(alias="run-parallel")
-
-    class Config:
-        extra = "allow"
+    run_parallel: Optional[bool] = Field(alias="run-parallel", default=None)
+    model_config = ConfigDict(extra="allow")
 
 
 class NodePoolsRootModel(ConfigBaseModel):
-    abstract: Optional[Dict[str, NodePoolsModel]]
+    abstract: Optional[Dict[str, NodePoolsModel]] = None
     concrete: Dict[str, NodePoolsModel]
 
 
 class LoggingModel(ConfigBaseModel):
     version: Literal[1]
-
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 class ClientAuthModel(ConfigBaseModel):
@@ -144,20 +145,21 @@ class ClientModel(ConfigBaseModel):
 
 
 class AppModel(ConfigBaseModel):
-    loglevel: Optional[LogLevel]
-    host: Optional[str]
-    port: Optional[conint(gt=0, lt=65536)]
-    logging: Optional[LoggingModel]
-    retries: Optional[RetriesModel]
+    loglevel: Optional[LogLevel] = None
+    host: Optional[str] = None
+    port: Optional[Annotated[int, Field(gt=0, lt=65536)]] = None
+    logging: Optional[LoggingModel] = None
+    retries: Optional[RetriesModel] = None
 
 
 class LegacyPoolMapModel(ConfigBaseModel):
     pool: str
-    ver: Optional[str]
-    arch: Optional[str]
-    flavor: Optional[str]
+    ver: Optional[str] = None
+    arch: Optional[str] = None
+    flavor: Optional[str] = None
 
-    @validator("ver", "arch", "flavor")
+    @field_validator("ver", "arch", "flavor")
+    @classmethod
     def detect_regex(cls, v: str):
         if v.startswith("^") and v.endswith("$"):
             return re.compile(v)
@@ -165,21 +167,21 @@ class LegacyPoolMapModel(ConfigBaseModel):
 
 
 class LegacyModel(ConfigBaseModel):
-    host: Optional[str]
-    port: Optional[conint(gt=0, lt=65536)]
-    dest: Optional[AnyHttpUrl]
-    loglevel: Optional[LogLevel]
-    logging: Optional[LoggingModel]
+    host: Optional[str] = None
+    port: Optional[Annotated[int, Field(gt=0, lt=65536)]] = None
+    dest: Optional[AnyHttpUrl] = None
+    loglevel: Optional[LogLevel] = None
+    logging: Optional[LoggingModel] = None
     usermap: Dict[str, str]
     poolmap: List[LegacyPoolMapModel]
-    mangle_hostname: Optional[str]
+    mangle_hostname: Optional[str] = None
 
 
 class ConfigModel(ConfigBaseModel):
-    client: Optional[ClientModel]
-    app: Optional[AppModel]
-    tasks: Optional[TasksModel]
-    database: Optional[DatabaseModel]
-    defaults: Optional[DefaultsModel]
-    metaclient: Optional[LegacyModel]
-    nodepools: Optional[NodePoolsRootModel]
+    client: Optional[ClientModel] = None
+    app: Optional[AppModel] = None
+    tasks: Optional[TasksModel] = None
+    database: Optional[DatabaseModel] = None
+    defaults: Optional[DefaultsModel] = None
+    metaclient: Optional[LegacyModel] = None
+    nodepools: Optional[NodePoolsRootModel] = None

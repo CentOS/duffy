@@ -101,7 +101,9 @@ async def create_tenant(
         raise HTTPException(HTTP_409_CONFLICT, str(exc))
 
     api_tenant = TenantCreateResultModel(
-        api_key=api_key, **TenantModel.from_orm(created_tenant).dict()
+        api_key=api_key,
+        ssh_key=created_tenant.ssh_key,
+        **TenantModel.model_validate(created_tenant).model_dump(exclude=["ssh_key"]),
     )
 
     await db_async_session.flush()
@@ -163,7 +165,7 @@ async def update_tenant(
                 updated_tenant.api_key = data.api_key
             api_key = SecretStr("this is hidden anyway")
 
-        data_dict = data.dict(exclude_unset=True)
+        data_dict = data.model_dump(exclude_unset=True)
 
         if "node_quota" in data_dict:
             updated_tenant.node_quota = data.node_quota
@@ -175,7 +177,7 @@ async def update_tenant(
             updated_tenant.session_lifetime_max = data.session_lifetime_max
 
     api_tenant = TenantUpdateResultModel(
-        api_key=api_key, **TenantModel.from_orm(updated_tenant).dict()
+        api_key=api_key, **TenantModel.model_validate(updated_tenant).model_dump()
     )
 
     await db_async_session.flush()

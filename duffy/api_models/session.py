@@ -2,7 +2,8 @@ from abc import ABC
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, conint
+from pydantic import BaseModel, ConfigDict, Field
+from typing_extensions import Annotated
 
 try:
     from ..database.types import NodeState
@@ -17,7 +18,7 @@ from .tenant import TenantModel
 
 
 class NodesSpec(BaseModel):
-    quantity: conint(ge=1)
+    quantity: Annotated[int, Field(ge=1)]
     pool: str
 
 
@@ -26,30 +27,29 @@ class NodesSpec(BaseModel):
 
 class SessionNodeModel(NodeBase):
     id: int
-    state: Optional[NodeState]
+    state: Optional[NodeState] = None
 
 
 # session model
 
 
 class SessionBase(BaseModel, ABC):
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SessionCreateModel(SessionBase):
-    tenant_id: Optional[int]
+    tenant_id: Optional[int] = None
     nodes_specs: List[NodesSpec]
 
 
 class SessionUpdateModel(SessionBase):
-    active: Optional[bool]
-    expires_at: Optional[Union[datetime, APITimeDelta]]
+    active: Optional[bool] = None
+    expires_at: Optional[Union[datetime, APITimeDelta]] = None
 
 
 class SessionModel(SessionBase, CreatableMixin, RetirableMixin):
     id: int
-    expires_at: Optional[datetime]
+    expires_at: Optional[datetime] = None
     tenant: TenantModel
     data: Dict[str, Any]
     nodes: List[SessionNodeModel]

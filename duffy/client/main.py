@@ -3,7 +3,7 @@ from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Sequence, Union
 
 import httpx
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from ..api_models import (
     PoolResult,
@@ -25,9 +25,7 @@ class _MethodEnum(str, Enum):
 
 class DuffyApiErrorDetailModel(BaseModel):
     detail: str
-
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 class DuffyAPIErrorModel(BaseModel):
@@ -87,7 +85,7 @@ class DuffyClient:
     ) -> BaseModel:
         add_kwargs = {}
         if in_dict is not None:
-            add_kwargs["json"] = in_model(**in_dict).dict()
+            add_kwargs["json"] = in_model(**in_dict).model_dump()
 
         with self.client() as client:
             client_method = getattr(client, method.name)

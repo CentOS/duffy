@@ -3,7 +3,8 @@ from datetime import timedelta
 from typing import List, Literal, Optional, Union
 from uuid import UUID
 
-from pydantic import BaseModel, SecretStr, conint, root_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
+from typing_extensions import Annotated
 
 from ..misc import ConfigTimeDelta
 from .common import APIResult, CreatableMixin, RetirableMixin
@@ -13,14 +14,12 @@ from .common import APIResult, CreatableMixin, RetirableMixin
 
 class TenantBase(BaseModel, ABC):
     name: str
-    is_admin: Optional[bool]
+    is_admin: Optional[bool] = None
     ssh_key: SecretStr
-    node_quota: Optional[conint(gt=0)]
-    session_lifetime: Optional[ConfigTimeDelta]
-    session_lifetime_max: Optional[ConfigTimeDelta]
-
-    class Config:
-        orm_mode = True
+    node_quota: Optional[Annotated[int, Field(gt=0)]] = None
+    session_lifetime: Optional[ConfigTimeDelta] = None
+    session_lifetime_max: Optional[ConfigTimeDelta] = None
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TenantCreateModel(TenantBase):
@@ -32,25 +31,26 @@ class TenantRetireModel(BaseModel):
 
 
 class TenantUpdateModel(BaseModel):
-    ssh_key: Optional[SecretStr]
-    api_key: Optional[Union[UUID, Literal["reset"]]]
-    node_quota: Optional[conint(gt=0)]
-    session_lifetime: Optional[ConfigTimeDelta]
-    session_lifetime_max: Optional[ConfigTimeDelta]
-
-    class Config:
-        minimum_fields = (
+    ssh_key: Optional[SecretStr] = None
+    api_key: Optional[Union[UUID, Literal["reset"]]] = None
+    node_quota: Optional[Annotated[int, Field(gt=0)]] = None
+    session_lifetime: Optional[ConfigTimeDelta] = None
+    session_lifetime_max: Optional[ConfigTimeDelta] = None
+    model_config = ConfigDict(
+        minimum_fields=(
             "ssh_key",
             "api_key",
             "node_quota",
             "session_lifetime",
             "session_lifetime_max",
         )
+    )
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def check_any_field_set(cls, values):
-        if not any(field in values for field in cls.Config.minimum_fields):
-            raise ValueError(f"one of {', '.join(cls.Config.minimum_fields)} is required")
+        if not any(field in values for field in cls.model_config["minimum_fields"]):
+            raise ValueError(f"one of {', '.join(cls.model_config['minimum_fields'])} is required")
         return values
 
 
@@ -62,11 +62,12 @@ class TenantModel(TenantBase, CreatableMixin, RetirableMixin):
 
 
 class TenantCreateResultModel(TenantModel):
+    ssh_key: str
     api_key: UUID
 
 
 class TenantUpdateResultModel(TenantModel):
-    api_key: Optional[Union[UUID, SecretStr]]
+    api_key: Optional[Union[UUID, SecretStr]] = None
 
 
 # API results
@@ -78,9 +79,6 @@ class TenantResult(APIResult):
 
 class TenantCreateResult(TenantResult):
     tenant: TenantCreateResultModel
-
-    class Config:
-        json_encoders = {SecretStr: lambda v: v.get_secret_value() if v else None}
 
 
 class TenantUpdateResult(TenantResult):

@@ -7,6 +7,7 @@ from contextlib import nullcontext
 from unittest import mock
 
 import pytest
+from pydantic import TypeAdapter
 from sqlalchemy import func, select
 from starlette.status import (
     HTTP_200_OK,
@@ -22,6 +23,8 @@ from duffy.database.model import Node, Session, Tenant
 from duffy.database.setup import _gen_test_api_key
 
 from . import BaseTestController
+
+datetime_adapter = TypeAdapter(dt.datetime)
 
 
 @pytest.mark.duffy_config(example_config=True)
@@ -442,7 +445,7 @@ class TestSessionWorkflow:
             assert created_session["active"] is True
             assert created_session["retired_at"] is None
 
-            created_at = dt.datetime.fromisoformat(created_session["created_at"])
+            created_at = datetime_adapter.validate_python(created_session["created_at"])
 
             if testcase == "retired-session":
                 async with db_async_session.begin():
@@ -471,7 +474,7 @@ class TestSessionWorkflow:
         # attempt to extend by one day to test clamping
         if "expires-at" in testcase:
             if "set-expires-at" in testcase:
-                new_expires_at = then = dt.datetime.fromisoformat(
+                new_expires_at = then = datetime_adapter.validate_python(
                     created_session["created_at"]
                 ) + dt.timedelta(days=1)
                 request_payload["expires_at"] = "+1d"
@@ -512,7 +515,10 @@ class TestSessionWorkflow:
                     assert updated_session["retired_at"] is not None
 
             if "expires_at" in testcase:
-                assert dt.datetime.fromisoformat(updated_session["expires_at"]) == new_expires_at
+                assert (
+                    datetime_adapter.validate_python(updated_session["expires_at"])
+                    == new_expires_at
+                )
         else:
             deprovision_nodes.delay.assert_not_called()
             if testcase == "unknown-session":
