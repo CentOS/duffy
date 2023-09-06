@@ -35,7 +35,7 @@ router = APIRouter(prefix="/sessions")
 
 
 def wrap_with_http_422_exception(exc: Exception) -> Exception:
-    return HTTPException(HTTP_422_UNPROCESSABLE_ENTITY, str(exc))  # pragma: without-xdist
+    return HTTPException(HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
 
 
 # http get http://localhost:8080/api/v1/sessions
@@ -188,7 +188,7 @@ async def create_session(
                             session_nodes.append(session_node)
                             db_async_session.add(session_node)
                             log.debug("Allocating node: %s (%s)", node.id, node.pool)
-            except retry.exceptions as exc:  # pragma: without-xdist
+            except retry.exceptions as exc:
                 retry.process_exception(exc)
 
     # Unfortunately, it is possible that the read operations on nodes above (in another concurrent
@@ -294,7 +294,7 @@ async def create_session(
                     # None not in contextualized_ipaddrs
                     # Workaround: give coverage an anchor to detect that this branch is taken.
                     pass
-            except retry.exceptions as exc:  # pragma: without-xdist
+            except retry.exceptions as exc:
                 retry.process_exception(exc)
 
     log.debug("Nodes deployed, kick off filling pools and return result via API")

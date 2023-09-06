@@ -830,22 +830,6 @@ tomli = {version = "*", optional = true, markers = "python_full_version <= \"3.1
 toml = ["tomli"]
 
 [[package]]
-name = "coverage-conditional-plugin"
-version = "0.9.0"
-description = "Conditional coverage based on any rules you define!"
-optional = false
-python-versions = ">=3.7,<4.0"
-files = [
-    {file = "coverage_conditional_plugin-0.9.0-py3-none-any.whl", hash = "sha256:1b37bc469019d2ab5b01f5eee453abe1846b3431e64e209720c2a9ec4afb8130"},
-    {file = "coverage_conditional_plugin-0.9.0.tar.gz", hash = "sha256:6893dab0542695dbd5ea714281dae0dfec8d0e36480ba32d839e9fa7344f8215"},
-]
-
-[package.dependencies]
-coverage = ">=7,<8"
-importlib_metadata = {version = "*", markers = "python_version < \"3.10\""}
-packaging = ">=20.4"
-
-[[package]]
 name = "crashtest"
 version = "0.4.1"
 description = "Manage Python errors with ease"
@@ -3214,4 +3198,4 @@ tasks = ["Jinja2", "aiodns", "ansible-runner", "celery", "jmespath", "pottery"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "2cec52f188d166f89382dfc385bee07b95b1788359d9d0765ccc3ca08b4f0e40"
+content-hash = "f0240fd1803ee439ddc45f3dd8094a66819a54bb11518123331483d178ff86cd"
