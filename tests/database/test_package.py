@@ -15,31 +15,49 @@ TEST_CONFIG = {
 
 
 @pytest.mark.duffy_config(TEST_CONFIG)
+@pytest.mark.parametrize("with_engine", (False, True), ids=("with-engine", "without-engine"))
 @mock.patch("duffy.database.sync_session_maker")
 @mock.patch("duffy.database.get_sync_engine")
-def test_init_sync_model(get_sync_engine, sync_session_maker):
+def test_init_sync_model(get_sync_engine, sync_session_maker, with_engine):
+    if with_engine:
+        sync_engine = object()
+    else:
+        sync_engine = None
     sentinel = object()
     get_sync_engine.return_value = sentinel
 
-    database.init_sync_model()
+    database.init_sync_model(sync_engine=sync_engine)
 
-    get_sync_engine.assert_called_once_with()
-    sync_session_maker.configure.assert_called_once_with(bind=sentinel)
+    if not with_engine:
+        get_sync_engine.assert_called_once_with()
+        sync_session_maker.configure.assert_called_once_with(bind=sentinel)
+    else:
+        get_sync_engine.assert_not_called()
+        sync_session_maker.configure.assert_called_once_with(bind=sync_engine)
 
 
 @pytest.mark.duffy_config(TEST_CONFIG)
+@pytest.mark.parametrize("with_engine", (False, True), ids=("with-engine", "without-engine"))
 @mock.patch("duffy.database.async_session_maker", new_callable=mock.AsyncMock)
 @mock.patch("duffy.database.get_async_engine")
-async def test_init_async_model(get_async_engine, async_session_maker):
+async def test_init_async_model(get_async_engine, async_session_maker, with_engine):
+    if with_engine:
+        async_engine = object()
+    else:
+        async_engine = None
     sentinel = object()
     get_async_engine.return_value = sentinel
     # configure() is not an async coroutine, avoid warning
     async_session_maker.configure = mock.MagicMock()
 
-    await database.init_async_model()
+    await database.init_async_model(async_engine=async_engine)
 
-    get_async_engine.assert_called_once_with()
-    async_session_maker.configure.assert_called_once_with(bind=sentinel)
+    if not with_engine:
+        get_async_engine.assert_called_once_with()
+        async_session_maker.configure.assert_called_once_with(bind=sentinel)
+    else:
+        get_async_engine.assert_not_called()
+        async_session_maker.configure.assert_called_once_with(bind=async_engine)
 
 
 @mock.patch("duffy.database.init_async_model")
