@@ -1,6 +1,5 @@
 import asyncio
 import datetime as dt
-import os
 import re
 import uuid
 from collections import defaultdict
@@ -49,6 +48,76 @@ class TestSession(BaseTestController):
             tenant = Tenant(**kwargs)
             db_async_session.add(tenant)
         return tenant
+
+    @pytest.mark.usefixtures("db_async_test_data")
+    @mock.patch("duffy.app.controllers.session.decontextualize")
+    @mock.patch("duffy.app.controllers.session.contextualize")
+    @mock.patch("duffy.app.controllers.session.fill_pools")
+    async def test_create_with_retries(
+        self,
+        fill_pools,
+        contextualize,
+        decontextualize,
+        client,
+        db_async_session,
+        auth_tenant,
+        caplog,
+    ):
+        class TestException(Exception):
+            pass
+
+        class TweakedSerializationErrorRetryContext(session_module.SerializationErrorRetryContext):
+            exceptions = TestException
+
+            def exception_matches(self, exc):
+                return True
+
+        # Making set() and sorted() throw the exceptions is a little questionable, but they’re the
+        # easiest to use for the purpose because they’re only used in one place, respectively.
+
+        with mock.patch.dict(self.attrs), mock.patch(
+            "duffy.app.controllers.session.SerializationErrorRetryContext",
+            wraps=TweakedSerializationErrorRetryContext,
+        ), mock.patch("duffy.app.controllers.session.set") as mock_set, mock.patch(
+            "duffy.app.controllers.session.sorted"
+        ) as mock_sorted, caplog.at_level(
+            "DEBUG"
+        ):
+            self.attrs["nodes_specs"] = [{"pool": "physical-centos8stream-x86_64", "quantity": 1}]
+
+            def set_side_effect(*args, __aux__=[0], **kwargs):
+                attempt = __aux__[0]
+                __aux__[0] += 1
+                if not attempt:
+                    raise TestException("BOOP")
+                return set(*args, **kwargs)
+
+            mock_set.side_effect = set_side_effect
+
+            def sorted_side_effect(*args, __aux__=[0], **kwargs):
+                attempt = __aux__[0]
+                __aux__[0] += 1
+                if not attempt:
+                    raise TestException("FROOP")
+                return sorted(*args, **kwargs)
+
+            mock_sorted.side_effect = sorted_side_effect
+
+            response = await self._create_obj(client, attrs={"tenant_id": auth_tenant.id})
+
+        assert response.status_code == HTTP_201_CREATED
+        result = response.json()
+
+        assert result["session"]["id"] == 2  # Must have caught only on the second attempt
+        assert mock_set.call_count == 2
+        assert mock_sorted.call_count == 2
+
+        no_attempts = TweakedSerializationErrorRetryContext.no_attempts
+        for attempt in (1, 2):
+            assert (
+                len([m for m in caplog.messages if f"Attempt {attempt} of {no_attempts}" in m]) == 2
+            )
+        assert all(f"Attempt 3 of {no_attempts}" not in m for m in caplog.messages)
 
     async def test_create_other_tenant(self, client, db_async_session, auth_tenant):
         other_tenant = await self._create_tenant(db_async_session)
@@ -254,9 +323,6 @@ class TestSessionWorkflow:
                     assert len(failed_nodes) == 1
                     assert failed_nodes[0].data["error"]["detail"] == "contextualizing node failed"
 
-    @pytest.mark.skipif(
-        "PYTEST_XDIST_WORKER" in os.environ, reason="Doesn’t work reliably with xdist"
-    )
     @pytest.mark.parametrize(
         "testcase", ("success", "success-exact-attempts", "fail-exceed-attempts")
     )
