@@ -28,7 +28,7 @@ class DuffyFormatter:
 
     @staticmethod
     def result_as_compatible_dict(result: BaseModel) -> dict:
-        return json.loads(result.json())
+        return json.loads(result.model_dump_json())
 
     def format(self, result: BaseModel) -> str:
         raise NotImplementedError()
@@ -36,7 +36,7 @@ class DuffyFormatter:
 
 class DuffyJSONFormatter(DuffyFormatter, format="json"):
     def format(self, result: BaseModel) -> str:
-        return result.json(indent=2)
+        return result.model_dump_json(indent=2)
 
 
 class DuffyYAMLFormatter(DuffyFormatter, format="yaml"):

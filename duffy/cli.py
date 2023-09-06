@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 import click
+from pydantic import TypeAdapter, ValidationError
 
 try:
     import uvicorn
@@ -93,9 +94,14 @@ class IntervalOrNoneType(click.ParamType):
             if isinstance(value, str) and value.lower() in ("none", "null"):
                 return None
 
-            return ConfigTimeDelta.validate(value)
-        except ValueError as exc:
-            self.fail(exc.args[0] if exc.args else f"Can't convert value {value!r}", param, ctx)
+            return TypeAdapter(ConfigTimeDelta).validate_python(value)
+        except ValidationError as exc:
+            errors = exc.errors()
+            self.fail(
+                str(errors[0]["ctx"]["error"]) if errors else f"Can't convert value {value!r}",
+                param,
+                ctx,
+            )
 
 
 INTERVAL_OR_NONE = IntervalOrNoneType()

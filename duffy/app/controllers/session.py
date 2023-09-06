@@ -145,7 +145,7 @@ async def create_session(
                 async with db_async_session.begin():
                     session = Session(
                         tenant_id=tenant.id,
-                        data={"nodes_specs": [spec.dict() for spec in data.nodes_specs]},
+                        data={"nodes_specs": [spec.model_dump() for spec in data.nodes_specs]},
                         expires_at=(
                             dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc)
                             + tenant.effective_session_lifetime
@@ -160,7 +160,7 @@ async def create_session(
                     pools_to_fill_up = set()
                     for nodes_spec in data.nodes_specs:
                         pools_to_fill_up.add(nodes_spec.pool)
-                        nodes_spec_dict = nodes_spec.dict()
+                        nodes_spec_dict = nodes_spec.model_dump()
                         quantity = nodes_spec_dict.pop("quantity")
 
                         query = (
@@ -180,7 +180,7 @@ async def create_session(
                         # take the nodes out of circulation and update data
                         for node in nodes_to_reserve:
                             # record why this node was allocated for this session
-                            node.data["nodes_spec"] = nodes_spec.dict()
+                            node.data["nodes_spec"] = nodes_spec.model_dump()
                             node.state = NodeState.contextualizing
                             session_node = SessionNode(
                                 session=session, node=node, pool=nodes_spec.pool, data=node.data

@@ -11,7 +11,7 @@ class CreatableMixin(BaseModel):
 
 
 class RetirableMixin(BaseModel):
-    retired_at: Optional[datetime]
+    retired_at: Optional[datetime] = None
     active: bool
 
 
@@ -22,4 +22,4 @@ class APIResultAction(str, Enum):
 
 
 class APIResult(BaseModel, ABC):
-    action: Optional[APIResultAction]
+    action: Optional[APIResultAction] = None

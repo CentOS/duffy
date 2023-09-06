@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, IPvAnyAddress
+from pydantic import BaseModel, ConfigDict, IPvAnyAddress
 
 try:
     from ..database.types import NodeState
@@ -13,16 +13,14 @@ from .common import APIResult, CreatableMixin, RetirableMixin
 
 
 class NodeBase(BaseModel, ABC):
-    hostname: Optional[str]
-    ipaddr: Optional[IPvAnyAddress]
-    comment: Optional[str]
+    hostname: Optional[str] = None
+    ipaddr: Optional[IPvAnyAddress] = None
+    comment: Optional[str] = None
 
-    pool: Optional[str]
+    pool: Optional[str] = None
     reusable: bool
     data: Dict[str, Any]
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class NodeCreateModel(NodeBase):
