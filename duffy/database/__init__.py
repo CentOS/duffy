@@ -1,10 +1,12 @@
 import asyncio
 from copy import deepcopy
 
-from sqlalchemy import MetaData, create_engine
+from sqlalchemy import MetaData, create_engine, event
 from sqlalchemy.engine import Engine
+from sqlalchemy.engine.interfaces import DBAPIConnection
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.pool import ConnectionPoolEntry
 
 from ..configuration import config
 from ..exceptions import DuffyConfigurationError
@@ -48,6 +50,24 @@ _key_failed_to_config_key = {
 }
 
 
+def _pgsql_disable_seqscan(
+    dbapi_connection: DBAPIConnection, connection_record: ConnectionPoolEntry
+) -> None:
+    """Disables the query planner's use of sequential scan plan types.
+
+    As far as this is possible at least.
+
+    Sequential scanning in queries can cause conflicts in concurrent transactions even if the
+    respective rows accessed in the transactions are different, merely iterating over the rows “of
+    the other transaction” can cause them to be locked.
+
+    For this to work, it is necessary that the involved columns have an index, i.e. the planner has
+    a usable alternative to sequential scans."""
+    cursor = dbapi_connection.cursor()
+    cursor.execute("SET enable_seqscan=off")
+    cursor.close()
+
+
 def get_sync_engine():
     try:
         sync_config = deepcopy(config["database"]["sqlalchemy"]) or {}
@@ -59,7 +79,10 @@ def get_sync_engine():
         ) from exc
     sync_config.pop("async_url", None)
     sync_config.setdefault("isolation_level", "SERIALIZABLE")
-    return create_engine(**sync_config)
+    engine = create_engine(**sync_config)
+    if engine.name == "postgresql":
+        event.listen(engine, "connect", _pgsql_disable_seqscan)
+    return engine
 
 
 def get_async_engine():
@@ -73,4 +96,7 @@ def get_async_engine():
         ) from exc
     async_config.pop("sync_url", None)
     async_config.setdefault("isolation_level", "SERIALIZABLE")
-    return create_async_engine(**async_config)
+    engine = create_async_engine(**async_config)
+    if engine.name == "postgresql":
+        event.listen(engine.sync_engine, "connect", _pgsql_disable_seqscan)
+    return engine

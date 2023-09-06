@@ -8,7 +8,7 @@ import psycopg
 import pytest
 import pytest_postgresql
 import yaml
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.asyncio import create_async_engine
 
@@ -16,6 +16,7 @@ from duffy.app.logging import RequestIdFilter
 from duffy.configuration import read_configuration
 from duffy.database import (
     Base,
+    _pgsql_disable_seqscan,
     async_session_maker,
     init_async_model,
     init_sync_model,
@@ -159,6 +160,7 @@ def db_sync_engine(postgresql_sync_url):
         echo=True,
         isolation_level="SERIALIZABLE",
     )
+    event.listen(db_engine, "connect", _pgsql_disable_seqscan)
     return db_engine
 
 
@@ -171,6 +173,7 @@ def db_async_engine(postgresql_async_url):
         echo=True,
         isolation_level="SERIALIZABLE",
     )
+    event.listen(async_db_engine.sync_engine, "connect", _pgsql_disable_seqscan)
     return async_db_engine
 
 
