@@ -44,6 +44,7 @@ class Node(Base, CreatableMixin, RetirableMixin):
         nullable=False,
         default=NodeState.unused,
         server_default=NodeState.unused.value,
+        index=True,
     )
     comment = Column(UnicodeText, nullable=True)
 
@@ -64,7 +65,9 @@ class Node(Base, CreatableMixin, RetirableMixin):
 
 class SessionNode(Base):
     __tablename__ = "sessions_nodes"
-    session_id = Column(Integer, ForeignKey(Session.id), primary_key=True, nullable=False)
+    session_id = Column(
+        Integer, ForeignKey(Session.id), primary_key=True, nullable=False, index=True
+    )
     session = relationship(Session, back_populates="session_nodes")
     node_id = Column(Integer, ForeignKey(Node.id), primary_key=True, nullable=False)
     node = relationship(Node)

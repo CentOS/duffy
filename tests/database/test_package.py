@@ -72,35 +72,75 @@ def test_init_model(init_sync_model, init_async_model):
     init_async_model.assert_called_once_with(sentinel)
 
 
+def test__pgsql_disable_seqscan():
+    dbapi_connection = mock.Mock()
+    dbapi_connection.cursor.return_value = cursor = mock.Mock()
+
+    database._pgsql_disable_seqscan(dbapi_connection, connection_record=object())
+
+    dbapi_connection.cursor.assert_called_once_with()
+    cursor.execute.assert_called_once_with("SET enable_seqscan=off")
+    cursor.close.assert_called_once_with()
+
+
 @pytest.mark.duffy_config(TEST_CONFIG)
-@pytest.mark.parametrize("testcase", ("works", "config-broken"))
+@pytest.mark.parametrize("testcase", ("works-sqlite", "works-postgresql", "config-broken"))
+@mock.patch("duffy.database.event")
 @mock.patch("duffy.database.create_engine")
-def test_get_sync_engine(create_engine, testcase):
+def test_get_sync_engine(create_engine, event, testcase):
     if testcase == "config-broken":
         del configuration.config["database"]["sqlalchemy"]
         with pytest.raises(exceptions.DuffyConfigurationError):
             database.get_sync_engine()
         create_engine.assert_not_called()
-    else:
+    else:  # "works" in testcase
+        db_engine = create_engine.return_value
+
+        if "postgresql" in testcase:
+            db_engine.name = "postgresql"
+        else:
+            db_engine.name = "sqlite"
+
         database.get_sync_engine()
         create_engine.assert_called_once_with(
             url=TEST_CONFIG["database"]["sqlalchemy"]["sync_url"],
             isolation_level="SERIALIZABLE",
         )
 
+        if "postgresql" in testcase:
+            event.listen.assert_called_once_with(
+                db_engine, "connect", database._pgsql_disable_seqscan
+            )
+        else:
+            event.listen.assert_not_called()
+
 
 @pytest.mark.duffy_config(TEST_CONFIG)
-@pytest.mark.parametrize("testcase", ("works", "config-broken"))
+@pytest.mark.parametrize("testcase", ("works-sqlite", "works-postgresql", "config-broken"))
+@mock.patch("duffy.database.event")
 @mock.patch("duffy.database.create_async_engine")
-def test_get_async_engine(create_async_engine, testcase):
+def test_get_async_engine(create_async_engine, event, testcase):
     if testcase == "config-broken":
         del configuration.config["database"]["sqlalchemy"]
         with pytest.raises(exceptions.DuffyConfigurationError):
             database.get_async_engine()
         create_async_engine.assert_not_called()
-    else:
+    else:  # "works" in testcase
+        async_db_engine = create_async_engine.return_value
+        if "postgresql" in testcase:
+            async_db_engine.name = "postgresql"
+        else:
+            async_db_engine.name = "sqlite"
+
         database.get_async_engine()
         create_async_engine.assert_called_once_with(
             url=TEST_CONFIG["database"]["sqlalchemy"]["async_url"],
             isolation_level="SERIALIZABLE",
         )
+
+        if "postgresql" in testcase:
+            event.listen.assert_called_once_with(
+                async_db_engine.sync_engine, "connect", database._pgsql_disable_seqscan
+            )
+        else:
+            event.listen.assert_not_called()
