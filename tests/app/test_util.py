@@ -58,7 +58,6 @@ async def test_serializationerror_retry_context(testcase):
         elif "match-other-pgcode" in testcase:
             orig_exc.pgcode = str(orig_exc.pgcode) + "Boo"
         elif "no-asyncpg" in testcase:
-            duffy.app.util.asyncpg = None
             hide_asyncpg = mock.patch.object(duffy.app.util, "asyncpg", None)
 
     toplvl_exc = DBAPIError("", "", orig_exc)
