@@ -230,7 +230,15 @@ class RetryContext:
         This method can be used to inspect the exception and re-raise it if it
         doesn't match certain criteria.
         """
-        return isinstance(exc, self.exceptions)
+        if not isinstance(exc, self.exceptions):
+            log.debug(
+                "[%r] Smoke tests failed (exception %s doesn’t match %r)",
+                self,
+                exc,
+                self.exceptions,
+            )
+            return False
+        return True
 
     def process_exception(self, exc: Exception) -> None:
         """Further process caught exception.

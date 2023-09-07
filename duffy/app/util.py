@@ -33,8 +33,7 @@ class SerializationErrorRetryContext(ConfigRetryContext):
 
     def exception_matches(self, exc):
         log.debug("[%r] Matching %r...", self, exc)
-        if not (super().exception_matches(exc) and asyncpg):
-            log.debug("[%r] Smoke tests failed", self)
+        if not super().exception_matches(exc):
             return False
 
         result = getattr(exc.orig, "pgcode", None) == asyncpg.SerializationError.sqlstate
