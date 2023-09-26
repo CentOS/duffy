@@ -422,11 +422,15 @@ def test_fill_pools(fill_single_pool, testcase):
     else:  # unknown-pool
         pool_names = ["unknown"]
 
+    fill_single_pool.delay.return_value = celery_async_result = mock.Mock()
+
     provision.fill_pools(pool_names=pool_names)
 
     if testcase == "all-pools":
-        fill_single_pool.delay.has_calls([pool for pool in all_pool_names])
+        assert fill_single_pool.delay.call_args_list == [mock.call(pool) for pool in all_pool_names]
+        assert celery_async_result.forget.call_args_list == [mock.call() for _ in all_pool_names]
     elif testcase == "one-pool":
         fill_single_pool.delay.assert_called_once_with("foo")
+        celery_async_result.forget.assert_called_once_with()
     else:  # testcase == "unknown-pool"
         fill_single_pool.delay.assert_not_called()

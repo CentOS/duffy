@@ -57,6 +57,7 @@ pydantic = "^2.0.3"
 aiosqlite = {version = "^0.17 || ^0.18 || ^0.19", optional = true}
 pyxdg = "^0.27 || ^0.28"
 typing-extensions = "^4.6.1"
+greenlet = {version = "^2 || ^3", optional = true, allow-prereleases = true}
 
 [tool.poetry.dev-dependencies]
 Jinja2 = "^3.0.3"
