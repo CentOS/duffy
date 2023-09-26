@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        tox-env: ["py38", "py39", "py310", "py311"]
+        tox-env: ["py38", "py39", "py310", "py311", "py312"]
     runs-on: ubuntu-latest
     container: fedorapython/fedora-python-tox:latest
     steps:
@@ -29,7 +29,7 @@ jobs:
 
       - name: Install RPM dependencies
         run: |
-          dnf install -y libpq-devel postgresql-server
+          dnf install -y libpq-devel postgresql-server libffi-devel
 
       - name: Set up testrunner user
         run: |
