@@ -19,7 +19,7 @@ class TenantBase(BaseModel, ABC):
     node_quota: Optional[Annotated[int, Field(gt=0)]] = None
     session_lifetime: Optional[ConfigTimeDelta] = None
     session_lifetime_max: Optional[ConfigTimeDelta] = None
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, ser_json_timedelta="float")
 
 
 class TenantCreateModel(TenantBase):
