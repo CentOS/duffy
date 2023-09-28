@@ -1,10 +1,8 @@
 import datetime as dt
 import json
 from contextlib import nullcontext
-from enum import Enum
 
 import pytest
-from pydantic import BaseModel
 
 from duffy.api_models import (
     PoolConciseModel,
@@ -26,16 +24,7 @@ from duffy.client.formatter import (
 )
 from duffy.client.main import DuffyAPIErrorModel
 
-
-class _TestEnum(str, Enum):
-    bar = "bar"
-
-
-class _TestModel(BaseModel):
-    test_enum: _TestEnum
-
-
-TEST_MODEL_DICT = {"test_enum": _TestEnum.bar}
+TEST_JSON_DICT = {"test_key": "test_value"}
 
 
 class TestDuffyFormatter:
@@ -51,26 +40,21 @@ class TestDuffyFormatter:
         fmtobj = DuffyFormatter.new_for_format(format)
         assert isinstance(fmtobj, formatter_cls)
 
-    def test_result_as_compatible_dict(self):
-        result = _TestModel(test_enum=_TestEnum.bar)
-
-        assert DuffyFormatter.result_as_compatible_dict(result) == {"test_enum": "bar"}
-
     def test_format(self):
         with pytest.raises(NotImplementedError):
-            DuffyFormatter().format(_TestModel(test_enum=_TestEnum.bar))
+            DuffyFormatter().format(TEST_JSON_DICT)
 
 
 class TestDuffyJSONFormatter:
     def test_format(self):
-        formatted = DuffyJSONFormatter().format(_TestModel(**TEST_MODEL_DICT))
-        assert json.loads(formatted) == TEST_MODEL_DICT
+        formatted = DuffyJSONFormatter().format(TEST_JSON_DICT)
+        assert json.loads(formatted) == TEST_JSON_DICT
 
 
 class TestDuffyYAMLFormatter:
     def test_format(self):
-        formatted = DuffyYAMLFormatter().format(_TestModel(**TEST_MODEL_DICT))
-        assert formatted == "test_enum: bar\n"
+        formatted = DuffyYAMLFormatter().format(TEST_JSON_DICT)
+        assert formatted == "test_key: test_value\n"
 
 
 class TestDuffyFlatFormatter:
@@ -132,7 +116,9 @@ class TestDuffyFlatFormatter:
         assert node_line == "error='Hullo.'"
 
     def test_flatten_pool(self):
-        pool_line = next(DuffyFlatFormatter().flatten_pool(pool=self.TEST_POOL_VERBOSE))
+        pool_line = next(
+            DuffyFlatFormatter().flatten_pool(pool=self.TEST_POOL_VERBOSE.model_dump(by_alias=True))
+        )
 
         assert pool_line == (
             "pool_name='pool' fill_level=15 levels_provisioning=0 levels_ready=15"
@@ -142,7 +128,7 @@ class TestDuffyFlatFormatter:
     def test_flatten_pool_result(self):
         pool_line = next(
             DuffyFlatFormatter().flatten_pool_result(
-                PoolResult(action="get", pool=self.TEST_POOL_VERBOSE)
+                PoolResult(action="get", pool=self.TEST_POOL_VERBOSE).model_dump(by_alias=True)
             )
         )
 
@@ -154,14 +140,20 @@ class TestDuffyFlatFormatter:
     def test_flatten_pools_result(self):
         pool_line = next(
             DuffyFlatFormatter().flatten_pools_result(
-                PoolResultCollection(action="get", pools=[self.TEST_POOL_CONCISE])
+                PoolResultCollection(action="get", pools=[self.TEST_POOL_CONCISE]).model_dump(
+                    by_alias=True
+                )
             )
         )
 
         assert pool_line == "pool_name='pool' fill_level=15"
 
     def test_flatten_session(self):
-        node_line = next(DuffyFlatFormatter().flatten_session(session=self.TEST_SESSION))
+        node_line = next(
+            DuffyFlatFormatter().flatten_session(
+                session=self.TEST_SESSION.model_dump(by_alias=True)
+            )
+        )
 
         assert node_line == (
             "session_id=17 active=TRUE created_at='2022-05-31 12:00:00' retired_at= pool='pool'"
@@ -171,7 +163,7 @@ class TestDuffyFlatFormatter:
     def test_flatten_session_result(self):
         node_line = next(
             DuffyFlatFormatter().flatten_session_result(
-                SessionResult(action="get", session=self.TEST_SESSION)
+                SessionResult(action="get", session=self.TEST_SESSION).model_dump(by_alias=True)
             )
         )
 
@@ -183,7 +175,9 @@ class TestDuffyFlatFormatter:
     def test_flatten_sessions_result(self):
         node_line = next(
             DuffyFlatFormatter().flatten_sessions_result(
-                SessionResultCollection(action="get", sessions=[self.TEST_SESSION])
+                SessionResultCollection(action="get", sessions=[self.TEST_SESSION]).model_dump(
+                    by_alias=True
+                )
             )
         )
 
@@ -198,17 +192,22 @@ class TestDuffyFlatFormatter:
     )
     def test_format(self, result_cls):
         expectation = nullcontext()
+        api_result = None
+
         if result_cls == PoolResult:
-            api_result = PoolResult(action="get", pool=self.TEST_POOL_VERBOSE)
+            model_result = PoolResult(action="get", pool=self.TEST_POOL_VERBOSE)
         elif result_cls == PoolResultCollection:
-            api_result = PoolResultCollection(action="get", pools=[self.TEST_POOL_CONCISE])
+            model_result = PoolResultCollection(action="get", pools=[self.TEST_POOL_CONCISE])
         elif result_cls == SessionResult:
-            api_result = SessionResult(action="get", session=self.TEST_SESSION)
+            model_result = SessionResult(action="get", session=self.TEST_SESSION)
         elif result_cls == SessionResultCollection:
-            api_result = SessionResultCollection(action="get", sessions=[self.TEST_SESSION])
+            model_result = SessionResultCollection(action="get", sessions=[self.TEST_SESSION])
         else:
             api_result = {"a dict": "contents don't matter"}
             expectation = pytest.raises(TypeError)
+
+        if not api_result:
+            api_result = model_result.model_dump(by_alias=True)
 
         with expectation:
             formatted = DuffyFlatFormatter().format(api_result)
