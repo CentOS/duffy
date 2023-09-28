@@ -7,14 +7,7 @@ import httpx
 import pytest
 from pydantic import BaseModel
 
-from duffy.api_models import (
-    PoolResult,
-    PoolResultCollection,
-    SessionCreateModel,
-    SessionResult,
-    SessionResultCollection,
-    SessionUpdateModel,
-)
+from duffy.api_models import SessionCreateModel, SessionUpdateModel
 from duffy.client import DuffyClient
 from duffy.client.main import _MethodEnum
 from duffy.configuration import config
@@ -24,21 +17,11 @@ class InModel(BaseModel):
     in_field: int
 
 
-class OutModel(BaseModel):
-    out_field: int
-
-
 @pytest.mark.duffy_config(example_config=True)
 class TestDuffyClient:
     wrapper_method_test_details = {
-        "list_sessions": (
-            mock.call(),
-            mock.call(_MethodEnum.get, "/sessions", out_model=SessionResultCollection),
-        ),
-        "show_session": (
-            mock.call(15),
-            mock.call(_MethodEnum.get, "/sessions/15", out_model=SessionResult),
-        ),
+        "list_sessions": (mock.call(), mock.call(_MethodEnum.get, "/sessions")),
+        "show_session": (mock.call(15), mock.call(_MethodEnum.get, "/sessions/15")),
         "request_session": (
             mock.call([{"pool": "pool", "quantity": "31"}]),
             mock.call(
@@ -46,7 +29,6 @@ class TestDuffyClient:
                 "/sessions",
                 in_dict={"nodes_specs": [{"pool": "pool", "quantity": "31"}]},
                 in_model=SessionCreateModel,
-                out_model=SessionResult,
                 expected_status=HTTPStatus.CREATED,
             ),
         ),
@@ -57,17 +39,10 @@ class TestDuffyClient:
                 "/sessions/53",
                 in_dict={"active": False},
                 in_model=SessionUpdateModel,
-                out_model=SessionResult,
             ),
         ),
-        "list_pools": (
-            mock.call(),
-            mock.call(_MethodEnum.get, "/pools", out_model=PoolResultCollection),
-        ),
-        "show_pool": (
-            mock.call("lagoon"),
-            mock.call(_MethodEnum.get, "/pools/lagoon", out_model=PoolResult),
-        ),
+        "list_pools": (mock.call(), mock.call(_MethodEnum.get, "/pools")),
+        "show_pool": (mock.call("lagoon"), mock.call(_MethodEnum.get, "/pools/lagoon")),
     }
 
     @pytest.mark.parametrize("testcase", ("params-set", "params-unset"))
@@ -150,18 +125,18 @@ class TestDuffyClient:
         dclient = DuffyClient()
 
         with expectation as exc:
-            result = dclient._query_method(method=method, url="url", out_model=OutModel, **kwargs)
+            result = dclient._query_method(method=method, url="url", **kwargs)
 
         if actual_status not in expected_statuses:
             if actual_status >= 400:
                 if with_detail:
-                    assert result.error.detail == "a detail"
+                    assert result["error"]["detail"] == "a detail"
                 else:
                     assert exc.match("BOOP")
             else:
                 assert exc.match("Can't process response:")
         else:
-            assert result.out_field == 7
+            assert result["out_field"] == 7
 
     @pytest.mark.parametrize("method_name", list(wrapper_method_test_details))
     def test_wrapper_methods(self, method_name):

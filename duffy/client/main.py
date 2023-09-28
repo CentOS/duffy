@@ -5,15 +5,10 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 import httpx
 from pydantic import BaseModel, ConfigDict
 
-from ..api_models import (
-    PoolResult,
-    PoolResultCollection,
-    SessionCreateModel,
-    SessionResult,
-    SessionResultCollection,
-    SessionUpdateModel,
-)
+from ..api_models import SessionCreateModel, SessionUpdateModel
 from ..configuration import config
+
+JSONValue = Union[None, bool, str, float, int, List["JSONValue"], Dict[str, "JSONValue"]]
 
 
 class _MethodEnum(str, Enum):
@@ -80,9 +75,8 @@ class DuffyClient:
         *,
         in_dict: Optional[Dict[str, Any]] = None,
         in_model: Optional[BaseModel] = None,
-        out_model: BaseModel,
         expected_status: Union[HTTPStatus, Sequence[HTTPStatus]] = HTTPStatus.OK,
-    ) -> BaseModel:
+    ) -> JSONValue:
         add_kwargs = {}
         if in_dict is not None:
             add_kwargs["json"] = in_model(**in_dict).model_dump()
@@ -96,56 +90,38 @@ class DuffyClient:
 
         if response.status_code not in expected_status:
             try:
-                return DuffyAPIErrorModel(error=response.json())
+                return DuffyAPIErrorModel(error=response.json()).model_dump(by_alias=True)
             except Exception as exc:
                 response.raise_for_status()
                 raise RuntimeError(f"Can't process response: {response}") from exc
 
-        return out_model(**response.json())
+        return response.json()
 
-    def list_sessions(self) -> SessionResultCollection:
-        return self._query_method(
-            _MethodEnum.get,
-            "/sessions",
-            out_model=SessionResultCollection,
-        )
+    def list_sessions(self) -> JSONValue:
+        return self._query_method(_MethodEnum.get, "/sessions")
 
-    def show_session(self, session_id: int) -> SessionResult:
-        return self._query_method(
-            _MethodEnum.get,
-            f"/sessions/{session_id}",
-            out_model=SessionResult,
-        )
+    def show_session(self, session_id: int) -> JSONValue:
+        return self._query_method(_MethodEnum.get, f"/sessions/{session_id}")
 
-    def request_session(self, nodes_specs: List[Dict[str, str]]) -> SessionResult:
+    def request_session(self, nodes_specs: List[Dict[str, str]]) -> JSONValue:
         return self._query_method(
             _MethodEnum.post,
             "/sessions",
             in_dict={"nodes_specs": nodes_specs},
             in_model=SessionCreateModel,
-            out_model=SessionResult,
             expected_status=HTTPStatus.CREATED,
         )
 
-    def retire_session(self, session_id: int) -> SessionResult:
+    def retire_session(self, session_id: int) -> JSONValue:
         return self._query_method(
             _MethodEnum.put,
             f"/sessions/{session_id}",
             in_dict={"active": False},
             in_model=SessionUpdateModel,
-            out_model=SessionResult,
         )
 
-    def list_pools(self) -> PoolResultCollection:
-        return self._query_method(
-            _MethodEnum.get,
-            "/pools",
-            out_model=PoolResultCollection,
-        )
+    def list_pools(self) -> JSONValue:
+        return self._query_method(_MethodEnum.get, "/pools")
 
-    def show_pool(self, pool_name: str) -> PoolResult:
-        return self._query_method(
-            _MethodEnum.get,
-            f"/pools/{pool_name}",
-            out_model=PoolResult,
-        )
+    def show_pool(self, pool_name: str) -> JSONValue:
+        return self._query_method(_MethodEnum.get, f"/pools/{pool_name}")
