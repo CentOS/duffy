@@ -1987,13 +1987,13 @@ poetry-core = ">=1.6.0,<2.0.0"
 
 [[package]]
 name = "port-for"
-version = "0.7.1"
+version = "0.7.2"
 description = "Utility that helps with local TCP ports management. It can find an unused TCP localhost port and remember the association."
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "port-for-0.7.1.tar.gz", hash = "sha256:e0f3b8d7ec8bdc388c14d88bdbab8d6441c8081ed2bdec7847b38ca6d1563f23"},
-    {file = "port_for-0.7.1-py3-none-any.whl", hash = "sha256:8abdaa1a7810281b0cecf718a6319da5f8538fdae3a5101d1e9afd54da0baf8c"},
+    {file = "port-for-0.7.2.tar.gz", hash = "sha256:074f29335130578aa42fef3726985e57d01c15189e509633a8a1b0b7f9226349"},
+    {file = "port_for-0.7.2-py3-none-any.whl", hash = "sha256:16b279ab4f210bad33515c45bd9af0c6e048ab24c3b6bbd9cfc7e451782617df"},
 ]
 
 [[package]]
