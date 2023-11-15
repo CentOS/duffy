@@ -1043,13 +1043,13 @@ all = ["email-validator (>=2.0.0)", "httpx (>=0.23.0)", "itsdangerous (>=1.1.0)"
 
 [[package]]
 name = "fastjsonschema"
-version = "2.18.1"
+version = "2.19.0"
 description = "Fastest Python implementation of JSON schema"
 optional = false
 python-versions = "*"
 files = [
-    {file = "fastjsonschema-2.18.1-py3-none-any.whl", hash = "sha256:aec6a19e9f66e9810ab371cc913ad5f4e9e479b63a7072a2cd060a9369e329a8"},
-    {file = "fastjsonschema-2.18.1.tar.gz", hash = "sha256:06dc8680d937628e993fa0cd278f196d20449a1adc087640710846b324d422ea"},
+    {file = "fastjsonschema-2.19.0-py3-none-any.whl", hash = "sha256:b9fd1a2dd6971dbc7fee280a95bd199ae0dd9ce22beb91cc75e9c1c528a5170e"},
+    {file = "fastjsonschema-2.19.0.tar.gz", hash = "sha256:e25df6647e1bc4a26070b700897b07b542ec898dd4f1f6ea013e7f6a88417225"},
 ]
 
 [package.extras]
@@ -1976,13 +1976,13 @@ typing-extensions = "*"
 
 [[package]]
 name = "prompt-toolkit"
-version = "3.0.40"
+version = "3.0.41"
 description = "Library for building powerful interactive command lines in Python"
 optional = true
 python-versions = ">=3.7.0"
 files = [
-    {file = "prompt_toolkit-3.0.40-py3-none-any.whl", hash = "sha256:99ba3dfb23d5b5af89712f89e60a5f3d9b8b67a9482ca377c5771d0e9047a34b"},
-    {file = "prompt_toolkit-3.0.40.tar.gz", hash = "sha256:a371c06bb1d66cd499fecd708e50c0b6ae00acba9822ba33c586e2f16d1b739e"},
+    {file = "prompt_toolkit-3.0.41-py3-none-any.whl", hash = "sha256:f36fe301fafb7470e86aaf90f036eef600a3210be4decf461a5b1ca8403d3cb2"},
+    {file = "prompt_toolkit-3.0.41.tar.gz", hash = "sha256:941367d97fc815548822aa26c2a269fdc4eb21e9ec05fc5d447cf09bad5d75f0"},
 ]
 
 [package.dependencies]
@@ -3023,13 +3023,13 @@ test = ["argcomplete (>=3.0.3)", "mypy (>=1.6.0)", "pre-commit", "pytest (>=7.0,
 
 [[package]]
 name = "trove-classifiers"
-version = "2023.11.13"
+version = "2023.11.14"
 description = "Canonical source for classifiers on PyPI (pypi.org)."
 optional = false
 python-versions = "*"
 files = [
-    {file = "trove-classifiers-2023.11.13.tar.gz", hash = "sha256:87d8599d890b719c81c7e33cdb2813d5965e5958984bff1b913e161f0d6a5286"},
-    {file = "trove_classifiers-2023.11.13-py3-none-any.whl", hash = "sha256:5b09dd4114d2ea30928561fbb656724ea5e2b19f97b2c8c3699ac22e4e971958"},
+    {file = "trove-classifiers-2023.11.14.tar.gz", hash = "sha256:64b5e78305a5de347f2cd7ec8c12d704a3ef0cb85cc10c0ca5f73488d1c201f8"},
+    {file = "trove_classifiers-2023.11.14-py3-none-any.whl", hash = "sha256:2893a80cf3c48645462dea97c72c02a9fb1f7bd3c65f9908d3ffb1a7ef0b3833"},
 ]
 
 [[package]]
