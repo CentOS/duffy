@@ -54,7 +54,7 @@ pottery = {version = "^3", optional = true}
 psycopg2 = {version = "^2.9.2", optional = true}
 aiodns = {version = "^3.0.0", optional = true}
 pydantic = "^2.0.3"
-aiosqlite = {version = "^0.17 || ^0.18 || ^0.19", optional = true}
+aiosqlite = {version = "^0.17 || ^0.18 || ^0.19 || ^0.20.0", optional = true}
 pyxdg = "^0.27 || ^0.28"
 typing-extensions = "^4.6.1"
 greenlet = {version = "^2 || ^3", optional = true, allow-prereleases = true}
