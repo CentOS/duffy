@@ -2483,13 +2483,13 @@ pytest = ">=5.0"
 
 [[package]]
 name = "pytest-postgresql"
-version = "5.1.1"
+version = "6.0.0"
 description = "Postgresql fixtures and fixture factories for Pytest."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pytest-postgresql-5.1.1.tar.gz", hash = "sha256:edc1e83f65e9276bf465a983bfee98799866ee067defcee586ef6f889218e91f"},
-    {file = "pytest_postgresql-5.1.1-py3-none-any.whl", hash = "sha256:8e737e3e74a487717bc515605c2ea577aaf639548af7919f1086546e341acc7b"},
+    {file = "pytest-postgresql-6.0.0.tar.gz", hash = "sha256:6a4d8e600a2eef273f3c0e846cd0b2ea577282e252de29b4ca854bfb929bb682"},
+    {file = "pytest_postgresql-6.0.0-py3-none-any.whl", hash = "sha256:f14272bffad16a74d9a63f4cc828f243a12ae92995e236b68fd53154760e6a5a"},
 ]
 
 [package.dependencies]
@@ -3263,4 +3263,4 @@ tasks = ["Jinja2", "aiodns", "ansible-runner", "celery", "jmespath", "pottery"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "296707264de6c46d716dfc33b0b750d5ad2384606e51ac523810bda6af5b0c79"
+content-hash = "9f559adbaa583d4eebf92b87e6f46193db8a9e0078f45dba25662b57c904256b"
