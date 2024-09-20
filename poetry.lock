@@ -1060,13 +1060,13 @@ tests = ["asttokens (>=2.1.0)", "coverage", "coverage-enable-subprocess", "ipyth
 
 [[package]]
 name = "fastapi"
-version = "0.114.0"
+version = "0.115.0"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "fastapi-0.114.0-py3-none-any.whl", hash = "sha256:fee75aa1b1d3d73f79851c432497e4394e413e1dece6234f68d3ce250d12760a"},
-    {file = "fastapi-0.114.0.tar.gz", hash = "sha256:9908f2a5cc733004de6ca5e1412698f35085cefcbfd41d539245b9edf87b73c1"},
+    {file = "fastapi-0.115.0-py3-none-any.whl", hash = "sha256:17ea427674467486e997206a5ab25760f6b09e069f099b96f5b55a32fb6f1631"},
+    {file = "fastapi-0.115.0.tar.gz", hash = "sha256:f93b4ca3529a8ebc6fc3fcf710e5efa8de3df9b41570958abf1d97d843138004"},
 ]
 
 [package.dependencies]
@@ -3262,4 +3262,4 @@ tasks = ["Jinja2", "aiodns", "ansible-runner", "celery", "jmespath", "pottery"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "655da5aeeec1ef0140a1cb831e39499e99bb28edc8cc35c1cb85e128c493be34"
+content-hash = "610c62f739f367ded02442f72d105dbf8af5ebac6ac1e614704a3f92f53ac97f"
