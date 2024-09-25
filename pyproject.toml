@@ -106,6 +106,7 @@ client = ["httpx"]
 [tool.pytest.ini_options]
 addopts = "--black --cov-config .coveragerc --cov=duffy --cov-report term --cov-report xml --cov-report html --isort"
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 log_format = "%(levelname)s: %(asctime)s %(short_request_id_optional)s(%(filename)s:%(lineno)s %(message)s)"
 
 [tool.isort]
