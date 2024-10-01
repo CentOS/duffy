@@ -3101,13 +3101,13 @@ zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
 name = "uvicorn"
-version = "0.30.1"
+version = "0.31.0"
 description = "The lightning-fast ASGI server."
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "uvicorn-0.30.1-py3-none-any.whl", hash = "sha256:cd17daa7f3b9d7a24de3617820e634d0933b69eed8e33a516071174427238c81"},
-    {file = "uvicorn-0.30.1.tar.gz", hash = "sha256:d46cd8e0fd80240baffbcd9ec1012a712938754afcf81bce56c024c1656aece8"},
+    {file = "uvicorn-0.31.0-py3-none-any.whl", hash = "sha256:cac7be4dd4d891c363cd942160a7b02e69150dcbc7a36be04d5f4af4b17c8ced"},
+    {file = "uvicorn-0.31.0.tar.gz", hash = "sha256:13bc21373d103859f68fe739608e2eb054a816dea79189bc3ca08ea89a275906"},
 ]
 
 [package.dependencies]
@@ -3262,4 +3262,4 @@ tasks = ["Jinja2", "aiodns", "ansible-runner", "celery", "jmespath", "pottery"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "610c62f739f367ded02442f72d105dbf8af5ebac6ac1e614704a3f92f53ac97f"
+content-hash = "a70e19704298ec09a0dffdbf2e42e0a54c5efc7fce6c9e325576b816ad5cb234"
