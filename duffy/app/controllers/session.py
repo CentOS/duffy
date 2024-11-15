@@ -1,4 +1,5 @@
 """This is the session controller."""
+
 import datetime as dt
 import logging
 from typing import Optional

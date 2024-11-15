@@ -152,9 +152,7 @@ def test_provision_nodes_into_pool(reuse_nodes, testcase, foo_pool, db_sync_sess
         foo_pool.mechanism, "provision", wraps=wraps_pool_mech_provision
     ) as pool_mech_provision, mock.patch.object(
         provision, "_node_lookup_hostname_from_ipaddr", wraps=_fake_lookup
-    ) as _node_lookup_hostname_from_ipaddr, caplog.at_level(
-        "DEBUG", "duffy"
-    ), expectation:
+    ) as _node_lookup_hostname_from_ipaddr, caplog.at_level("DEBUG", "duffy"), expectation:
         if "mechanism-failure" in testcase:
             pool_provision.side_effect = MechanismFailure()
         elif not real_playbook:

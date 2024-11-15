@@ -55,7 +55,7 @@ class TestRetryContext:
             delay_backoff_factor=4,
             delay_add_fuzz=5,
         ) as retry:
-            assert retry.exceptions == RuntimeError
+            assert retry.exceptions is RuntimeError
             assert retry.no_attempts == 1
             assert retry.delay_min == 2
             assert retry.delay_max == 3

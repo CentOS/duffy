@@ -83,9 +83,7 @@ class TestSession(BaseTestController):
             wraps=TweakedSerializationErrorRetryContext,
         ), mock.patch("duffy.app.controllers.session.set") as mock_set, mock.patch(
             "duffy.app.controllers.session.sorted"
-        ) as mock_sorted, caplog.at_level(
-            "DEBUG"
-        ):
+        ) as mock_sorted, caplog.at_level("DEBUG"):
             self.attrs["nodes_specs"] = [{"pool": "physical-centos8stream-x86_64", "quantity": 1}]
 
             def set_side_effect(*args, __aux__=[0], **kwargs):
