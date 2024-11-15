@@ -84,9 +84,9 @@ class RetriesModel(ConfigBaseModel):
     delay_backoff_factor: Optional[
         Union[Annotated[int, Field(ge=1)], Annotated[float, Field(ge=1)]]
     ] = Field(alias="delay-backoff-factor", default=None)
-    delay_add_fuzz: Optional[
-        Union[Annotated[int, Field(ge=0)], Annotated[float, Field(ge=0)]]
-    ] = Field(alias="delay-add-fuzz", default=None)
+    delay_add_fuzz: Optional[Union[Annotated[int, Field(ge=0)], Annotated[float, Field(ge=0)]]] = (
+        Field(alias="delay-add-fuzz", default=None)
+    )
 
 
 class DefaultsModel(ConfigBaseModel):
