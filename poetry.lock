@@ -3161,13 +3161,13 @@ files = [
 
 [[package]]
 name = "virtualenv"
-version = "20.27.2"
+version = "20.27.1"
 description = "Virtual Python Environment builder"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "virtualenv-20.27.2-py3-none-any.whl", hash = "sha256:a9ebd6adbf08c99583133b61e7491f8a4bc8d5fb34361abaa5ede3fff903a0f0"},
-    {file = "virtualenv-20.27.2.tar.gz", hash = "sha256:99c89daeeaf15918880c73c99f41dc05eb39055e43231a4d76fc6b9fc2cf019d"},
+    {file = "virtualenv-20.27.1-py3-none-any.whl", hash = "sha256:f11f1b8a29525562925f745563bfd48b189450f61fb34c4f9cc79dd5aa32a1f4"},
+    {file = "virtualenv-20.27.1.tar.gz", hash = "sha256:142c6be10212543b32c6c45d3d3893dff89112cc588b7d0879ae5a1ec03a47ba"},
 ]
 
 [package.dependencies]
