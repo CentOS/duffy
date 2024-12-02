@@ -2389,13 +2389,13 @@ files = [
 
 [[package]]
 name = "pytest"
-version = "8.3.3"
+version = "8.3.4"
 description = "pytest: simple powerful testing with Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pytest-8.3.3-py3-none-any.whl", hash = "sha256:a6853c7375b2663155079443d2e45de913a911a11d669df02a50814944db57b2"},
-    {file = "pytest-8.3.3.tar.gz", hash = "sha256:70b98107bd648308a7952b06e6ca9a50bc660be218d53c257cc1fc94fda10181"},
+    {file = "pytest-8.3.4-py3-none-any.whl", hash = "sha256:50e16d954148559c9a74109af1eaf0c945ba2d8f30f0a3d3335edde19788b6f6"},
+    {file = "pytest-8.3.4.tar.gz", hash = "sha256:965370d062bce11e73868e0335abac31b4d3de0e82f4007408d242b4f8610761"},
 ]
 
 [package.dependencies]
@@ -2465,24 +2465,22 @@ setuptools = "*"
 
 [[package]]
 name = "python-daemon"
-version = "3.1.0"
+version = "3.1.1"
 description = "Library to implement a well-behaved Unix daemon process."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "python_daemon-3.1.0-py3-none-any.whl", hash = "sha256:a66b5896f0aed5807a25c6128268eb496488b1f9c6927c487710049ba16be32a"},
-    {file = "python_daemon-3.1.0.tar.gz", hash = "sha256:fdb621d7e5f46e74b4de1ad6b0fff6e69cd91b4f219de1476190ebdd0f4781df"},
+    {file = "python_daemon-3.1.1-py3-none-any.whl", hash = "sha256:b44866efe923c278ac5a052b6b87d4736fc53221b671cd3a7ec7c1f94ed19f47"},
+    {file = "python_daemon-3.1.1.tar.gz", hash = "sha256:a389d342aab7ac4c0e8397510af54ecb0d6919e2fced9bab7dd24f8c22265306"},
 ]
 
 [package.dependencies]
 lockfile = ">=0.10"
-setuptools = ">=62.4.0"
 
 [package.extras]
 build = ["build", "changelog-chug", "docutils", "python-daemon[doc]", "wheel"]
 devel = ["python-daemon[dist,test]"]
 dist = ["python-daemon[build]", "twine"]
-doc = ["Sphinx (>=4.4,<5.0)"]
 static-analysis = ["isort (>=5.13,<6.0)", "pip-check", "pycodestyle (>=2.12,<3.0)", "pydocstyle (>=6.3,<7.0)", "pyupgrade (>=3.17,<4.0)"]
 test = ["coverage", "python-daemon[build,static-analysis]", "testscenarios (>=0.4)", "testtools"]
 
