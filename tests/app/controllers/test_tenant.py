@@ -106,9 +106,7 @@ class TestTenant(BaseTestController):
                 # Ensure there's a session around to be expired.
                 tenant_session = Session(
                     tenant_id=tenant_id,
-                    expires_at=(
-                        dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc) + dt.timedelta(days=1)
-                    ),
+                    expires_at=dt.datetime.now(dt.timezone.utc) + dt.timedelta(days=1),
                 )
                 db_async_session.add(tenant_session)
                 await db_async_session.flush()

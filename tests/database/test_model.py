@@ -192,15 +192,15 @@ class TestNode(ModelTestBase):
     klass = model.Node
     attrs = _gen_node_attrs()
 
-    @mock.patch("duffy.database.model.node.dt.datetime")
-    def test_fail(self, datetime, db_sync_obj):
-        datetime.utcnow.return_value = utcnow = mock.MagicMock()
-        utcnow.isoformat.return_value = failed_at_sentinel = object()
+    @mock.patch("duffy.database.model.node.dt")
+    def test_fail(self, dt, db_sync_obj):
+        dt.datetime.now.return_value = now = mock.MagicMock()
+        now.isoformat.return_value = failed_at_sentinel = object()
 
         db_sync_obj.fail("information about the error")
 
-        datetime.utcnow.assert_called_once_with()
-        utcnow.isoformat.assert_called_once_with()
+        dt.datetime.now.assert_called_once_with(dt.timezone.utc)
+        now.isoformat.assert_called_once_with()
 
         assert db_sync_obj.data["error"] == {
             "failed_at": failed_at_sentinel,
