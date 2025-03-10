@@ -51,7 +51,7 @@ Jinja2 = {version = "^3.0.3", optional = true}
 ansible-runner = {version = "^2.1.1", optional = true}
 asyncpg = {version = "^0.25 || ^0.26 || ^0.27 || ^0.28 || ^0.29.0 || ^0.30.0", optional = true}
 celery = {version = "^5.2.1", extras = ["redis"], optional = true}
-httpx = {version = "^0.18.2 || ^0.19 || ^0.20 || ^0.21 || ^0.22 || ^0.23 || ^0.24 || ^0.25.0 || ^0.26.0 || ^0.27.0", optional = true}
+httpx = {version = "^0.18.2 || ^0.19 || ^0.20 || ^0.21 || ^0.22 || ^0.23 || ^0.24 || ^0.25.0 || ^0.26.0 || ^0.27.0 || ^0.28.0", optional = true}
 ipython = {version = "^7.29 || ^8 || ^9.0.0", optional = true}
 jmespath = {version = ">=0.10,<1 || ^1", optional = true}
 pottery = {version = "^3", optional = true}
@@ -68,7 +68,7 @@ Jinja2 = "^3.0.3"
 ansible = "^5.2 || ^6 || ^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0"
 ansible-core = "^2.12.1"
 ansible-runner = "^2.1.1"
-httpx = "^0.18.2 || ^0.19 || ^0.20 || ^0.21 || ^0.22 || ^0.23 || ^0.24 || ^0.25.0 || ^0.26.0 || ^0.27.0"
+httpx = "^0.18.2 || ^0.19 || ^0.20 || ^0.21 || ^0.22 || ^0.23 || ^0.24 || ^0.25.0 || ^0.26.0 || ^0.27.0 || ^0.28.0"
 isort = "^5.9.3"
 jmespath = "^0.10 || ^1"
 poetry = "^1.2.0"

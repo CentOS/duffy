@@ -4,7 +4,7 @@ from contextlib import nullcontext
 from unittest import mock
 
 import pytest
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.responses import PlainTextResponse
@@ -67,7 +67,8 @@ class TestRequestIDMiddleware:
             middleware=[Middleware(middleware.RequestIdMiddleware)],
         )
 
-        async with AsyncClient(app=app, base_url="http://example.test/") as client:
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://example.test/") as client:
             await self.run_basic_test(uuid_kind, client, caplog)
 
     async def test_in_duffy_app(self, uuid_kind, client, caplog):
