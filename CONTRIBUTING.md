@@ -81,7 +81,7 @@ There are a lot of ways with which one can contribute to this project.
    2. Ensure that the code is semantic and the names provided to variables, functions and classes describe their purpose.
    3. Tests must be added in the same pull request to ensure that a good coverage and great overall code quality.
    4. If there are parts in the code that do not require testing or cannot be tested, be sure to exclude them in the config.
-   5. Use `black .` to format the code and `isort .` to automatically sort the imports before pushing the changes.
+   5. Use `ruff format .` to format the code and `ruff check --fix .` to automatically sort the imports and fix other issues before pushing the changes.
 
 
 ## Where do I reach out if I wish to discuss the project?
