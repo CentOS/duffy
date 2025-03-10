@@ -52,7 +52,7 @@ ansible-runner = {version = "^2.1.1", optional = true}
 asyncpg = {version = "^0.25 || ^0.26 || ^0.27 || ^0.28 || ^0.29.0 || ^0.30.0", optional = true}
 celery = {version = "^5.2.1", extras = ["redis"], optional = true}
 httpx = {version = "^0.18.2 || ^0.19 || ^0.20 || ^0.21 || ^0.22 || ^0.23 || ^0.24 || ^0.25.0 || ^0.26.0 || ^0.27.0", optional = true}
-ipython = {version = "^7.29 || ^8", optional = true}
+ipython = {version = "^7.29 || ^8 || ^9.0.0", optional = true}
 jmespath = {version = ">=0.10,<1 || ^1", optional = true}
 pottery = {version = "^3", optional = true}
 psycopg2 = {version = "^2.9.2", optional = true}
