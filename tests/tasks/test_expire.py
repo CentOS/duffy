@@ -14,7 +14,7 @@ def test_expire_sessions(Lock, deprovision_nodes, db_sync_session, caplog):
     deprovision_nodes.delay.return_value = async_result = mock.Mock()
 
     with db_sync_session.begin():
-        now = dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc)
+        now = dt.datetime.now(dt.timezone.utc)
 
         tenant = Tenant(
             name="tenant", ssh_key="BOOP", api_key=uuid.uuid5(uuid.NAMESPACE_OID, "tenant")

@@ -148,8 +148,7 @@ async def create_session(
                         tenant_id=tenant.id,
                         data={"nodes_specs": [spec.model_dump() for spec in data.nodes_specs]},
                         expires_at=(
-                            dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc)
-                            + tenant.effective_session_lifetime
+                            dt.datetime.now(dt.timezone.utc) + tenant.effective_session_lifetime
                         ),
                     )
                     db_async_session.add(session)

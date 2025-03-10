@@ -18,7 +18,7 @@ def expire_sessions():
     with Lock(
         key="duffy:expire_sessions"
     ), sync_session_maker() as db_sync_session, db_sync_session.begin():
-        now = dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc)
+        now = dt.datetime.now(dt.timezone.utc)
 
         expired_sessions = (
             db_sync_session.execute(

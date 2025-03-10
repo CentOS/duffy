@@ -60,7 +60,10 @@ class Node(Base, CreatableMixin, RetirableMixin):
     def fail(self, detail: str):
         """Set the state of a node to failed with details"""
         self.state = NodeState.failed
-        self.data["error"] = {"failed_at": dt.datetime.utcnow().isoformat(), "detail": detail}
+        self.data["error"] = {
+            "failed_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+            "detail": detail,
+        }
 
 
 class SessionNode(Base):

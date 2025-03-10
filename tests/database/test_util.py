@@ -76,10 +76,9 @@ class TestTZDateTime:
         if testcase == "none":
             now = None
         else:
-            now = dt.datetime.utcnow()
-            if testcase == "with tz":
-                now = now.replace(tzinfo=dt.timezone.utc)
-            elif testcase == "without tz":
+            now = dt.datetime.now(dt.timezone.utc)
+            if testcase == "without tz":
+                now = now.replace(tzinfo=None)
                 expectation = pytest.raises(TypeError)
 
         with expectation:
@@ -99,7 +98,7 @@ class TestTZDateTime:
         if testcase == "none":
             now = None
         else:
-            now = dt.datetime.utcnow()
+            now = dt.datetime.now(dt.timezone.utc)
             if testcase == "with tz":
                 now = now.replace(tzinfo=dt.timezone.utc)
 
@@ -127,7 +126,7 @@ class Retirable(Base, RetirableMixin):
 class TestCreatableMixin:
     def test_created_at_gets_set(self, db_sync_session):
         """Test that created_at gets set."""
-        now = dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc)
+        now = dt.datetime.now(dt.timezone.utc)
         obj = Creatable()
         db_sync_session.add(obj)
         db_sync_session.flush()
@@ -151,7 +150,7 @@ class TestRetirableMixin:
         ),
     )
     def test_setting_active(self, value, previously_active, db_sync_session):
-        now = dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc)
+        now = dt.datetime.now(dt.timezone.utc)
         obj = Retirable()
         if not previously_active:
             inthepast = dt.datetime(2020, 1, 1, 10, 0).replace(tzinfo=dt.timezone.utc)

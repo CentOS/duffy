@@ -143,7 +143,7 @@ async def update_tenant(
         updated_tenant.active = data.active
         if data.active is False:
             # Cause their active sessions to be expired soon
-            now = dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc)
+            now = dt.datetime.now(dt.timezone.utc)
 
             tenant_sessions = (
                 await db_async_session.execute(
