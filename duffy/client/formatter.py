@@ -23,7 +23,7 @@ class DuffyFormatter:
 
 class DuffyJSONFormatter(DuffyFormatter, format="json"):
     def format(self, result: JSONValue) -> str:
-        return json.dumps(result)
+        return json.dumps(result, indent=4)
 
 
 class DuffyYAMLFormatter(DuffyFormatter, format="yaml"):
