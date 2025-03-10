@@ -5,7 +5,7 @@ from unittest import mock
 
 import pytest
 from fastapi.exceptions import HTTPException
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from starlette.status import (
     HTTP_200_OK,
     HTTP_201_CREATED,
@@ -28,7 +28,10 @@ TEST_CRED = Credentials(
 
 @pytest.fixture
 async def client() -> Iterator[AsyncClient]:
-    async with AsyncClient(app=main.app, base_url="http://duffy-legacy-test.example.com") as client:
+    transport = ASGITransport(app=main.app)
+    async with AsyncClient(
+        transport=transport, base_url="http://duffy-legacy-test.example.com"
+    ) as client:
         yield client
 
 

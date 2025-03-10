@@ -4,7 +4,7 @@ from unittest import mock
 from uuid import UUID
 
 import pytest
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
 
 from duffy.app.main import app
@@ -110,7 +110,10 @@ async def client(
                     else:
                         raise ValueError(f"can't create client for tenant with name '{name}'")
 
-    async with AsyncClient(app=app, base_url="http://duffy-test.example.com", auth=auth) as client:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(
+        transport=transport, base_url="http://duffy-test.example.com", auth=auth
+    ) as client:
         yield client
 
 
