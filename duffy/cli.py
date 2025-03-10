@@ -28,7 +28,10 @@ try:
 except ImportError:  # pragma: no cover
     shell = None
 
-from .app.logging import RequestIdFilter
+try:
+    from .app.logging import RequestIdFilter
+except ImportError:  # pragma: no cover
+    RequestIdFilter = None
 
 try:
     from .client import DuffyClient, DuffyFormatter
@@ -350,7 +353,8 @@ def serve(obj, reload, host, port):
     numeric_loglevel = uvicorn.config.LOG_LEVELS[loglevel.lower()]
 
     handler = logging.StreamHandler()
-    handler.addFilter(RequestIdFilter())
+    if RequestIdFilter:
+        handler.addFilter(RequestIdFilter())
     logging.basicConfig(
         force=True,
         level=numeric_loglevel,
@@ -431,7 +435,8 @@ def serve_legacy(obj, reload, host, port, dest):
     numeric_loglevel = uvicorn.config.LOG_LEVELS[loglevel.lower()]
 
     handler = logging.StreamHandler()
-    handler.addFilter(RequestIdFilter())
+    if RequestIdFilter:
+        handler.addFilter(RequestIdFilter())
     logging.basicConfig(
         force=True,
         level=numeric_loglevel,

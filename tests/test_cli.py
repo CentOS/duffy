@@ -306,7 +306,14 @@ def test_worker(worker_available, duffy_config_files, runner):
 
 @pytest.mark.duffy_config(example_config=True)
 @pytest.mark.parametrize(
-    "testcase", ("default", "with-options", "without-logging-config", "missing-modules")
+    "testcase",
+    (
+        "default",
+        "with-options",
+        "without-logging-config",
+        "missing-uvicorn-module",
+        "missing-app-extra",
+    ),
 )
 @mock.patch("duffy.cli.logging")
 @mock.patch("duffy.cli.uvicorn.run")
@@ -320,8 +327,10 @@ def test_serve(uvicorn_run, logging, testcase, runner, duffy_config_files, tmp_p
         with config_file.open("w") as fp:
             yaml.dump(modified_config, fp)
 
-    if "missing-modules" in testcase:
+    if "missing-uvicorn-module" in testcase:
         ctxmgr = mock.patch.object(duffy.cli, "uvicorn", None)
+    elif "missing-app-extra" in testcase:
+        ctxmgr = mock.patch.object(duffy.cli, "RequestIdFilter", None)
     else:
         ctxmgr = nullcontext()
 
@@ -333,7 +342,7 @@ def test_serve(uvicorn_run, logging, testcase, runner, duffy_config_files, tmp_p
     with ctxmgr:
         result = runner.invoke(cli, parameters)
 
-    if "missing-modules" not in testcase:
+    if "missing-uvicorn-module" not in testcase:
         assert result.exit_code == 0
         uvicorn_run.assert_called_once()
         if "without-logging-config" in testcase:
@@ -347,7 +356,14 @@ def test_serve(uvicorn_run, logging, testcase, runner, duffy_config_files, tmp_p
 
 @pytest.mark.duffy_config(example_config=True)
 @pytest.mark.parametrize(
-    "testcase", ("default", "with-options", "without-logging-config", "missing-modules")
+    "testcase",
+    (
+        "default",
+        "with-options",
+        "without-logging-config",
+        "missing-uvicorn-module",
+        "missing-app-extra",
+    ),
 )
 @mock.patch("duffy.cli.logging")
 @mock.patch("duffy.cli.uvicorn.run")
@@ -361,8 +377,10 @@ def test_serve_legacy(uvicorn_run, logging, testcase, runner, duffy_config_files
         with config_file.open("w") as fp:
             yaml.dump(modified_config, fp)
 
-    if "missing-modules" in testcase:
+    if "missing-uvicorn-module" in testcase:
         ctxmgr = mock.patch.object(duffy.cli, "uvicorn", None)
+    elif "missing-app-extra" in testcase:
+        ctxmgr = mock.patch.object(duffy.cli, "RequestIdFilter", None)
     else:
         ctxmgr = nullcontext()
 
@@ -378,7 +396,7 @@ def test_serve_legacy(uvicorn_run, logging, testcase, runner, duffy_config_files
     with ctxmgr:
         result = runner.invoke(cli, parameters)
 
-    if "missing-modules" not in testcase:
+    if "missing-uvicorn-module" not in testcase:
         assert result.exit_code == 0
         uvicorn_run.assert_called_once()
         if "without-logging-config" in testcase:
