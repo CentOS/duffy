@@ -71,7 +71,7 @@ class CustomTimeDelta:
             milliseconds=sign * int(m.group("milliseconds") or 0),
         )
 
-    def serialize(self, v: dt.timedelta) -> Union[str, int]:
+    def serialize(self, v: dt.timedelta) -> Union[str, int, float]:
         total_seconds = v.total_seconds()
 
         if self.serialize_to_seconds:
