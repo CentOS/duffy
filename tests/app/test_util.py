@@ -7,6 +7,7 @@ from sqlalchemy.exc import DBAPIError
 
 import duffy.app.util
 from duffy.app.util import ConfigRetryContext, SerializationErrorRetryContext
+from duffy.util import aclosing
 
 
 def mock_config_get(key, *args, **kwargs):
@@ -88,10 +89,10 @@ async def test_serializationerror_retry_context(testcase, caplog):
     result = None
 
     with expectation, hide_asyncpg, caplog.at_level("DEBUG"):
-        async with SerializationErrorRetryContext() as retry:
+        async with SerializationErrorRetryContext() as retry, aclosing(retry.attempts) as attempts:
             if not catch_exceptions:
                 catch_exceptions = retry.exceptions
-            async for attempt in retry.attempts:
+            async for attempt in attempts:
                 try:
                     result = await fn()
                 # NB: The following should be `except retry.exceptions as exc` in real code, but we

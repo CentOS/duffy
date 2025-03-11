@@ -4,7 +4,7 @@ from unittest import mock
 
 import pytest
 
-from duffy.util import RetryContext, camel_case_to_lower_with_underscores, merge_dicts
+from duffy.util import RetryContext, aclosing, camel_case_to_lower_with_underscores, merge_dicts
 
 
 @pytest.mark.parametrize(
@@ -110,8 +110,8 @@ class TestRetryContext:
         result = None
 
         with expectation:
-            async with RetryContext() as retry:
-                async for attempt in retry.attempts:
+            async with RetryContext() as retry, aclosing(retry.attempts) as attempts:
+                async for attempt in attempts:
                     try:
                         if attempt < limit:
                             raise RuntimeError()
