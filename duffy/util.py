@@ -2,6 +2,21 @@ import asyncio
 import enum
 import logging
 import time
+
+try:
+    from contextlib import aclosing
+except ImportError:  # pragma: no cover
+    # Python < 3.10
+    from contextlib import asynccontextmanager
+
+    @asynccontextmanager
+    async def aclosing(thing):
+        try:
+            yield thing
+        finally:
+            await thing.aclose()
+
+
 from random import random
 from typing import AsyncIterator, Callable, Iterator, Optional, Tuple, Union
 
@@ -78,8 +93,13 @@ class RetryContext:
 
     Use it e.g. like this:
 
-        async with RetryContext(exceptions=RuntimeError) as retry:
-            async for attempt in retry.attempts:
+        from contextlib import aclosing
+        # or for Python < 3.10: from duffy.util import aclosing
+
+        async with RetryContext(
+            exceptions=RuntimeError
+        ) as retry, aclosing(retry.attempts) as attempts:
+            async for attempt in attempts:
                 # ... set up the things ...
                 try:
                     # ... do the things ...

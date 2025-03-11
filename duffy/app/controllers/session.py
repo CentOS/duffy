@@ -26,6 +26,7 @@ from ...database.model import Node, Session, SessionNode, Tenant
 from ...database.types import NodeState
 from ...nodes.context import contextualize, decontextualize
 from ...tasks import deprovision_nodes, fill_pools
+from ...util import aclosing
 from ..auth import req_tenant, req_tenant_optional
 from ..database import req_db_async_session
 from ..util import SerializationErrorRetryContext
@@ -140,8 +141,8 @@ async def create_session(
 
     async with SerializationErrorRetryContext(
         exception_wrapper=wrap_with_http_422_exception
-    ) as retry:
-        async for attempt in retry.attempts:
+    ) as retry, aclosing(retry.attempts) as attempts:
+        async for attempt in attempts:
             try:
                 async with db_async_session.begin():
                     session = Session(
@@ -197,8 +198,8 @@ async def create_session(
 
     async with SerializationErrorRetryContext(
         exception_wrapper=wrap_with_http_422_exception
-    ) as retry:
-        async for attempt in retry.attempts:
+    ) as retry, aclosing(retry.attempts) as attempts:
+        async for attempt in attempts:
             try:
                 async with db_async_session.begin():
                     # New transaction -> reload session and related node objects
