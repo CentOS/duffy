@@ -66,7 +66,7 @@ pyxdg = "^0.27 || ^0.28"
 typing-extensions = "^4.6.1"
 greenlet = {version = "^2 || ^3", optional = true, allow-prereleases = true}
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 Jinja2 = "^3.0.3"
 ansible = [
     { version = "^5.2 || ^6", python = "~3.8" },
@@ -86,7 +86,10 @@ ansible-runner = [
 ]
 httpx = "^0.18.2 || ^0.19 || ^0.20 || ^0.21 || ^0.22 || ^0.23 || ^0.24 || ^0.25.0 || ^0.26.0 || ^0.27.0 || ^0.28.0"
 jmespath = "^0.10 || ^1"
-poetry = "^1.2.0"
+poetry = [
+    { version = "^1.2.0", python = "~3.8" },
+    { version = "^1.2.0 || ^2.0.0", python = ">=3.9,<4" },
+]
 pottery = "^3"
 pytest = ">=6.2.5"
 pytest-asyncio = "^0.17 || ^0.18 || ^0.19 || ^0.20 || ^0.21 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0"
