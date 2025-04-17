@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base",
+    "config:recommended",
     "group:allNonMajor",
     "schedule:nonOfficeHours",
     ":separateMultipleMajorReleases",
@@ -18,15 +18,23 @@
   },
   "automergeStrategy": "rebase",
   "rangeStrategy": "widen",
-  "stabilityDays": 3,
-  "labels": ["dependencies"],
+  "minimumReleaseAge": "3 days",
+  "labels": [
+    "dependencies"
+  ],
   "packageRules": [
     {
-      "matchLanguages": ["python"],
-      "addLabels": ["python"]
+      "matchCategories": [
+        "python"
+      ],
+      "addLabels": [
+        "python"
+      ]
     },
     {
-      "matchDepTypes": ["devDependencies"],
+      "matchDepTypes": [
+        "devDependencies"
+      ],
       "automerge": true,
       "groupName": "dev dependencies"
     }
