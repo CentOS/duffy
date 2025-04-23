@@ -125,17 +125,17 @@ ansible-core = ">=2.17.7,<2.18.0"
 
 [[package]]
 name = "ansible"
-version = "11.4.0"
+version = "11.5.0"
 description = "Radically simple IT automation"
 optional = false
 python-versions = ">=3.11"
 files = [
-    {file = "ansible-11.4.0-py3-none-any.whl", hash = "sha256:fb56f6e5d5b08f69499a76f0972ac0b88ddc488ada1f386129ba40cb0b5c6ec7"},
-    {file = "ansible-11.4.0.tar.gz", hash = "sha256:d25a7f26bf5821f8043bc806019822fd2810bd65e6b6bafb698bbeedadba72bf"},
+    {file = "ansible-11.5.0-py3-none-any.whl", hash = "sha256:d20bc30f44a35678ca5f05868084f2f52a8bb6f024e85dc80639f6ac4364cc61"},
+    {file = "ansible-11.5.0.tar.gz", hash = "sha256:18a3fc73120a49ade9a9a67eb8f9d4f5009d2106c34ffeb9663ad928b76ed59b"},
 ]
 
 [package.dependencies]
-ansible-core = ">=2.18.4,<2.19.0"
+ansible-core = ">=2.18.5,<2.19.0"
 
 [[package]]
 name = "ansible-core"
@@ -175,13 +175,13 @@ resolvelib = ">=0.5.3,<0.9.0"
 
 [[package]]
 name = "ansible-core"
-version = "2.17.10"
+version = "2.17.11"
 description = "Radically simple IT automation"
 optional = false
 python-versions = ">=3.10"
 files = [
-    {file = "ansible_core-2.17.10-py3-none-any.whl", hash = "sha256:329c83c5787ded1621449479fa59112aa3d3c0fcb994f19de2822ab44e59018c"},
-    {file = "ansible_core-2.17.10.tar.gz", hash = "sha256:5a3c0f37c1d816b20beb77ac721be5b1463a8037116bbae700bd1c7d4b6612f1"},
+    {file = "ansible_core-2.17.11-py3-none-any.whl", hash = "sha256:b90cc1afb8113ba61a6dcf94540ae4e32093ff669c3247eafaf9857da140be00"},
+    {file = "ansible_core-2.17.11.tar.gz", hash = "sha256:fa3175ef425d499052fc40cf2ed60e10a43c494de02864ee15533074094e9662"},
 ]
 
 [package.dependencies]
@@ -2121,13 +2121,13 @@ files = [
 
 [[package]]
 name = "more-itertools"
-version = "10.6.0"
+version = "10.7.0"
 description = "More routines for operating on iterables, beyond itertools"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "more-itertools-10.6.0.tar.gz", hash = "sha256:2cd7fad1009c31cc9fb6a035108509e6547547a7a738374f10bd49a09eb3ee3b"},
-    {file = "more_itertools-10.6.0-py3-none-any.whl", hash = "sha256:6eb054cb4b6db1473f6e15fcc676a08e4732548acd47c708f0e179c2c7c01e89"},
+    {file = "more_itertools-10.7.0-py3-none-any.whl", hash = "sha256:d43980384673cb07d2f7d2d918c616b30c659c089ee23953f601d6609c67510e"},
+    {file = "more_itertools-10.7.0.tar.gz", hash = "sha256:9fddd5403be01a94b204faadcff459ec3568cf110265d3c54323e1e866ad29d3"},
 ]
 
 [[package]]
