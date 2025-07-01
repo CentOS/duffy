@@ -2256,13 +2256,13 @@ testing = ["docopt", "pytest"]
 
 [[package]]
 name = "pbs-installer"
-version = "2025.6.26"
+version = "2025.6.30"
 description = "Installer for Python Build Standalone"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pbs_installer-2025.6.26-py3-none-any.whl", hash = "sha256:bb8bc2c489d8c5af6f7b5e4563e56070f828f2be555f06eb2fe67abd72ee44e1"},
-    {file = "pbs_installer-2025.6.26.tar.gz", hash = "sha256:e0a0995f6245dd38fcf178bfd8ee7253627cdbe52e46361228b91a173b7ea0de"},
+    {file = "pbs_installer-2025.6.30-py3-none-any.whl", hash = "sha256:c921b51d0d701c79c06ef3b496a72475f6650800a60f5fae3d840f0f468133b8"},
+    {file = "pbs_installer-2025.6.30.tar.gz", hash = "sha256:baf6b67b379644e5d7a67aec1a14df5fdb0114a9cb6e47001feb1b85b12a59b7"},
 ]
 
 [package.dependencies]
