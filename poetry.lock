@@ -125,17 +125,17 @@ ansible-core = ">=2.17.7,<2.18.0"
 
 [[package]]
 name = "ansible"
-version = "11.9.0"
+version = "11.10.0"
 description = "Radically simple IT automation"
 optional = false
 python-versions = ">=3.11"
 files = [
-    {file = "ansible-11.9.0-py3-none-any.whl", hash = "sha256:79b087ef38105b93e0e092e7013a0f840e154a6a8ce9b5fddd1b47593adc542a"},
-    {file = "ansible-11.9.0.tar.gz", hash = "sha256:528ca5a408f11cf1fea00daea7570e68d40e167be38b90c119a7cb45729e4921"},
+    {file = "ansible-11.10.0-py3-none-any.whl", hash = "sha256:e31d5fc5748353d3efc1d64348c3c1d969032486a4533b2253478442cb4ab024"},
+    {file = "ansible-11.10.0.tar.gz", hash = "sha256:f394e091c5dfd7e66c2f1e1d4459c44285004ba95925989b2d04c3a850ffcb96"},
 ]
 
 [package.dependencies]
-ansible-core = ">=2.18.8,<2.19.0"
+ansible-core = ">=2.18.9,<2.19.0"
 
 [[package]]
 name = "ansible-core"
@@ -2664,13 +2664,13 @@ idna = ["idna (>=2.1)"]
 
 [[package]]
 name = "pycparser"
-version = "2.22"
+version = "2.23"
 description = "C parser in Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pycparser-2.22-py3-none-any.whl", hash = "sha256:c3702b6d3dd8c7abc1afa565d7e63d53a1d0bd86cdc24edd75470f4de499cfcc"},
-    {file = "pycparser-2.22.tar.gz", hash = "sha256:491c8be9c040f5390f5bf44a5b07752bd07f56edf992381b05c701439eec10f6"},
+    {file = "pycparser-2.23-py3-none-any.whl", hash = "sha256:e5c6e8d3fbad53479cab09ac03729e0a9faf2bee3db8208a550daf5af81a5934"},
+    {file = "pycparser-2.23.tar.gz", hash = "sha256:78816d4f24add8f10a06d6f05b4d424ad9e96cfebf68a4ddc99c65c0720d00c2"},
 ]
 
 [[package]]
@@ -3713,13 +3713,13 @@ test = ["argcomplete (>=3.0.3)", "mypy (>=1.7.0)", "pre-commit", "pytest (>=7.0,
 
 [[package]]
 name = "trove-classifiers"
-version = "2025.9.8.13"
+version = "2025.9.9.12"
 description = "Canonical source for classifiers on PyPI (pypi.org)."
 optional = false
 python-versions = "*"
 files = [
-    {file = "trove_classifiers-2025.9.8.13-py3-none-any.whl", hash = "sha256:f784db2f859ee1ffa168adaf0868006c20dee5e673a3ff813a2cd51ef2c465f9"},
-    {file = "trove_classifiers-2025.9.8.13.tar.gz", hash = "sha256:2de91c8f286b7fea55072061924f69e7f3bdf7a9cb63719c90090e41c6657d3a"},
+    {file = "trove_classifiers-2025.9.9.12-py3-none-any.whl", hash = "sha256:d449bd9d4715105657732d6dd1f46aa1595278d01ef1716ca164b35867135a4f"},
+    {file = "trove_classifiers-2025.9.9.12.tar.gz", hash = "sha256:6a00942fc023f4f383af3254b4ed818d7fa7923a3c7c03b0e71da2ce71b538ab"},
 ]
 
 [[package]]
