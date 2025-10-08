@@ -125,17 +125,17 @@ ansible-core = ">=2.17.7,<2.18.0"
 
 [[package]]
 name = "ansible"
-version = "11.10.0"
+version = "11.11.0"
 description = "Radically simple IT automation"
 optional = false
 python-versions = ">=3.11"
 files = [
-    {file = "ansible-11.10.0-py3-none-any.whl", hash = "sha256:e31d5fc5748353d3efc1d64348c3c1d969032486a4533b2253478442cb4ab024"},
-    {file = "ansible-11.10.0.tar.gz", hash = "sha256:f394e091c5dfd7e66c2f1e1d4459c44285004ba95925989b2d04c3a850ffcb96"},
+    {file = "ansible-11.11.0-py3-none-any.whl", hash = "sha256:8f93cdeef8f26cbac216237e8925f79168d0a8d5211391eb4fa86535cedef63a"},
+    {file = "ansible-11.11.0.tar.gz", hash = "sha256:a67c3628bbafd69d291e038785f39d7449e137262d852be283fc331705352d40"},
 ]
 
 [package.dependencies]
-ansible-core = ">=2.18.9,<2.19.0"
+ansible-core = ">=2.18.10,<2.19.0"
 
 [[package]]
 name = "ansible-core"
@@ -2408,13 +2408,13 @@ testing = ["docopt", "pytest"]
 
 [[package]]
 name = "pbs-installer"
-version = "2025.9.18"
+version = "2025.10.7"
 description = "Installer for Python Build Standalone"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pbs_installer-2025.9.18-py3-none-any.whl", hash = "sha256:8ef55d7675698747505c237015d14c81759bd66a0d4c8b20cec9a2dc96e8434c"},
-    {file = "pbs_installer-2025.9.18.tar.gz", hash = "sha256:c0a51a7c1e015723bd8396f02e15b5876e439f74b0f45bbac436b189f903219f"},
+    {file = "pbs_installer-2025.10.7-py3-none-any.whl", hash = "sha256:7574aff70432bbb8ec449975a41b587d3dd8ed91dd2c92081452cc169388132c"},
+    {file = "pbs_installer-2025.10.7.tar.gz", hash = "sha256:49e89b22f45f0bcadf43989e4ffb0ec3c801ae4f89adcf7b64b0e6bf0b305381"},
 ]
 
 [package.dependencies]
