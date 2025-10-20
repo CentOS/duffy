@@ -1,6 +1,7 @@
 import logging
 import logging.config
 import sys
+import time
 from datetime import timedelta
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
@@ -726,14 +727,77 @@ def client_show_session(obj, session_id: int):
     required=True,
     metavar="pool=<pool>,quantity=<quantity> [...]",
 )
+@click.option(
+    "--retry",
+    is_flag=True,
+    help="Enable retry on failure with fixed interval.",
+)
+@click.option(
+    "--timeout",
+    type=int,
+    default=5,
+    help="Total timeout in minutes for retries (default: 5).",
+)
+@click.option(
+    "--retry-interval",
+    type=int,
+    default=45,
+    help="Seconds to wait between retry attempts (default: 45).",
+)
 @click.pass_obj
-def client_request_session(obj: dict, nodes_specs: List[str]):
+def client_request_session(
+    obj: dict, nodes_specs: List[str], retry: bool, timeout: int, retry_interval: int
+):
     """Request a session with nodes from the Duffy API."""
-    result = obj["client"].request_session(nodes_specs)
-    if "error" in result:
-        click.echo(obj["formatter"].format(result), err=True)
-        sys.exit(1)
-    click.echo(obj["formatter"].format(result))
+    start_time = time.time()
+    timeout_seconds = timeout * 60  # Convert minutes to seconds
+    attempt = 0
+
+    while True:
+        attempt += 1
+        result = obj["client"].request_session(nodes_specs)
+
+        if "error" not in result:
+            # Success - output result and exit
+            if attempt > 1:
+                click.echo(f"Success after {attempt} attempts!", err=True)
+            click.echo(obj["formatter"].format(result))
+            return
+
+        # If retry is not enabled, exit immediately on error
+        if not retry:
+            click.echo(obj["formatter"].format(result), err=True)
+            sys.exit(1)
+
+        # Check if we've exceeded the timeout
+        elapsed_time = time.time() - start_time
+        if elapsed_time >= timeout_seconds:
+            click.echo(f"Timeout reached after {timeout} minutes. Last error:", err=True)
+            click.echo(obj["formatter"].format(result), err=True)
+            sys.exit(1)
+
+        # Calculate remaining time and next sleep duration
+        remaining_time = timeout_seconds - elapsed_time
+        sleep_duration = min(retry_interval, remaining_time)
+
+        if sleep_duration <= 0:
+            click.echo(f"Timeout reached after {timeout} minutes. Last error:", err=True)
+            click.echo(obj["formatter"].format(result), err=True)
+            sys.exit(1)
+
+        # Show progress every 5 attempts
+        if attempt % 5 == 0:
+            elapsed_minutes = elapsed_time / 60
+            click.echo(
+                f"Still trying... (attempt {attempt}, "
+                f"{elapsed_minutes:.1f}/{timeout} minutes elapsed)",
+                err=True,
+            )
+
+        click.echo(
+            f"Request failed (attempt {attempt}), retrying in {sleep_duration} seconds...", err=True
+        )
+        time.sleep(sleep_duration)
 
 
 @client.command("retire-session")
