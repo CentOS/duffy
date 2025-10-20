@@ -851,6 +851,221 @@ class TestClientCLI:
         click_echo.assert_called_with("ERROR: No nodes available", err=True)
         sys_exit.assert_called_once_with(1)
 
+    @mock.patch("duffy.cli.time.sleep")
+    @mock.patch("duffy.cli.time.time")
+    @mock.patch("click.echo")
+    @mock.patch("duffy.cli.sys.exit")
+    def test_request_session_retry_success(
+        self,
+        sys_exit,
+        click_echo,
+        time_time,
+        time_sleep,
+        DuffyClient,
+        DuffyFormatter,
+        runner,
+        duffy_config_files,
+    ):
+        (config_file,) = duffy_config_files
+
+        # Mock time.time() to simulate passage of time
+        time_time.side_effect = [0, 30, 90]  # Start, after first failure, after success
+
+        DuffyClient.return_value = client = mock.MagicMock()
+        error_result = {"error": {"detail": "No nodes available"}}
+        success_result = {"session_id": 123}
+        # First call fails, second call succeeds
+        client.request_session.side_effect = [error_result, success_result]
+
+        DuffyFormatter.new_for_format.return_value = formatter = mock.MagicMock()
+        formatter.format.return_value = "Session created successfully"
+
+        parameters = [
+            f"--config={config_file.absolute()}",
+            "client",
+            "request-session",
+            "--retry",
+            "--timeout=5",
+            "--retry-interval=45",
+            "pool=pool,quantity=1",
+        ]
+
+        runner.invoke(cli, parameters)
+
+        # Should be called twice: once fails, once succeeds
+        assert client.request_session.call_count == 2
+
+        # Should sleep once between attempts
+        time_sleep.assert_called_once_with(45)
+
+        # Should output success message and result
+        assert any("Success after 2 attempts!" in str(call) for call in click_echo.call_args_list)
+        click_echo.assert_any_call("Session created successfully")
+
+        sys_exit.assert_called_once_with(0)
+
+    @mock.patch("duffy.cli.time.sleep")
+    @mock.patch("duffy.cli.time.time")
+    @mock.patch("click.echo")
+    @mock.patch("duffy.cli.sys.exit")
+    def test_request_session_retry_timeout(
+        self,
+        sys_exit,
+        click_echo,
+        time_time,
+        time_sleep,
+        DuffyClient,
+        DuffyFormatter,
+        runner,
+        duffy_config_files,
+    ):
+        (config_file,) = duffy_config_files
+
+        # Mock time.time() to simulate timeout after 2 minutes
+        time_time.side_effect = [0, 45, 90, 135, 300]  # Start, after each attempt
+
+        DuffyClient.return_value = client = mock.MagicMock()
+        error_result = {"error": {"detail": "No nodes available"}}
+        client.request_session.return_value = error_result
+
+        DuffyFormatter.new_for_format.return_value = formatter = mock.MagicMock()
+        formatter.format.return_value = "ERROR: No nodes available"
+        # Configure sys_exit to raise SystemExit with proper exit code
+        sys_exit.side_effect = lambda code: exec("raise SystemExit(code)")
+
+        parameters = [
+            f"--config={config_file.absolute()}",
+            "client",
+            "request-session",
+            "--retry",
+            "--timeout=2",  # 2 minutes timeout
+            "--retry-interval=45",
+            "pool=pool,quantity=1",
+        ]
+
+        result = runner.invoke(cli, parameters)
+
+        # Should attempt multiple times until timeout
+        assert client.request_session.call_count >= 2
+
+        # Should output timeout message
+        assert any(
+            "Timeout reached after 2 minutes" in str(call) for call in click_echo.call_args_list
+        )
+
+        sys_exit.assert_called_once_with(1)
+        assert result.exit_code == 1
+
+    @mock.patch("duffy.cli.time.sleep")
+    @mock.patch("duffy.cli.time.time")
+    @mock.patch("click.echo")
+    @mock.patch("duffy.cli.sys.exit")
+    def test_request_session_retry_progress_reporting(
+        self,
+        sys_exit,
+        click_echo,
+        time_time,
+        time_sleep,
+        DuffyClient,
+        DuffyFormatter,
+        runner,
+        duffy_config_files,
+    ):
+        (config_file,) = duffy_config_files
+
+        # Mock time.time() to simulate 6 attempts (to trigger progress reporting every 5)
+        time_time.side_effect = [0, 45, 90, 135, 180, 225, 270, 315, 360]
+
+        DuffyClient.return_value = client = mock.MagicMock()
+        error_result = {"error": {"detail": "No nodes available"}}
+        success_result = {"session_id": 123}
+        # Fail 5 times, then succeed on 6th attempt
+        client.request_session.side_effect = [error_result] * 5 + [success_result]
+
+        DuffyFormatter.new_for_format.return_value = formatter = mock.MagicMock()
+        formatter.format.return_value = "Session created successfully"
+
+        parameters = [
+            f"--config={config_file.absolute()}",
+            "client",
+            "request-session",
+            "--retry",
+            "--timeout=10",  # 10 minutes timeout
+            "--retry-interval=45",
+            "pool=pool,quantity=1",
+        ]
+
+        runner.invoke(cli, parameters)
+
+        # Should be called 6 times: 5 failures + 1 success
+        assert client.request_session.call_count == 6
+
+        # Should output progress message after 5 attempts
+        assert any("Still trying... (attempt 5," in str(call) for call in click_echo.call_args_list)
+
+        # Should output success message
+        assert any("Success after 6 attempts!" in str(call) for call in click_echo.call_args_list)
+
+        sys_exit.assert_called_once_with(0)
+
+    @mock.patch("duffy.cli.time.sleep")
+    @mock.patch("duffy.cli.time.time")
+    @mock.patch("click.echo")
+    @mock.patch("duffy.cli.sys.exit")
+    def test_request_session_retry_timeout_with_zero_sleep(
+        self,
+        sys_exit,
+        click_echo,
+        time_time,
+        time_sleep,
+        DuffyClient,
+        DuffyFormatter,
+        runner,
+        duffy_config_files,
+    ):
+        """Test timeout when sleep_duration becomes <= 0."""
+        (config_file,) = duffy_config_files
+
+        # Mock time.time() to simulate scenario where retry_interval=0 triggers sleep_duration <= 0
+        # With retry_interval=0, sleep_duration = min(0, remaining_time) = 0
+        # This will trigger the second timeout condition (lines 784-786)
+        time_time.side_effect = [0, 30]  # First attempt, then immediate retry due to interval=0
+
+        DuffyClient.return_value = client = mock.MagicMock()
+        error_result = {"error": {"detail": "No nodes available"}}
+        client.request_session.return_value = error_result
+
+        DuffyFormatter.new_for_format.return_value = formatter = mock.MagicMock()
+        formatter.format.return_value = "ERROR: No nodes available"
+        # Configure sys_exit to raise SystemExit with proper exit code
+        sys_exit.side_effect = lambda code: exec("raise SystemExit(code)")
+
+        parameters = [
+            f"--config={config_file.absolute()}",
+            "client",
+            "request-session",
+            "--retry",
+            "--timeout=1",  # 1 minute timeout
+            "--retry-interval=0",
+            "pool=pool,quantity=1",
+        ]
+
+        result = runner.invoke(cli, parameters)
+
+        # Should attempt only once, then sleep_duration <= 0 triggers immediate timeout
+        assert client.request_session.call_count == 1
+
+        # Should not call sleep when sleep_duration <= 0
+        time_sleep.assert_not_called()
+
+        # Should output timeout message for sleep_duration <= 0 case
+        assert any(
+            "Timeout reached after 1 minutes" in str(call) for call in click_echo.call_args_list
+        )
+
+        sys_exit.assert_called_once_with(1)
+        assert result.exit_code == 1
+
     @mock.patch("click.echo")
     @mock.patch("duffy.cli.sys.exit")
     def test_retire_session(
