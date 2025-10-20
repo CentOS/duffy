@@ -138,7 +138,7 @@ NODES_SPEC = NodesSpecType()
 # CLI groups and commands
 
 
-@click.group(name="duffy")
+@click.group(name="duffy", context_settings={"help_option_names": ["-h", "--help"]})
 @click.option(
     "-l",
     "--loglevel",
@@ -183,7 +183,7 @@ def cli(ctx: click.Context, loglevel: Optional[str], config_paths: Tuple[Path]):
 # Check & dump configuration
 
 
-@cli.group(name="config")
+@cli.group(name="config", context_settings={"help_option_names": ["-h", "--help"]})
 def config_subcmd():
     """Check and dump configuration."""
 
@@ -236,7 +236,7 @@ def setup_db(test_data):
 # Handle database migrations
 
 
-@cli.group()
+@cli.group(context_settings={"help_option_names": ["-h", "--help"]})
 def migration():
     """Handle database migrations."""
     if not alembic_migration:
@@ -475,7 +475,7 @@ class FakeAPITenant:
     is_admin = True
 
 
-@cli.group("admin")
+@cli.group("admin", context_settings={"help_option_names": ["-h", "--help"]})
 def admin_group():
     """Administrate Duffy tenants."""
     if not admin:
@@ -662,7 +662,7 @@ def admin_update_tenant(
         )
 
 
-@cli.group()
+@cli.group(context_settings={"help_option_names": ["-h", "--help"]})
 @click.option("--url", help="The base URL of the Duffy API.")
 @click.option("--auth-name", help="The tenant name to authenticate with the Duffy API.")
 @click.option("--auth-key", help="The tenant key to authenticate with the Duffy API.")

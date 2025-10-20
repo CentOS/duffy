@@ -108,6 +108,27 @@ def test_cli_help(runner):
     assert "Usage: duffy" in result.stdout
 
 
+def test_cli_help_short_option(runner):
+    """Ensure `duffy -h` works."""
+    result = runner.invoke(cli, ["-h"], terminal_width=80)
+    assert result.exit_code == 0
+    assert "Usage: duffy" in result.output
+
+
+@pytest.mark.parametrize("subcommand", ["config", "migration", "admin", "client"])
+def test_subcommand_help_options(runner, subcommand):
+    """Ensure both -h and --help work for all CLI subgroups."""
+    # Test --help
+    result = runner.invoke(cli, [subcommand, "--help"], terminal_width=80)
+    assert result.exit_code == 0
+    assert f"Usage: duffy {subcommand}" in result.output
+
+    # Test -h
+    result = runner.invoke(cli, [subcommand, "-h"], terminal_width=80)
+    assert result.exit_code == 0
+    assert f"Usage: duffy {subcommand}" in result.output
+
+
 def test_cli_suggestion(runner):
     result = runner.invoke(cli, ["--helo"])
     assert result.exit_code == 2
