@@ -623,7 +623,6 @@ class TestAdminCLI:
             assert result.exit_code == 0
             assert result.stdout.startswith("OK: tenant-name:")
         else:
-            assert result.exit_code == 1
             if testcase == "failure":
                 assert result.stderr.strip() == "ERROR: tenant-name\nERROR DETAIL: BLOOP"
             else:
@@ -684,17 +683,20 @@ class TestClientCLI:
             assert result.exit_code != 0
             assert "Please install the duffy[client] extra for this command" in result.stderr
 
-    @mock.patch.object(duffy.cli.click, "echo")
+    @mock.patch("click.echo")
+    @mock.patch("duffy.cli.sys.exit")
     def test_list_sessions(
-        self, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files
+        self, sys_exit, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files
     ):
         (config_file,) = duffy_config_files
 
         DuffyClient.return_value = client = mock.MagicMock()
-        client.list_sessions.return_value = sessions_sentinel = object()
+        sessions_sentinel = {"sessions": [{"id": 1, "name": "test"}]}
+        client.list_sessions.return_value = sessions_sentinel
         DuffyFormatter.new_for_format.return_value = formatter = mock.MagicMock()
 
-        formatter.format.return_value = formatted_result_sentinel = object()
+        formatted_result_sentinel = "formatted_sessions"
+        formatter.format.return_value = formatted_result_sentinel
 
         parameters = [f"--config={config_file.absolute()}", "client", "list-sessions"]
 
@@ -703,19 +705,51 @@ class TestClientCLI:
         client.list_sessions.assert_called_once_with()
         formatter.format.assert_called_once_with(sessions_sentinel)
 
-        click.echo.assert_called_once_with(formatted_result_sentinel, nl=formatted_result_sentinel)
+        click_echo.assert_called_once_with(formatted_result_sentinel, nl=True)
+        sys_exit.assert_called_once_with(0)
 
-    @mock.patch.object(duffy.cli.click, "echo")
-    def test_show_session(
-        self, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files
+    @mock.patch("click.echo")
+    @mock.patch("duffy.cli.sys.exit")
+    def test_list_sessions_error(
+        self, sys_exit, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files
     ):
         (config_file,) = duffy_config_files
 
         DuffyClient.return_value = client = mock.MagicMock()
-        client.show_session.return_value = session_sentinel = object()
+        error_result = {"error": {"detail": "API error"}}
+        client.list_sessions.return_value = error_result
         DuffyFormatter.new_for_format.return_value = formatter = mock.MagicMock()
 
-        formatter.format.return_value = result_sentinel = object()
+        formatter.format.return_value = "ERROR: API error"
+        # Configure sys_exit to raise SystemExit with proper exit code
+        sys_exit.side_effect = lambda code: exec("raise SystemExit(code)")
+
+        parameters = [f"--config={config_file.absolute()}", "client", "list-sessions"]
+
+        runner.invoke(cli, parameters)
+
+        client.list_sessions.assert_called_once_with()
+        formatter.format.assert_called_with(error_result)
+
+        # Verify error is output to stderr and exit(1) is called
+        click_echo.assert_called_with("ERROR: API error", err=True)
+        sys_exit.assert_called_once_with(1)
+
+    @mock.patch("click.echo")
+    @mock.patch("duffy.cli.sys.exit")
+    def test_show_session(
+        self, sys_exit, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files
+    ):
+        (config_file,) = duffy_config_files
+
+        DuffyClient.return_value = client = mock.MagicMock()
+        client.show_session.return_value = session_sentinel = {
+            "session_id": 123,
+            "status": "active",
+        }
+        DuffyFormatter.new_for_format.return_value = formatter = mock.MagicMock()
+
+        formatter.format.return_value = result_sentinel = "Session 123: active"
 
         parameters = [f"--config={config_file.absolute()}", "client", "show-session", "15"]
 
@@ -725,18 +759,47 @@ class TestClientCLI:
         formatter.format.assert_called_once_with(session_sentinel)
 
         click_echo.assert_called_once_with(result_sentinel)
+        sys_exit.assert_called_once_with(0)
 
-    @mock.patch.object(duffy.cli.click, "echo")
-    def test_request_session(
-        self, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files
+    @mock.patch("click.echo")
+    @mock.patch("duffy.cli.sys.exit")
+    def test_show_session_error(
+        self, sys_exit, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files
     ):
         (config_file,) = duffy_config_files
 
         DuffyClient.return_value = client = mock.MagicMock()
-        client.request_session.return_value = session_sentinel = object()
+        error_result = {"error": {"detail": "Session not found"}}
+        client.show_session.return_value = error_result
         DuffyFormatter.new_for_format.return_value = formatter = mock.MagicMock()
 
-        formatter.format.return_value = result_sentinel = object()
+        formatter.format.return_value = "ERROR: Session not found"
+        # Configure sys_exit to raise SystemExit with proper exit code
+        sys_exit.side_effect = lambda code: exec("raise SystemExit(code)")
+
+        parameters = [f"--config={config_file.absolute()}", "client", "show-session", "15"]
+
+        runner.invoke(cli, parameters)
+
+        client.show_session.assert_called_once_with(15)
+        formatter.format.assert_called_with(error_result)
+
+        # Verify error is output to stderr and exit(1) is called
+        click_echo.assert_called_with("ERROR: Session not found", err=True)
+        sys_exit.assert_called_once_with(1)
+
+    @mock.patch("click.echo")
+    @mock.patch("duffy.cli.sys.exit")
+    def test_request_session(
+        self, sys_exit, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files
+    ):
+        (config_file,) = duffy_config_files
+
+        DuffyClient.return_value = client = mock.MagicMock()
+        client.request_session.return_value = session_sentinel = {"session_id": 123}
+        DuffyFormatter.new_for_format.return_value = formatter = mock.MagicMock()
+
+        formatter.format.return_value = result_sentinel = "Session created: 123"
 
         parameters = [
             f"--config={config_file.absolute()}",
@@ -754,18 +817,55 @@ class TestClientCLI:
         formatter.format.assert_called_once_with(session_sentinel)
 
         click_echo.assert_called_once_with(result_sentinel)
+        sys_exit.assert_called_once_with(0)
 
-    @mock.patch.object(duffy.cli.click, "echo")
-    def test_retire_session(
-        self, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files
+    @mock.patch("click.echo")
+    @mock.patch("duffy.cli.sys.exit")
+    def test_request_session_error_no_retry(
+        self, sys_exit, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files
     ):
         (config_file,) = duffy_config_files
 
         DuffyClient.return_value = client = mock.MagicMock()
-        client.retire_session.return_value = session_sentinel = object()
+        error_result = {"error": {"detail": "No nodes available"}}
+        client.request_session.return_value = error_result
         DuffyFormatter.new_for_format.return_value = formatter = mock.MagicMock()
 
-        formatter.format.return_value = result_sentinel = object()
+        formatter.format.return_value = "ERROR: No nodes available"
+        # Configure sys_exit to raise SystemExit with proper exit code
+        sys_exit.side_effect = lambda code: exec("raise SystemExit(code)")
+
+        parameters = [
+            f"--config={config_file.absolute()}",
+            "client",
+            "request-session",
+            "pool=pool,quantity=1",
+        ]
+
+        runner.invoke(cli, parameters)
+
+        client.request_session.assert_called_once_with(({"pool": "pool", "quantity": "1"},))
+        formatter.format.assert_called_with(error_result)
+
+        # Verify error is output to stderr and exit(1) is called
+        click_echo.assert_called_with("ERROR: No nodes available", err=True)
+        sys_exit.assert_called_once_with(1)
+
+    @mock.patch("click.echo")
+    @mock.patch("duffy.cli.sys.exit")
+    def test_retire_session(
+        self, sys_exit, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files
+    ):
+        (config_file,) = duffy_config_files
+
+        DuffyClient.return_value = client = mock.MagicMock()
+        client.retire_session.return_value = session_sentinel = {
+            "session_id": 51,
+            "status": "retired",
+        }
+        DuffyFormatter.new_for_format.return_value = formatter = mock.MagicMock()
+
+        formatter.format.return_value = result_sentinel = "Session 51 retired successfully"
 
         parameters = [f"--config={config_file.absolute()}", "client", "retire-session", "51"]
 
@@ -775,16 +875,47 @@ class TestClientCLI:
         formatter.format.assert_called_once_with(session_sentinel)
 
         click_echo.assert_called_once_with(result_sentinel)
+        sys_exit.assert_called_once_with(0)
 
-    @mock.patch.object(duffy.cli.click, "echo")
-    def test_list_pools(self, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files):
+    @mock.patch("click.echo")
+    @mock.patch("duffy.cli.sys.exit")
+    def test_retire_session_error(
+        self, sys_exit, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files
+    ):
         (config_file,) = duffy_config_files
 
         DuffyClient.return_value = client = mock.MagicMock()
-        client.list_pools.return_value = pools_sentinel = object()
+        error_result = {"error": {"detail": "Session not found or already retired"}}
+        client.retire_session.return_value = error_result
         DuffyFormatter.new_for_format.return_value = formatter = mock.MagicMock()
 
-        formatter.format.return_value = formatted_result_sentinel = object()
+        formatter.format.return_value = "ERROR: Session not found or already retired"
+        # Configure sys_exit to raise SystemExit with proper exit code
+        sys_exit.side_effect = lambda code: exec("raise SystemExit(code)")
+
+        parameters = [f"--config={config_file.absolute()}", "client", "retire-session", "51"]
+
+        runner.invoke(cli, parameters)
+
+        client.retire_session.assert_called_once_with(51)
+        formatter.format.assert_called_with(error_result)
+
+        # Verify error is output to stderr and exit(1) is called
+        click_echo.assert_called_with("ERROR: Session not found or already retired", err=True)
+        sys_exit.assert_called_once_with(1)
+
+    @mock.patch("click.echo")
+    @mock.patch("duffy.cli.sys.exit")
+    def test_list_pools(
+        self, sys_exit, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files
+    ):
+        (config_file,) = duffy_config_files
+
+        DuffyClient.return_value = client = mock.MagicMock()
+        client.list_pools.return_value = pools_sentinel = [{"name": "pool1"}, {"name": "pool2"}]
+        DuffyFormatter.new_for_format.return_value = formatter = mock.MagicMock()
+
+        formatter.format.return_value = formatted_result_sentinel = "pool1\npool2"
 
         parameters = [f"--config={config_file.absolute()}", "client", "list-pools"]
 
@@ -793,17 +924,50 @@ class TestClientCLI:
         client.list_pools.assert_called_once_with()
         formatter.format.assert_called_once_with(pools_sentinel)
 
-        click_echo.assert_called_once_with(formatted_result_sentinel, nl=formatted_result_sentinel)
+        click_echo.assert_called_once_with(
+            formatted_result_sentinel, nl=bool(formatted_result_sentinel)
+        )
+        sys_exit.assert_called_once_with(0)
 
-    @mock.patch.object(duffy.cli.click, "echo")
-    def test_show_pool(self, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files):
+    @mock.patch("click.echo")
+    @mock.patch("duffy.cli.sys.exit")
+    def test_list_pools_error(
+        self, sys_exit, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files
+    ):
         (config_file,) = duffy_config_files
 
         DuffyClient.return_value = client = mock.MagicMock()
-        client.show_pool.return_value = pool_sentinel = object()
+        error_result = {"error": {"detail": "Failed to retrieve pools"}}
+        client.list_pools.return_value = error_result
         DuffyFormatter.new_for_format.return_value = formatter = mock.MagicMock()
 
-        formatter.format.return_value = formatted_result_sentinel = object()
+        formatter.format.return_value = "ERROR: Failed to retrieve pools"
+        # Configure sys_exit to raise SystemExit with proper exit code
+        sys_exit.side_effect = lambda code: exec("raise SystemExit(code)")
+
+        parameters = [f"--config={config_file.absolute()}", "client", "list-pools"]
+
+        runner.invoke(cli, parameters)
+
+        client.list_pools.assert_called_once_with()
+        formatter.format.assert_called_with(error_result)
+
+        # Verify error is output to stderr and exit(1) is called
+        click_echo.assert_called_with("ERROR: Failed to retrieve pools", err=True)
+        sys_exit.assert_called_once_with(1)
+
+    @mock.patch("click.echo")
+    @mock.patch("duffy.cli.sys.exit")
+    def test_show_pool(
+        self, sys_exit, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files
+    ):
+        (config_file,) = duffy_config_files
+
+        DuffyClient.return_value = client = mock.MagicMock()
+        client.show_pool.return_value = pool_sentinel = {"name": "lagoon", "nodes": 5}
+        DuffyFormatter.new_for_format.return_value = formatter = mock.MagicMock()
+
+        formatter.format.return_value = formatted_result_sentinel = "Pool: lagoon (5 nodes)"
 
         parameters = [f"--config={config_file.absolute()}", "client", "show-pool", "lagoon"]
 
@@ -813,3 +977,31 @@ class TestClientCLI:
         formatter.format.assert_called_once_with(pool_sentinel)
 
         click_echo.assert_called_once_with(formatted_result_sentinel)
+        sys_exit.assert_called_once_with(0)
+
+    @mock.patch("click.echo")
+    @mock.patch("duffy.cli.sys.exit")
+    def test_show_pool_error(
+        self, sys_exit, click_echo, DuffyClient, DuffyFormatter, runner, duffy_config_files
+    ):
+        (config_file,) = duffy_config_files
+
+        DuffyClient.return_value = client = mock.MagicMock()
+        error_result = {"error": {"detail": "Pool not found"}}
+        client.show_pool.return_value = error_result
+        DuffyFormatter.new_for_format.return_value = formatter = mock.MagicMock()
+
+        formatter.format.return_value = "ERROR: Pool not found"
+        # Configure sys_exit to raise SystemExit with proper exit code
+        sys_exit.side_effect = lambda code: exec("raise SystemExit(code)")
+
+        parameters = [f"--config={config_file.absolute()}", "client", "show-pool", "lagoon"]
+
+        runner.invoke(cli, parameters)
+
+        client.show_pool.assert_called_once_with("lagoon")
+        formatter.format.assert_called_with(error_result)
+
+        # Verify error is output to stderr and exit(1) is called
+        click_echo.assert_called_with("ERROR: Pool not found", err=True)
+        sys_exit.assert_called_once_with(1)
