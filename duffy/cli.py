@@ -698,9 +698,12 @@ def client(
 def client_list_sessions(obj):
     """Query active sessions for this tenant on the Duffy API."""
     result = obj["client"].list_sessions()
+    if "error" in result:
+        click.echo(obj["formatter"].format(result), err=True)
+        sys.exit(1)
     formatted_result = obj["formatter"].format(result)
     # Only print newline if formatted_result isn't empty.
-    click.echo(formatted_result, nl=formatted_result)
+    click.echo(formatted_result, nl=bool(formatted_result))
 
 
 @client.command("show-session")
@@ -709,6 +712,9 @@ def client_list_sessions(obj):
 def client_show_session(obj, session_id: int):
     """Show one session identified by its id on the Duffy API."""
     result = obj["client"].show_session(session_id)
+    if "error" in result:
+        click.echo(obj["formatter"].format(result), err=True)
+        sys.exit(1)
     click.echo(obj["formatter"].format(result))
 
 
@@ -724,6 +730,9 @@ def client_show_session(obj, session_id: int):
 def client_request_session(obj: dict, nodes_specs: List[str]):
     """Request a session with nodes from the Duffy API."""
     result = obj["client"].request_session(nodes_specs)
+    if "error" in result:
+        click.echo(obj["formatter"].format(result), err=True)
+        sys.exit(1)
     click.echo(obj["formatter"].format(result))
 
 
@@ -733,6 +742,9 @@ def client_request_session(obj: dict, nodes_specs: List[str]):
 def client_retire_session(obj: dict, session_id: int):
     """Retire an active Duffy session."""
     result = obj["client"].retire_session(session_id)
+    if "error" in result:
+        click.echo(obj["formatter"].format(result), err=True)
+        sys.exit(1)
     click.echo(obj["formatter"].format(result))
 
 
@@ -741,9 +753,13 @@ def client_retire_session(obj: dict, session_id: int):
 def client_list_pools(obj: dict):
     """List configured Duffy node pools."""
     result = obj["client"].list_pools()
+    if "error" in result:
+        formatted_result = obj["formatter"].format(result)
+        click.echo(formatted_result, err=True)
+        sys.exit(1)
     formatted_result = obj["formatter"].format(result)
     # Only print newline if formatted_result isn't empty.
-    click.echo(formatted_result, nl=formatted_result)
+    click.echo(formatted_result, nl=bool(formatted_result))
 
 
 @client.command("show-pool")
@@ -752,4 +768,7 @@ def client_list_pools(obj: dict):
 def client_show_pool(obj: dict, name: str):
     """Show information about a Duffy node pool."""
     result = obj["client"].show_pool(name)
+    if "error" in result:
+        click.echo(obj["formatter"].format(result), err=True)
+        sys.exit(1)
     click.echo(obj["formatter"].format(result))
