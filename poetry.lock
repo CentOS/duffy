@@ -136,17 +136,17 @@ ansible-core = ">=2.17.7,<2.18.0"
 
 [[package]]
 name = "ansible"
-version = "11.11.0"
+version = "11.12.0"
 description = "Radically simple IT automation"
 optional = false
 python-versions = ">=3.11"
 files = [
-    {file = "ansible-11.11.0-py3-none-any.whl", hash = "sha256:8f93cdeef8f26cbac216237e8925f79168d0a8d5211391eb4fa86535cedef63a"},
-    {file = "ansible-11.11.0.tar.gz", hash = "sha256:a67c3628bbafd69d291e038785f39d7449e137262d852be283fc331705352d40"},
+    {file = "ansible-11.12.0-py3-none-any.whl", hash = "sha256:0be0e1677dfb2f86a73ee0aaf1564bfc3aa0ea3a13077a7d6e881f277c650ab3"},
+    {file = "ansible-11.12.0.tar.gz", hash = "sha256:6f18de9dba19f0e6b9afc74774b6e65c5f55dadbc7ecc5ba21027cce00c806ea"},
 ]
 
 [package.dependencies]
-ansible-core = ">=2.18.10,<2.19.0"
+ansible-core = ">=2.18.11,<2.19.0"
 
 [[package]]
 name = "ansible-core"
