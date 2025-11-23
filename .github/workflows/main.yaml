@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     container: fedorapython/fedora-python-tox:latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Install base Python dependencies
         run: |
@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     container: fedorapython/fedora-python-tox:latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Install RPM dependencies
         run: |
