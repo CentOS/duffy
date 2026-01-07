@@ -302,7 +302,8 @@ class TestMain:
             )
             result = response.json()
             assert result == {"detail": "Not authenticated"}
-            assert response.status_code == HTTP_403_FORBIDDEN
+            # fastapi < 0.122 returns HTTP_403_FORBIDDEN instead of HTTP_401_UNAUTHORIZED
+            assert response.status_code in (HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN)
 
     @pytest.mark.parametrize(
         "testcase",
@@ -351,7 +352,8 @@ class TestMain:
             response = await client.get("/Node/done", params={"ssid": 1})
             result = response.json()
             assert result == {"detail": "Not authenticated"}
-            assert response.status_code == HTTP_403_FORBIDDEN
+            # fastapi < 0.122 returns HTTP_403_FORBIDDEN instead of HTTP_401_UNAUTHORIZED
+            assert response.status_code in (HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN)
 
     @pytest.mark.parametrize(
         "testcase",
@@ -392,7 +394,8 @@ class TestMain:
             response = await client.get("/Node/fail", params={"ssid": 1})
             result = response.json()
             assert result == {"detail": "Not authenticated"}
-            assert response.status_code == HTTP_403_FORBIDDEN
+            # fastapi < 0.122 returns HTTP_403_FORBIDDEN instead of HTTP_401_UNAUTHORIZED
+            assert response.status_code in (HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN)
         elif testcase == "failure":
             apiv1_response.status_code = HTTP_500_INTERNAL_SERVER_ERROR
             response = await client.get("/Node/fail", params={"key": key, "ssid": 1})
