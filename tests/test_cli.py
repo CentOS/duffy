@@ -21,7 +21,10 @@ from duffy.version import __version__
 
 @pytest.fixture
 def runner():
-    return CliRunner()
+    try:
+        return CliRunner(mix_stderr=False)  # click < 8.2
+    except TypeError:
+        return CliRunner()
 
 
 @pytest.fixture(autouse=True, scope="module")
@@ -95,20 +98,20 @@ class TestNodesSpecType:
 def test_cli_version(runner):
     result = runner.invoke(cli, ["--version"])
     assert result.exit_code == 0
-    assert result.output == "Duffy, version %s\n" % __version__
+    assert result.stdout == "Duffy, version %s\n" % __version__
 
 
 def test_cli_help(runner):
     """Ensure `duffy --help` works."""
     result = runner.invoke(cli, ["--help"], terminal_width=80)
     assert result.exit_code == 0
-    assert "Usage: duffy" in result.output
+    assert "Usage: duffy" in result.stdout
 
 
 def test_cli_suggestion(runner):
     result = runner.invoke(cli, ["--helo"])
     assert result.exit_code == 2
-    assert "Error: No such option: --helo" in result.output
+    assert "Error: No such option: --helo" in result.stderr
 
 
 def test_cli_missing_config(tmp_path, runner):
@@ -132,17 +135,17 @@ def test_config_check(config_empty, duffy_config_files, runner, tmp_path):
 
     if config_empty:
         assert result.exit_code == 0
-        assert "Configuration is empty" in result.output
+        assert "Configuration is empty" in result.stdout
     else:
         assert result.exit_code == 0
-        assert "OK" in result.output
-        assert "Validated configuration subkeys:" in result.output
+        assert "OK" in result.stdout
+        assert "Validated configuration subkeys:" in result.stdout
 
 
 @pytest.mark.duffy_config(example_config=True)
 def test_config_dump(runner):
     result = runner.invoke(cli, ["config", "dump"])
-    dumped_config = yaml.safe_load(result.output)
+    dumped_config = yaml.safe_load(result.stdout)
     assert dumped_config == config
 
 
@@ -179,7 +182,7 @@ def test_setup_db(
             setup_db_schema.assert_called_once_with()
             assert "Configuration key missing or wrong: database" in caplog.messages
         else:
-            assert "Please install the duffy[database] extra" in result.output
+            assert "Please install the duffy[database] extra" in result.stderr
 
 
 @duffy.cli.migration.command("test")
@@ -199,7 +202,7 @@ class TestMigrationCLI:
 
         result = runner.invoke(cli, parameters)
 
-        assert "Please install the duffy[database] extra" in result.output
+        assert "Please install the duffy[database] extra" in result.stderr
 
     @pytest.mark.parametrize("testcase", ("normal", "autogenerate", "missing-comment"))
     def test_migration_create(self, alembic_migration, testcase, runner):
@@ -301,7 +304,7 @@ def test_worker(worker_available, duffy_config_files, runner):
         start_worker.assert_called_once_with(worker_args=("a", "-b", "c", "--dee"))
     else:
         assert result.exit_code != 0
-        assert "Please install the duffy[tasks] extra for this command" in result.output
+        assert "Please install the duffy[tasks] extra for this command" in result.stderr
 
 
 @pytest.mark.duffy_config(example_config=True)
@@ -351,7 +354,7 @@ def test_serve(uvicorn_run, logging, testcase, runner, duffy_config_files, tmp_p
             logging.config.dictConfig.assert_called_once_with(config["metaclient"]["logging"])
     else:
         assert result.exit_code != 0
-        assert "Please install the duffy[app] extra" in result.output
+        assert "Please install the duffy[app] extra" in result.stderr
 
 
 @pytest.mark.duffy_config(example_config=True)
@@ -405,7 +408,7 @@ def test_serve_legacy(uvicorn_run, logging, testcase, runner, duffy_config_files
             logging.config.dictConfig.assert_called_once_with(config["metaclient"]["logging"])
     else:
         assert result.exit_code != 0
-        assert "Please install the duffy[legacy] extra for this command" in result.output
+        assert "Please install the duffy[legacy] extra for this command" in result.stderr
 
 
 @duffy.cli.admin_group.command("test")
@@ -424,7 +427,7 @@ class TestAdminCLI:
 
         result = runner.invoke(cli, parameters)
 
-        assert "Please install the duffy[admin] extra" in result.output
+        assert "Please install the duffy[admin] extra" in result.stderr
 
     @pytest.mark.parametrize("testcase", ("success", "failure"))
     def test_list_tenants(self, create_for_cli, testcase, runner, duffy_config_files, caplog):
@@ -454,7 +457,7 @@ class TestAdminCLI:
             assert result.stdout.strip() == "OK: tenant-1-name"
         else:
             assert result.exit_code == 1
-            assert result.stdout.strip() == "ERROR: couldn't list tenants\nERROR DETAIL: BOOM"
+            assert result.stderr.strip() == "ERROR: couldn't list tenants\nERROR DETAIL: BOOM"
 
     @pytest.mark.parametrize("testcase", ("success", "failure"))
     def test_show_tenant(self, create_for_cli, testcase, runner, duffy_config_files, caplog):
@@ -480,7 +483,7 @@ class TestAdminCLI:
             assert result.stdout.startswith("OK: tenant-name:")
         else:
             assert result.exit_code == 1
-            assert result.stdout.strip() == "ERROR: tenant-name\nERROR DETAIL: BAR"
+            assert result.stderr.strip() == "ERROR: tenant-name\nERROR DETAIL: BAR"
 
     @pytest.mark.parametrize("testcase", ("success", "failure"))
     def test_create_tenant(self, create_for_cli, testcase, runner, duffy_config_files, caplog):
@@ -511,7 +514,7 @@ class TestAdminCLI:
             assert result.stdout.startswith("OK: tenant-name:")
         else:
             assert result.exit_code == 1
-            assert result.stdout.strip() == "ERROR: tenant-name\nERROR DETAIL: FOO"
+            assert result.stderr.strip() == "ERROR: tenant-name\nERROR DETAIL: FOO"
 
     @pytest.mark.parametrize("testcase", ("retire", "unretire", "failure"))
     def test_retire_unretire_tenant(
@@ -547,7 +550,7 @@ class TestAdminCLI:
             assert result.stdout.startswith("OK: tenant-name:")
         else:
             assert result.exit_code == 1
-            assert result.stdout.strip() == "ERROR: tenant-name\nERROR DETAIL: BAR"
+            assert result.stderr.strip() == "ERROR: tenant-name\nERROR DETAIL: BAR"
 
     @pytest.mark.parametrize(
         "testcase",
@@ -622,9 +625,9 @@ class TestAdminCLI:
         else:
             assert result.exit_code == 1
             if testcase == "failure":
-                assert result.stdout.strip() == "ERROR: tenant-name\nERROR DETAIL: BLOOP"
+                assert result.stderr.strip() == "ERROR: tenant-name\nERROR DETAIL: BLOOP"
             else:
-                assert result.stdout.strip() == (
+                assert result.stderr.strip() == (
                     "ERROR: Either --ssh-key, --api-key, --node-quota, --session-lifetime or"
                     " --session-lifetime-max must be set."
                 )
@@ -679,7 +682,7 @@ class TestClientCLI:
             DuffyFormatter.new_for_format.assert_called_once_with(format)
         else:
             assert result.exit_code != 0
-            assert "Please install the duffy[client] extra for this command" in result.output
+            assert "Please install the duffy[client] extra for this command" in result.stderr
 
     @mock.patch.object(duffy.cli.click, "echo")
     def test_list_sessions(
