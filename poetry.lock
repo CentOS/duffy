@@ -5325,7 +5325,7 @@ description = "Postgresql fixtures and fixture factories for Pytest."
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
-markers = "python_version >= \"3.9\""
+markers = "python_version == \"3.9\""
 files = [
     {file = "pytest_postgresql-7.0.2-py3-none-any.whl", hash = "sha256:0b0d31c51620a9c1d6be93286af354256bc58a47c379f56f4147b22da6e81fb5"},
     {file = "pytest_postgresql-7.0.2.tar.gz", hash = "sha256:57c8d3f7d4e91d0ea8b2eac786d04f60080fa6ed6e66f1f94d747c71c9e5a4f4"},
@@ -5337,6 +5337,26 @@ packaging = "*"
 port-for = ">=0.7.3"
 psycopg = ">=3.0.0"
 pytest = ">=7.2"
+
+[[package]]
+name = "pytest-postgresql"
+version = "8.0.0"
+description = "Postgresql fixtures and fixture factories for Pytest."
+optional = false
+python-versions = ">=3.10"
+groups = ["dev"]
+markers = "python_version >= \"3.10\""
+files = [
+    {file = "pytest_postgresql-8.0.0-py3-none-any.whl", hash = "sha256:125b63b16d630c2dea19807062ed4c96e6123f06058ce65b82b4b14174d6c4b8"},
+    {file = "pytest_postgresql-8.0.0.tar.gz", hash = "sha256:26cbd44a0adef76cf4a82a3a2263f0e029bc54b5863556a9bd86ca3edfa91cce"},
+]
+
+[package.dependencies]
+mirakuru = ">=2.6.0"
+packaging = "*"
+port-for = ">=0.7.3"
+psycopg = ">=3.0.0"
+pytest = ">=8.2"
 
 [[package]]
 name = "python-daemon"
@@ -6982,4 +7002,4 @@ tasks = ["Jinja2", "aiodns", "ansible-runner", "ansible-runner", "celery", "jmes
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.8"
-content-hash = "9892a2f84afd2f9a7687068228e73589e35584f560095687184a6253a90655be"
+content-hash = "4e29f76503cf0b327bd876b34d635de938a0a46aedab753d603141a47fb6ef82"
