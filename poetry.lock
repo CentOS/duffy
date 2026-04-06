@@ -7102,15 +7102,15 @@ standard = ["colorama (>=0.4) ; sys_platform == \"win32\"", "httptools (>=0.6.3)
 
 [[package]]
 name = "uvicorn"
-version = "0.42.0"
+version = "0.43.0"
 description = "The lightning-fast ASGI server."
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
 markers = "python_version >= \"3.10\" and extra == \"app\""
 files = [
-    {file = "uvicorn-0.42.0-py3-none-any.whl", hash = "sha256:96c30f5c7abe6f74ae8900a70e92b85ad6613b745d4879eb9b16ccad15645359"},
-    {file = "uvicorn-0.42.0.tar.gz", hash = "sha256:9b1f190ce15a2dd22e7758651d9b6d12df09a13d51ba5bf4fc33c383a48e1775"},
+    {file = "uvicorn-0.43.0-py3-none-any.whl", hash = "sha256:46fac64f487fd968cd999e5e49efbbe64bd231b5bd8b4a0b482a23ebce499620"},
+    {file = "uvicorn-0.43.0.tar.gz", hash = "sha256:ab1652d2fb23abf124f36ccc399828558880def222c3cb3d98d24021520dc6e8"},
 ]
 
 [package.dependencies]
@@ -7512,4 +7512,4 @@ tasks = ["Jinja2", "aiodns", "ansible-runner", "ansible-runner", "celery", "jmes
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.8"
-content-hash = "4e29f76503cf0b327bd876b34d635de938a0a46aedab753d603141a47fb6ef82"
+content-hash = "fb2c9b06e89100c86439da3e97b8a6abfd856af13f5fe29a7be57830750e405d"
