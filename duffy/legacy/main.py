@@ -1,5 +1,5 @@
 import re
-from typing import Dict, Optional
+from typing import Optional
 
 import httpx
 import jinja2
@@ -38,7 +38,7 @@ app = FastAPI(
 )
 
 
-def lookup_pool_from_map(**req_specs: Dict[str, Optional[str]]) -> Optional[str]:
+def lookup_pool_from_map(**req_specs: Optional[str]) -> Optional[str]:
     req_specs = {k: v for k, v in req_specs.items() if v is not None}
     pool_template = pool = None
 
@@ -80,7 +80,7 @@ async def request_nodes(
     ver: str = "7",
     arch: str = "x86_64",
     count: int = 1,
-    flavor: str = None,
+    flavor: Optional[str] = None,
     cred: Credentials = Depends(req_credentials),
 ):
     pool = lookup_pool_from_map(ver=ver, arch=arch, flavor=flavor)
@@ -107,7 +107,7 @@ async def request_nodes(
 
 @app.get("/Node/done")
 async def return_nodes_on_completion(
-    ssid: str = None, cred: Credentials = Depends(req_credentials)
+    ssid: Optional[str] = None, cred: Credentials = Depends(req_credentials)
 ):
     if ssid:
         async with httpx.AsyncClient() as client:
@@ -135,7 +135,9 @@ async def return_nodes_on_completion(
 
 
 @app.get("/Node/fail")
-async def extend_nodes_on_failure(ssid: str = None, cred: Credentials = Depends(req_credentials)):
+async def extend_nodes_on_failure(
+    ssid: Optional[str] = None, cred: Credentials = Depends(req_credentials)
+):
     if ssid:
         async with httpx.AsyncClient() as client:
             dest = config["metaclient"]["dest"].rstrip("/")

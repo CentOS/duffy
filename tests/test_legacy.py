@@ -1,6 +1,6 @@
 import uuid
 from contextlib import nullcontext
-from typing import Iterator
+from typing import AsyncIterator
 from unittest import mock
 
 import pytest
@@ -27,7 +27,7 @@ TEST_CRED = Credentials(
 
 
 @pytest.fixture
-async def client() -> Iterator[AsyncClient]:
+async def client() -> AsyncIterator[AsyncClient]:
     transport = ASGITransport(app=main.app)
     async with AsyncClient(
         transport=transport, base_url="http://duffy-legacy-test.example.com"
