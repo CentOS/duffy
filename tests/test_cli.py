@@ -132,7 +132,13 @@ def test_subcommand_help_options(runner, subcommand):
 def test_cli_suggestion(runner):
     result = runner.invoke(cli, ["--helo"])
     assert result.exit_code == 2
-    assert "Error: No such option: --helo" in result.stderr
+    assert any(
+        error_string in result.stderr
+        for error_string in (
+            "Error: No such option: --helo",  # click < 8.4
+            "Error: No such option '--helo'.",  # click >= 8.4
+        )
+    )
 
 
 def test_cli_missing_config(tmp_path, runner):
