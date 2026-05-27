@@ -63,6 +63,9 @@ def lookup_pool_from_map(**req_specs: Optional[str]) -> Optional[str]:
         if pool_template:
             pool = jinja2.Template(pool_template).render(**req_specs)
             break
+    else:  # pragma: no cover
+        # Python 3.14 + tox screws up coverage tallying here, so ignore it explicitly.
+        pass
 
     return pool
 
