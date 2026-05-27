@@ -22,7 +22,8 @@ from duffy.version import __version__
 @pytest.fixture
 def runner():
     try:
-        return CliRunner(mix_stderr=False)  # click < 8.2
+        # click < 8.2
+        return CliRunner(mix_stderr=False)  # type: ignore[reportCallIssue]
     except TypeError:
         return CliRunner()
 
@@ -46,7 +47,7 @@ class TestIntOrNoneType:
 
     def test_convert_invalid(self):
         with pytest.raises(click.ClickException) as exc:
-            duffy.cli.INT_OR_NONE.convert("hello", "<param>", None)
+            duffy.cli.INT_OR_NONE.convert("hello", None, None)
 
         assert exc.match("'hello' is not a valid integer")
 
@@ -64,7 +65,7 @@ class TestIntervalOrNoneType:
 
     def test_convert_invalid(self):
         with pytest.raises(click.ClickException) as exc:
-            duffy.cli.INTERVAL_OR_NONE.convert("hello", "<param>", None)
+            duffy.cli.INTERVAL_OR_NONE.convert("hello", None, None)
 
         assert exc.match("invalid timedelta format")
 
@@ -691,11 +692,14 @@ class TestClientCLI:
 
         parameters.append("test")
 
+        duffy_client_sentinel = object()
+        duffy_formatter_sentinel = object()
+
         if "missing-modules" in testcase:
             duffy.cli.DuffyClient = duffy.cli.DuffyFormatter = None
         else:
-            DuffyClient.return_value = duffy_client_sentinel = object()
-            DuffyFormatter.new_for_format.return_value = duffy_formatter_sentinel = object()
+            DuffyClient.return_value = duffy_client_sentinel
+            DuffyFormatter.new_for_format.return_value = duffy_formatter_sentinel
 
         obj = {}
         result = runner.invoke(cli, parameters, obj=obj)
