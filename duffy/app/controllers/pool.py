@@ -3,7 +3,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette.status import HTTP_404_NOT_FOUND, HTTP_422_UNPROCESSABLE_ENTITY
+from starlette.status import HTTP_404_NOT_FOUND
+
+try:
+    from starlette.status import HTTP_422_UNPROCESSABLE_CONTENT
+except ImportError:  # starlette < 0.48.0
+    from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY as HTTP_422_UNPROCESSABLE_CONTENT
 
 from ...api_models import PoolResult, PoolResultCollection
 from ...database.model import Node
@@ -36,7 +41,7 @@ async def get_pool(name: str, db_async_session: AsyncSession = Depends(req_db_as
         raise HTTPException(HTTP_404_NOT_FOUND)
 
     if "fill-level" not in pool:
-        raise HTTPException(HTTP_422_UNPROCESSABLE_ENTITY)
+        raise HTTPException(HTTP_422_UNPROCESSABLE_CONTENT)
 
     pool_result = {
         "name": name,

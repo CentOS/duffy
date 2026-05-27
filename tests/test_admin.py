@@ -4,7 +4,11 @@ from unittest import mock
 
 import pytest
 from fastapi import HTTPException
-from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
+
+try:
+    from starlette.status import HTTP_422_UNPROCESSABLE_CONTENT
+except ImportError:  # starlette < 0.48.0
+    from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY as HTTP_422_UNPROCESSABLE_CONTENT
 
 from duffy import api_models
 from duffy.admin import AdminContext
@@ -63,7 +67,7 @@ class TestAdminContext:
             controller_function.return_value = sentinel = object()
         else:
             controller_function.side_effect = HTTPException(
-                HTTP_422_UNPROCESSABLE_ENTITY, detail="BOO"
+                HTTP_422_UNPROCESSABLE_CONTENT, detail="BOO"
             )
 
         result = await admin_ctx.proxy_controller_function_async(controller_function, foo="bar")

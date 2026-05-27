@@ -11,9 +11,13 @@ from starlette.status import (
     HTTP_201_CREATED,
     HTTP_401_UNAUTHORIZED,
     HTTP_403_FORBIDDEN,
-    HTTP_422_UNPROCESSABLE_ENTITY,
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
+
+try:
+    from starlette.status import HTTP_422_UNPROCESSABLE_CONTENT
+except ImportError:  # starlette < 0.48.0
+    from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY as HTTP_422_UNPROCESSABLE_CONTENT
 
 from duffy.configuration import config
 from duffy.legacy import main
@@ -276,7 +280,7 @@ class TestMain:
             result = response.json()
             assert response.status_code == HTTP_200_OK
         elif testcase == "allocation-failed":
-            apiv1_response.status_code = HTTP_422_UNPROCESSABLE_ENTITY
+            apiv1_response.status_code = HTTP_422_UNPROCESSABLE_CONTENT
             response = await client.get(
                 "/Node/get", params={"key": key, "ver": 5, "arch": "armhf", "count": 3000}
             )
@@ -284,7 +288,7 @@ class TestMain:
             assert result == "Failed to allocate nodes"
             assert response.status_code == HTTP_200_OK
         elif testcase == "incorrect-query":
-            apiv1_response.status_code = HTTP_422_UNPROCESSABLE_ENTITY
+            apiv1_response.status_code = HTTP_422_UNPROCESSABLE_CONTENT
             response = await client.get("/Node/get", params={"key": key, "ver": {}})
             result = response.json()
             assert result == "Failed to allocate nodes"
@@ -328,7 +332,7 @@ class TestMain:
             result = response.json()
             assert result == "Done"
         elif testcase == "unsuccessfully-returned":
-            apiv1_response.status_code = HTTP_422_UNPROCESSABLE_ENTITY
+            apiv1_response.status_code = HTTP_422_UNPROCESSABLE_CONTENT
             response = await client.get("/Node/done", params={"key": key, "ssid": {}})
             result = response.json()
             assert result == "Failed to return nodes on completion"
@@ -441,7 +445,7 @@ class TestMain:
         if "incorrect-auth" in testcase:
             apiv1_response.status_code = HTTP_403_FORBIDDEN
         elif "incorrect-query" in testcase:
-            apiv1_response.status_code = HTTP_422_UNPROCESSABLE_ENTITY
+            apiv1_response.status_code = HTTP_422_UNPROCESSABLE_CONTENT
         elif "apiv1-failure" in testcase:
             apiv1_response.status_code = HTTP_500_INTERNAL_SERVER_ERROR
         else:

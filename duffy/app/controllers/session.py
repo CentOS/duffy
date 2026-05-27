@@ -12,9 +12,13 @@ from starlette.status import (
     HTTP_201_CREATED,
     HTTP_403_FORBIDDEN,
     HTTP_404_NOT_FOUND,
-    HTTP_422_UNPROCESSABLE_ENTITY,
     HTTP_503_SERVICE_UNAVAILABLE,
 )
+
+try:
+    from starlette.status import HTTP_422_UNPROCESSABLE_CONTENT
+except ImportError:  # starlette < 0.48.0
+    from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY as HTTP_422_UNPROCESSABLE_CONTENT
 
 from ...api_models import (
     SessionCreateModel,
@@ -37,7 +41,7 @@ router = APIRouter(prefix="/sessions")
 
 
 def wrap_with_http_422_exception(exc: Exception) -> Exception:
-    return HTTPException(HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
+    return HTTPException(HTTP_422_UNPROCESSABLE_CONTENT, str(exc))
 
 
 # http get http://localhost:8080/api/v1/sessions
@@ -103,11 +107,11 @@ async def create_session(
 
         if not tenant:
             raise HTTPException(
-                HTTP_422_UNPROCESSABLE_ENTITY, f"can't find tenant with id {data.tenant_id}"
+                HTTP_422_UNPROCESSABLE_CONTENT, f"can't find tenant with id {data.tenant_id}"
             )
         elif not tenant.active:
             raise HTTPException(
-                HTTP_422_UNPROCESSABLE_ENTITY, f"tenant '{tenant.name}' isn't active"
+                HTTP_422_UNPROCESSABLE_CONTENT, f"tenant '{tenant.name}' isn't active"
             )
     elif not tenant.is_admin and data.tenant_id is not None and data.tenant_id != tenant.id:
         raise HTTPException(HTTP_403_FORBIDDEN, "can't create session for other tenant")
@@ -175,7 +179,7 @@ async def create_session(
 
                         if len(nodes_to_reserve) < quantity:
                             raise HTTPException(
-                                HTTP_422_UNPROCESSABLE_ENTITY, f"can't reserve nodes: {nodes_spec}"
+                                HTTP_422_UNPROCESSABLE_CONTENT, f"can't reserve nodes: {nodes_spec}"
                             )
 
                         # take the nodes out of circulation and update data
@@ -348,7 +352,7 @@ async def update_session(
         raise HTTPException(HTTP_403_FORBIDDEN)
 
     if not session.active:
-        raise HTTPException(HTTP_422_UNPROCESSABLE_ENTITY, f"session {id} is retired")
+        raise HTTPException(HTTP_422_UNPROCESSABLE_CONTENT, f"session {id} is retired")
 
     if data.active is False:
         session.active = data.active

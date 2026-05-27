@@ -14,8 +14,12 @@ from starlette.status import (
     HTTP_403_FORBIDDEN,
     HTTP_404_NOT_FOUND,
     HTTP_409_CONFLICT,
-    HTTP_422_UNPROCESSABLE_ENTITY,
 )
+
+try:
+    from starlette.status import HTTP_422_UNPROCESSABLE_CONTENT
+except ImportError:  # starlette < 0.48.0
+    from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY as HTTP_422_UNPROCESSABLE_CONTENT
 
 from ...api_models import (
     TenantCreateModel,
@@ -132,7 +136,7 @@ async def update_tenant(
         not isinstance(data, TenantRetireModel) or data.active is False
     ):
         raise HTTPException(
-            HTTP_422_UNPROCESSABLE_ENTITY,
+            HTTP_422_UNPROCESSABLE_CONTENT,
             f"tenant {updated_tenant.name} (id={updated_tenant.id}) is retired",
         )
 
