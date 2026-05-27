@@ -11,4 +11,5 @@ exclude_lines =
     pragma: no cover
     def __repr__
     if TYPE_CHECKING:
+    except ImportError:
 show_missing = True
