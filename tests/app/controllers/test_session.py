@@ -14,9 +14,13 @@ from starlette.status import (
     HTTP_201_CREATED,
     HTTP_403_FORBIDDEN,
     HTTP_404_NOT_FOUND,
-    HTTP_422_UNPROCESSABLE_ENTITY,
     HTTP_503_SERVICE_UNAVAILABLE,
 )
+
+try:
+    from starlette.status import HTTP_422_UNPROCESSABLE_CONTENT
+except ImportError:  # starlette < 0.48.0
+    from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY as HTTP_422_UNPROCESSABLE_CONTENT
 
 from duffy.app.controllers import session as session_module
 from duffy.database.model import Node, Session, Tenant
@@ -129,7 +133,7 @@ class TestSession(BaseTestController):
 
     async def test_create_unknown_tenant(self, client, auth_tenant):
         response = await self._create_obj(client, attrs={"tenant_id": auth_tenant.id + 1})
-        assert response.status_code == HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == HTTP_422_UNPROCESSABLE_CONTENT
         result = response.json()
         assert re.match(r"^can't find tenant with id \d+$", result["detail"])
 
@@ -140,7 +144,7 @@ class TestSession(BaseTestController):
 
         response = await self._create_obj(client, attrs={"tenant_id": retired_tenant.id})
 
-        assert response.status_code == HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == HTTP_422_UNPROCESSABLE_CONTENT
         result = response.json()
         assert re.match(r"^tenant .* isn't active$", result["detail"])
 
@@ -284,7 +288,7 @@ class TestSessionWorkflow:
             if testcase == "inactive tenant":
                 assert response.status_code == HTTP_403_FORBIDDEN
             elif testcase == "insufficient nodes":
-                assert response.status_code == HTTP_422_UNPROCESSABLE_ENTITY
+                assert response.status_code == HTTP_422_UNPROCESSABLE_CONTENT
                 assert result["detail"].startswith("can't reserve nodes:")
             elif testcase == "wrong tenant":
                 assert response.status_code == HTTP_403_FORBIDDEN
@@ -403,7 +407,7 @@ class TestSessionWorkflow:
             for response in responses:
                 responses_per_code[response.status_code].add(response)
             assert len(responses_per_code[HTTP_201_CREATED]) == 1
-            assert len(responses_per_code[HTTP_422_UNPROCESSABLE_ENTITY]) == len(responses) - 1
+            assert len(responses_per_code[HTTP_422_UNPROCESSABLE_CONTENT]) == len(responses) - 1
 
         if "exceed-attempts" in testcase or "exact-attempts" in testcase:
             assert f"Attempt 2 of {no_attempts}" not in caplog.text
@@ -524,5 +528,5 @@ class TestSessionWorkflow:
             elif testcase == "unauthorized":
                 assert update_response.status_code == HTTP_403_FORBIDDEN
             else:  # testcase == "retired-session"
-                assert update_response.status_code == HTTP_422_UNPROCESSABLE_ENTITY
+                assert update_response.status_code == HTTP_422_UNPROCESSABLE_CONTENT
                 assert re.match(r"^session .* is retired$", update_result["detail"])

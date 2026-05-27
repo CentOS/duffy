@@ -1,7 +1,12 @@
 from unittest import mock
 
 import pytest
-from starlette.status import HTTP_200_OK, HTTP_404_NOT_FOUND, HTTP_422_UNPROCESSABLE_ENTITY
+from starlette.status import HTTP_200_OK, HTTP_404_NOT_FOUND
+
+try:
+    from starlette.status import HTTP_422_UNPROCESSABLE_CONTENT
+except ImportError:  # starlette < 0.48.0
+    from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY as HTTP_422_UNPROCESSABLE_CONTENT
 
 from duffy.database.model import Node
 
@@ -71,7 +76,7 @@ class TestPool:
         else:
             expected_result = None
             if pool == "foo":
-                expected_status = HTTP_422_UNPROCESSABLE_ENTITY
+                expected_status = HTTP_422_UNPROCESSABLE_CONTENT
             else:
                 expected_status = HTTP_404_NOT_FOUND
 

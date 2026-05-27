@@ -8,8 +8,12 @@ from starlette.status import (
     HTTP_201_CREATED,
     HTTP_403_FORBIDDEN,
     HTTP_404_NOT_FOUND,
-    HTTP_422_UNPROCESSABLE_ENTITY,
 )
+
+try:
+    from starlette.status import HTTP_422_UNPROCESSABLE_CONTENT
+except ImportError:  # starlette < 0.48.0
+    from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY as HTTP_422_UNPROCESSABLE_CONTENT
 
 from duffy.database.model import Session, Tenant
 from duffy.database.setup import _gen_test_api_key
@@ -187,7 +191,7 @@ class TestTenant(BaseTestController):
         elif testcase == "not admin":
             assert response.status_code == HTTP_403_FORBIDDEN
         elif testcase == "inactive":
-            assert response.status_code == HTTP_422_UNPROCESSABLE_ENTITY
+            assert response.status_code == HTTP_422_UNPROCESSABLE_CONTENT
         else:  # not found
             assert response.status_code == HTTP_404_NOT_FOUND
 
