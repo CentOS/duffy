@@ -15,6 +15,7 @@ from .exceptions import DuffyConfigurationError
 from .util import UNSET, SentinelType
 
 log = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 class FakeAPITenant:
@@ -30,12 +31,10 @@ class AdminContext:
     def create_for_cli(cls):
         """This exits the program if creating an AdminContext throws an exception."""
         try:
-            admin_ctx = cls()
+            return cls()
         except DuffyConfigurationError as exc:
-            log.error("Configuration key missing or wrong: %s", exc.args[0])
+            log.error("Configuration key missing or incorrect: %s", exc.args[0])
             sys.exit(1)
-        else:
-            return admin_ctx
 
     async def proxy_controller_function_async(self, controller_function, **kwargs):
         async with async_session_maker() as db_async_session, db_async_session.begin():
@@ -45,12 +44,13 @@ class AdminContext:
                 )
             except HTTPException as exc:
                 await db_async_session.rollback()
+                log.error("HTTPException during async operation: %s", exc.detail)
                 return {"error": {"detail": exc.detail}}
 
     def proxy_controller_function(self, controller_function, **kwargs):
         return asyncio.run(self.proxy_controller_function_async(controller_function, **kwargs))
 
-    def get_tenant_id(self, name: str):
+    def get_tenant_id(self, name: str) -> Optional[int]:
         with sync_session_maker() as db_sync_session:
             return db_sync_session.execute(
                 select(Tenant.id).filter_by(name=name)
@@ -60,35 +60,38 @@ class AdminContext:
         return self.proxy_controller_function(tenant.get_all_tenants)
 
     def show_tenant(self, name: str):
-        return self.proxy_controller_function(tenant.get_tenant, id=self.get_tenant_id(name))
+        tenant_id = self.get_tenant_id(name)
+        if tenant_id is None:
+            log.error("Tenant not found: %s", name)
+            return {"error": {"detail": "Tenant not found"}}
+        return self.proxy_controller_function(tenant.get_tenant, id=tenant_id)
 
     def create_tenant(
         self,
         name: str,
         ssh_key: str,
-        node_quota: Optional[int],
-        session_lifetime: Optional[timedelta],
-        session_lifetime_max: Optional[timedelta],
+        node_quota: Optional[int] = None,
+        session_lifetime: Optional[timedelta] = None,
+        session_lifetime_max: Optional[timedelta] = None,
         is_admin: bool = False,
     ):
-        return self.proxy_controller_function(
-            tenant.create_tenant,
-            data=TenantCreateModel(
-                name=name,
-                ssh_key=ssh_key,
-                is_admin=is_admin,
-                node_quota=node_quota,
-                session_lifetime=session_lifetime,
-                session_lifetime_max=session_lifetime_max,
-            ),
+        tenant_data = TenantCreateModel(
+            name=name,
+            ssh_key=ssh_key,
+            is_admin=is_admin,
+            node_quota=node_quota,
+            session_lifetime=session_lifetime,
+            session_lifetime_max=session_lifetime_max,
         )
+        return self.proxy_controller_function(tenant.create_tenant, data=tenant_data)
 
     def retire_unretire_tenant(self, name: str, retire: bool):
-        return self.proxy_controller_function(
-            tenant.update_tenant,
-            id=self.get_tenant_id(name),
-            data=TenantRetireModel(active=not retire),
-        )
+        tenant_id = self.get_tenant_id(name)
+        if tenant_id is None:
+            log.error("Tenant not found: %s", name)
+            return {"error": {"detail": "Tenant not found"}}
+        retire_data = TenantRetireModel(active=not retire)
+        return self.proxy_controller_function(tenant.update_tenant, id=tenant_id, data=retire_data)
 
     def update_tenant(
         self,
@@ -96,14 +99,15 @@ class AdminContext:
         api_key: Optional[Union[str, SentinelType]] = UNSET,
         ssh_key: Optional[Union[str, SentinelType]] = UNSET,
         node_quota: Optional[Union[int, SentinelType]] = UNSET,
-        session_lifetime: Optional[timedelta] = UNSET,
-        session_lifetime_max: Optional[timedelta] = UNSET,
+        session_lifetime: Optional[Union[timedelta, SentinelType]] = UNSET,
+        session_lifetime_max: Optional[Union[timedelta, SentinelType]] = UNSET,
     ):
-        data = {}
-        for key in ("api_key", "ssh_key", "node_quota", "session_lifetime", "session_lifetime_max"):
-            value = locals()[key]
-            if value is not UNSET:
-                data[key] = value
+        tenant_id = self.get_tenant_id(name)
+        if tenant_id is None:
+            log.error("Tenant not found: %s", name)
+            return {"error": {"detail": "Tenant not found"}}
+
+        data = {key: value for key, value in locals().items() if key != "name" and value is not UNSET}
         return self.proxy_controller_function(
-            tenant.update_tenant, id=self.get_tenant_id(name), data=TenantUpdateModel(**data)
+            tenant.update_tenant, id=tenant_id, data=TenantUpdateModel(**data)
         )
