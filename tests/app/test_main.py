@@ -16,9 +16,29 @@ class TestMain:
         "/api/v1/sessions",
     )
 
+    @classmethod
+    def flatten_routes(cls, routes, prefix=""):
+        for route in routes:
+            if hasattr(route, "path"):
+                yield route, prefix
+                continue
+
+            if hasattr(route, "original_router") and hasattr(route, "include_context"):
+                yield from cls.flatten_routes(
+                    route.original_router.routes, prefix + route.include_context.prefix
+                )
+                continue
+
+            raise AssertionError(f"Incompatible route object: {route!r}")
+
+    @classmethod
+    def get_route_paths(cls, routes):
+        for route, prefix in cls.flatten_routes(routes):
+            yield prefix + route.path
+
     @pytest.mark.parametrize("path", api_paths)
     def test_paths(self, path):
-        assert any(r.path == path for r in app.routes)
+        assert any(rp == path for rp in self.get_route_paths(app.routes))
 
     async def test_openapi_json(self, client):
         response = await client.get("/openapi.json")
