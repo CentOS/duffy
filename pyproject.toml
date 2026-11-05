@@ -96,7 +96,7 @@ pytest-asyncio = "<2.0.0,>=0.17"
 pytest-cov = "<8.0.0,>=3.0.0"
 tox = "<5.0.0,>=3.24.4"
 psycopg = "<4.0.0,>=3.0.16"
-pytest-postgresql = "<10.0.0,>=4.1.1"
+pytest-postgresql = "<10.1.0,>=4.1.1"
 ruff = "<0.18.0,>=0.7.3"
 toml = "<0.11.0,>=0.10.2"
 
