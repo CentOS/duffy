@@ -28,7 +28,7 @@ from ...api_models import (
 )
 from ...database.model import Node, Session, SessionNode, Tenant
 from ...database.types import NodeState
-from ...nodes.context import contextualize, decontextualize
+from ...nodes.context import SSH_REMOTE_USER, contextualize, decontextualize
 from ...tasks import deprovision_nodes, fill_pools
 from ...util import aclosing
 from ..auth import req_tenant, req_tenant_optional
@@ -226,6 +226,8 @@ async def create_session(
                     # Mark the nodes as deployed but only commit when they’re contextualized.
                     for node in nodes_in_transaction:
                         node.state = NodeState.deployed
+                        # This is static but users have asked for this info to be present
+                        node.data["context"] = {"ssh_remote_user": SSH_REMOTE_USER}
                     await db_async_session.flush()
 
                     contextualized_ipaddrs = await contextualize(

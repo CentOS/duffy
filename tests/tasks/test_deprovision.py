@@ -73,7 +73,10 @@ def test_deprovision_pool_nodes(testcase, test_mechanism, db_sync_session, caplo
                 state="deployed",
                 pool="foo",
                 reusable=reusable,
-                data={"provision": {"mech_id": id + 20, "some_more_data": "fortytwo"}},
+                data={
+                    "provision": {"mech_id": id + 20, "some_more_data": "fortytwo"},
+                    "context": {"ssh_remote_user": "root"},
+                },
             )
             if reusable:
                 node.data["somefield"] = "somevalue"
@@ -131,6 +134,8 @@ def test_deprovision_pool_nodes(testcase, test_mechanism, db_sync_session, caplo
         node_ids = {node.id for node in nodes}
 
         if "normal" in testcase or "mechanism-failure" in testcase:
+            # After deprovisioning, the `context` block should be removed
+            assert not any("context" in node.data for node in nodes)
             decontextualize.assert_awaited_once()
             (ipaddrs,), kwargs = decontextualize.await_args
             assert not kwargs

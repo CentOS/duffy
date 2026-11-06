@@ -55,6 +55,10 @@ def deprovision_pool_nodes(self, pool_name: str, node_ids: List[int]):
 
             for node in nodes:
                 node.state = NodeState.deprovisioning
+                try:
+                    del node.data["context"]
+                except KeyError:  # pragma: no cover
+                    pass
                 node.pool = None
 
         log.debug("Decontextualizing nodes.")
