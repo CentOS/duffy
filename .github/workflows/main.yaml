@@ -36,6 +36,8 @@ jobs:
             fedver: latest
           - toxenv: py314
             fedver: latest
+          - toxenv: py315
+            fedver: latest
     runs-on: ubuntu-latest
     container: "fedorapython/fedora-python-tox:${{ matrix.fedver }}"
     steps:
