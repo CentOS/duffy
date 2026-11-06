@@ -30,9 +30,10 @@ SSH_CMD_OPTIONS = [
 ]
 SSH_CMD_FLAGS = SSH_CMD_FLAGS_BASE + [item for option in SSH_CMD_OPTIONS for item in ("-o", option)]
 TENANT_CRED_SEPARATOR = "### DUFFY tenant credentials"
-SSH_REMOTE_CONTEXTUALIZE_CMD = "cat - >> ~root/.ssh/authorized_keys"
+SSH_REMOTE_USER = "root"
+SSH_REMOTE_CONTEXTUALIZE_CMD = f"cat - >> ~{SSH_REMOTE_USER}/.ssh/authorized_keys"
 SSH_REMOTE_DECONTEXTUALIZE_CMD = (
-    f"sed -i -n '/{TENANT_CRED_SEPARATOR}/q;p' ~root/.ssh/authorized_keys"
+    f"sed -i -n '/{TENANT_CRED_SEPARATOR}/q;p' ~{SSH_REMOTE_USER}/.ssh/authorized_keys"
 )
 
 

@@ -25,6 +25,7 @@ except ImportError:  # starlette < 0.48.0
 from duffy.app.controllers import session as session_module
 from duffy.database.model import Node, Session, Tenant
 from duffy.database.setup import _gen_test_api_key
+from duffy.nodes.context import SSH_REMOTE_USER
 
 from . import BaseTestController
 
@@ -272,6 +273,9 @@ class TestSessionWorkflow:
             # validate that the result lists the nodes
             session = result["session"]
             nodes = session["nodes"]
+            assert all(
+                node["data"]["context"]["ssh_remote_user"] == SSH_REMOTE_USER for node in nodes
+            )
             for nodes_spec in self.nodes_specs:
                 nodes_spec = nodes_spec.copy()
                 quantity = nodes_spec.pop("quantity")
