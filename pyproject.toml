@@ -45,7 +45,7 @@ PyYAML = "<7.0.0,>=6.0.0"
 SQLAlchemy = {version = "<3,>=2.0.5", extras=["asyncio"], optional = true}
 alembic = {version = "^1.7.5", optional = true}
 bcrypt = {version = "<6.0.0,>=3.2", optional = true}
-fastapi = {version = "<0.163.0,>=0.93", optional = true}
+fastapi = {version = "<0.164,>=0.93", optional = true}
 uvicorn = {version = "<0.55.0,>=0.15", optional = true}
 Jinja2 = {version = "<4,>=3.0.3", optional = true}
 ansible-runner = [
