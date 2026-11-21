@@ -3069,15 +3069,15 @@ standard-no-fastapi-cloud-cli = ["email-validator (>=2.0.0)", "fastapi-cli[stand
 
 [[package]]
 name = "fastapi"
-version = "0.163.0"
+version = "0.165.0"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
 optional = true
 python-versions = ">=3.11"
 groups = ["main"]
 markers = "python_version >= \"3.11\" and (extra == \"app\" or extra == \"admin\")"
 files = [
-    {file = "fastapi-0.163.0-py3-none-any.whl", hash = "sha256:7572550ab4935e3ff373dc0191aea410d6c48127cc5477bc290b992fe539e345"},
-    {file = "fastapi-0.163.0.tar.gz", hash = "sha256:ef55fa066d74b922aac7231af7869c4469b88ca00cac5d0421e42ceee213a902"},
+    {file = "fastapi-0.165.0-py3-none-any.whl", hash = "sha256:896f48462042bb4f162147eb8fac7e858753dc1f486765709baf105d70e4fc5b"},
+    {file = "fastapi-0.165.0.tar.gz", hash = "sha256:dd94d4128319c1e1d50535ab023ab698f850a4d2822f0e181747b46f4ff3c0ab"},
 ]
 
 [package.dependencies]
@@ -3085,7 +3085,7 @@ annotated-doc = ">=0.0.2"
 anyio = ">=4.1.0"
 opentelemetry-api = ">=1.44.0"
 pydantic = ">=2.9.0"
-starlette = ">=0.46.0"
+starlette = ">=1.6.0"
 typing-extensions = ">=4.8.0"
 typing-inspection = ">=0.4.2"
 
@@ -9791,4 +9791,4 @@ tasks = ["Jinja2", "aiodns", "ansible-runner", "ansible-runner", "celery", "jmes
 [metadata]
 lock-version = "2.1"
 python-versions = "<4.0,>=3.8"
-content-hash = "923988091884afb7ae78619e6f32752ed73d4f472260fca036d9e094c8b7aec9"
+content-hash = "620d4d54391645be479a852ca419ba42ca4e0d52795b30fd7718abb94464be33"
